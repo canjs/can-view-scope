@@ -1,8 +1,7 @@
 {
   "name": "can-view-scope",
-  "version": "3.0.0-pre.0",
+  "version": "3.0.0-pre.1",
   "description": "Observable scopes",
-  "homepage": "http://canjs.com",
   "homepage": "http://canjs.com",
   "repository": {
     "type": "git",
