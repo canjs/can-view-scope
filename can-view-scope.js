@@ -328,7 +328,7 @@ assign(Scope.prototype,{
 		}
 
 		if(key.charAt(0) === "*") {
-			observeReader.set(this.getRefs()._context, key, value, options);
+			observeReader.write(this.getRefs()._context, key, value, options);
 		} else {
 			var context = this.read(contextPath, options).value;
 			observeReader.write(context, propName, value, options);
