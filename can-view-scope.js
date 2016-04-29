@@ -5,7 +5,7 @@
 var observeReader = require('can-observe-info/reader/reader');
 var ObserveInfo = require('can-observe-info');
 
-var Map = require('can-map');
+var ReferenceMap = require('./reference-map');
 
 var makeComputeData = require('./compute_data');
 
@@ -43,8 +43,8 @@ assign(Scope, {
 	// can.compute.read reads properties from a parent.  A much more complex version of getObject.
 	read: observeReader.read,
 	// ## Scope.Refs
-	// A special type of `can.Map` used for the references scope.
-	Refs: Map.extend({shortName: "ReferenceMap"},{}),
+	// A Map-like object used for the references scope.
+	Refs: ReferenceMap,
 
 	// ## Scope.refsScope
 	// A scope with a references scope in it and no parent.

@@ -1,3 +1,4 @@
+require("./scope-define-test");
 var Scope = require('can-view-scope');
 var Map = require('can-map');
 var List = require('can-list');
@@ -16,7 +17,11 @@ test("basics",function(){
 	arrayScope = new Scope(itemsScope.attr('people'), itemsScope),
 	firstItem = new Scope( arrayScope.attr('0'), arrayScope );
 
-	var nameInfo = firstItem.read('name');
+	var nameInfo;
+	var c = compute(function(){
+		nameInfo = firstItem.read('name');
+	});
+	c.bind("change", function(){});
 	deepEqual(nameInfo.reads, [{key: "name", at: false}], "reads");
 	equal(nameInfo.scope, firstItem, "scope");
 	equal(nameInfo.value,"Justin", "value");

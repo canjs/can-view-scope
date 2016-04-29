@@ -1,10 +1,11 @@
 var ObservedInfo = require('can-observe-info');
 var observeReader = require('can-observe-info/reader/reader');
+var makeCompute = require('can-compute');
 
 var types = require('can-util/js/types/types');
 var isFunction = require('can-util/js/is-function/is-function');
 var isEmptyObject = require('can-util/js/is-empty-object/is-empty-object');
-var makeCompute = require('can-compute');
+
 
 // The goal of this is to create a high-performance compute that represents a key value from can.view.Scope.
 // If the key value is something like {{name}} and the context is a can.Map, a faster
@@ -36,7 +37,7 @@ var scopeReader = function(scope, key, options, computeData, newVal){
 				observeReader.write(obj, computeData.reads[last].key, newVal, options);
 			}
 		} else {
-			// WARN ... you can't set nothing
+			scope.set(key, newVal, options);
 		}
 		// **Compute getter**
 	} else {
