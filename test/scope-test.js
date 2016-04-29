@@ -4,6 +4,7 @@ var Map = require('can-map');
 var List = require('can-list');
 var observeReader = require('can-observe-info/reader/reader');
 var compute = require('can-compute');
+var ReferenceMap = require('../reference-map');
 
 var QUnit = require('steal-qunit');
 
@@ -376,3 +377,12 @@ test("can read parent context with ../ (#2244)", function(){
 	equal( top.attr("../"), map, "looked up value correctly");
 
 });
+
+test("trying to read constructor from refs scope is ok", function(){
+	var map = new ReferenceMap();
+	var construct = compute(function(){
+		return map.attr("constructor");
+	});
+	construct.bind("change", function(){});
+	equal(construct(), ReferenceMap);
+})
