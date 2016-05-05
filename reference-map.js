@@ -14,7 +14,7 @@ var ReferenceMap = Construct.extend("ReferenceMap",{
 		if(arguments.length > 1) {
 			var old = this._data[prop];
 			this._data[prop] = value;
-			canBatch.trigger.call(this, prop, old);
+			canBatch.trigger.call(this, prop, [old]);
 		} else {
 			if(prop !== "constructor") {
 				ObserveInfo.observe(this, prop);
