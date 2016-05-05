@@ -61,9 +61,9 @@
   "dependencies": {
     "can-compute": "^3.0.0-pre.1",
     "can-construct": "^3.0.0-pre.1",
-    "can-event": "^3.0.0-pre.3",
     "can-list": "^3.0.0-pre.1",
     "can-observe-info": "^3.0.0-pre.3",
+    "can-simple-map": "^3.0.0-pre.1",
     "can-util": "^3.0.0-pre.5"
   },
   "devDependencies": {
