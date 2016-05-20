@@ -4,14 +4,11 @@
 // If no parent scope is provided, only the scope's context will be explored for values.
 var observeReader = require('can-observe-info/reader/reader');
 var ObserveInfo = require('can-observe-info');
-
 var ReferenceMap = require('./reference-map');
-
 var makeComputeData = require('./compute_data');
-
 var assign = require('can-util/js/assign/assign');
-
 var each = require('can-util/js/each/each');
+var namespace = require('can-util/namespace');
 
 /**
  * @add can.view.Scope
@@ -413,4 +410,5 @@ Options.prototype.constructor = Options;
 
 Scope.Options = Options;
 
-module.exports = Scope;
+namespace.view = namespace.view || {};
+module.exports = namespace.view.Scope = Scope;

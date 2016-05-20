@@ -27,7 +27,7 @@
     "document": "documentjs",
     "develop": "done-serve --static --develop --port 8080"
   },
-  "main": "dist/cjs/can-view-scope",
+  "main": "can-view-scope",
   "browser": {
     "transform": [
       "cssify"
@@ -39,22 +39,13 @@
     ]
   },
   "keywords": [
-    "Done",
-    "JS",
-    "Can",
-    "JS"
+    "canjs",
+    "canjs-plugin",
+    "donejs"
   ],
   "system": {
-    "main": "can-view-scope",
     "configDependencies": [
       "live-reload"
-    ],
-    "npmIgnore": [
-      "documentjs",
-      "testee",
-      "generator-donejs",
-      "donejs-cli",
-      "steal-tools"
     ],
     "npmAlgorithm": "flat"
   },
@@ -64,7 +55,7 @@
     "can-list": "^3.0.0-pre.1",
     "can-observe-info": "^3.0.0-pre.3",
     "can-simple-map": "^3.0.0-pre.1",
-    "can-util": "^3.0.0-pre.5"
+    "can-util": "^3.0.0-pre.21"
   },
   "devDependencies": {
     "can-map": "^3.0.0-pre.1",
