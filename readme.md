@@ -2,57 +2,107 @@
 
 [![Build Status](https://travis-ci.org/canjs/can-view-scope.png?branch=master)](https://travis-ci.org/canjs/can-view-scope)
 
-Observable scopes
+Observable scopes.
 
-## Usage
+- <code>[__can-view-scope__ ](#can-view-scope-)</code>
+  - <code>[new Scope(context, [parent])](#new-scopecontext-parent)</code>
+    - _prototype_
+      - <code>[scope.add(context)](#scopeaddcontext)</code>
+      - <code>[scope.attr(key)](#scopeattrkey)</code>
+      - <code>[scope.compute(key, [options])](#scopecomputekey-options)</code>
+      - <code>[scope.computeData(key)](#scopecomputedatakey)</code>
 
-### ES6 use
+## API
 
-With StealJS, you can import this module directly in a template that is autorendered:
+
+## <code>__can-view-scope__ </code>
+Create a lookup node for [can.mustache.key keys]. 
+
+
+
+
+### <code>new Scope(context, [parent])</code>
+
+
+
+1. __context__ <code>{*}</code>:
+  A value that represents the 
+  current context. This is often an object or observable and is the first
+  place a `key` is looked up.
+  
+1. __parent__ <code>{[Scope](#new-scopecontext-parent)}</code>:
+  The parent scope. If a `key` value
+  is not found in the current scope, it will then look in the parent
+  scope.
+  
+
+- __returns__ <code>{}</code>:
+  Returns a scope instance.
+  
+
+#### <code>scope.add(context)</code>
+
+
+Add an object (which could be another Scope, a Map, or a plain object) to the scope.
 
 ```js
-import plugin from 'can-view-scope';
+var scope = new Scope({ foo: "bar" }).add({ baz: "qux" });
+
+scope.attr("baz"); // -> "qux"
 ```
 
-### CommonJS use
 
-Use `require` to load `can-view-scope` and everything else
-needed to create a template that uses `can-view-scope`:
+1. __context__ <code>{*}</code>:
+  The context of the new scope object.
+  
 
-```js
-var plugin = require("can-view-scope");
-```
+- __returns__ <code>{}</code>:
+  A scope object.
+  
 
-## AMD use
+#### <code>scope.attr(key)</code>
 
-Configure the `can` and `jquery` paths and the `can-view-scope` package:
 
-```html
-<script src="require.js"></script>
-<script>
-	require.config({
-	    paths: {
-	        "jquery": "node_modules/jquery/dist/jquery",
-	        "can": "node_modules/canjs/dist/amd/can"
-	    },
-	    packages: [{
-		    	name: 'can-view-scope',
-		    	location: 'node_modules/can-view-scope/dist/amd',
-		    	main: 'lib/can-view-scope'
-	    }]
-	});
-	require(["main-amd"], function(){});
-</script>
-```
 
-### Standalone use
+1. __key__ <code>{can.mustache.key}</code>:
+  A dot seperated path.  Use `"."` if you have a
+  property name that includes a dot.
+  
 
-Load the `global` version of the plugin:
+- __returns__ <code>{*}</code>:
+  The found value or undefined if no value is found.
+  
 
-```html
-<script src='./node_modules/can-view-scope/dist/global/can-view-scope.js'></script>
-```
+#### <code>scope.compute(key, [options])</code>
 
+
+1. __key__ <code>{can.mustache.key}</code>:
+  A dot seperated path.  Use `"."` if you have a
+  property name that includes a dot.
+  
+1. __options__ <code>{can.view.Scope.readOptions}</code>:
+  Options that configure how the `key` gets read.
+  
+
+- __returns__ <code>{can.compute}</code>:
+  A compute that can get or set `key`.
+  
+
+#### <code>scope.computeData(key)</code>
+
+
+
+1. __key__ <code>{can.mustache.key}</code>:
+  A dot seperated path.  Use `"."` if you have a
+  property name that includes a dot.
+  
+1. __options__ <code>{can.view.Scope.readOptions}</code>:
+  Options that configure how the `key` gets read.
+  
+
+- __returns__ <code>{Object}</code>:
+  An object with the following values:
+  
 ## Contributing
 
 ### Making a Build
