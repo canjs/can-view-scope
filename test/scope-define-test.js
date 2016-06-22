@@ -2,7 +2,7 @@
 var Scope = require('can-view-scope');
 var DefineMap = require('can-define/map/map');
 var DefineList = require('can-define/list/list');
-var observeReader = require('can-observe-info/reader/reader');
+var observeReader = require('can-observation/reader/reader');
 var compute = require('can-compute');
 
 var QUnit = require('steal-qunit');
