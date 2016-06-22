@@ -53,7 +53,7 @@
     "can-compute": "^3.0.0-pre.1",
     "can-construct": "^3.0.0-pre.1",
     "can-list": "^3.0.0-pre.1",
-    "can-observe-info": "^3.0.0-pre.3",
+    "can-observation": "^3.0.0-pre.0",
     "can-simple-map": "^3.0.0-pre.1",
     "can-util": "^3.0.0-pre.21"
   },

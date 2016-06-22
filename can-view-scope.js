@@ -2,8 +2,8 @@
 //
 // This allows you to define a lookup context and parent contexts that a key's value can be retrieved from.
 // If no parent scope is provided, only the scope's context will be explored for values.
-var observeReader = require('can-observe-info/reader/reader');
-var ObserveInfo = require('can-observe-info');
+var observeReader = require('can-observation/reader/reader');
+var Observation = require('can-observation');
 var ReferenceMap = require('./reference-map');
 var makeComputeData = require('./compute_data');
 var assign = require('can-util/js/assign/assign');
@@ -201,7 +201,7 @@ assign(Scope.prototype,{
 			) {
 
 				// Prevent computes from temporarily observing the reading of observables.
-				var getObserves = ObserveInfo.trap();
+				var getObserves = Observation.trap();
 
 				var data = observeReader.read(currentContext, keyReads, readOptions);
 
@@ -209,7 +209,7 @@ assign(Scope.prototype,{
 				var observes = getObserves();
 				// If a **value was was found**, return value and location data.
 				if (data.value !== undefined) {
-					ObserveInfo.observes(observes);
+					Observation.addAll(observes);
 					return {
 						scope: currentScope,
 						rootObserve: currentObserve,
@@ -236,7 +236,7 @@ assign(Scope.prototype,{
 		// The **value was not found**, return `undefined` for the value.
 		// Make sure we listen to everything we checked for when the value becomes defined.
 		// Once it becomes defined, we won't have to listen to so many things.
-		ObserveInfo.observes(undefinedObserves);
+		Observation.addAll(undefinedObserves);
 		return {
 			setRoot: currentSetObserve,
 			reads: currentSetReads,
@@ -246,7 +246,7 @@ assign(Scope.prototype,{
 
 	// ## Scope.prototype.get
 	// Gets a value from the scope without being observable.
-	get: ObserveInfo.notObserve(function (key, options) {
+	get: Observation.ignore(function (key, options) {
 
 		options = assign({
 			isArgument: true
@@ -334,7 +334,7 @@ assign(Scope.prototype,{
 
 	// ## Scope.prototype.attr
 	// Gets or sets a value in the scope without being observable.
-	attr: ObserveInfo.notObserve(function (key, value, options) {
+	attr: Observation.ignore(function (key, value, options) {
 
 
 		options = assign({

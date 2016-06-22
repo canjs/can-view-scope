@@ -1,5 +1,5 @@
-var ObservedInfo = require('can-observe-info');
-var observeReader = require('can-observe-info/reader/reader');
+var Observation = require('can-observation');
+var observeReader = require('can-observation/reader/reader');
 var makeCompute = require('can-compute');
 
 var types = require('can-util/js/types/types');
@@ -89,10 +89,10 @@ module.exports = function(scope, key, options){
 							this.newVal = newVal;
 						} else {
 							// restore
-							readInfo.dependencyChange = ObservedInfo.prototype.dependencyChange;
-							readInfo.getValueAndBind = ObservedInfo.prototype.getValueAndBind;
+							readInfo.dependencyChange = Observation.prototype.dependencyChange;
+							readInfo.getValueAndBind = Observation.prototype.getValueAndBind;
 						}
-						return ObservedInfo.prototype.dependencyChange.call(this, ev);
+						return Observation.prototype.dependencyChange.call(this, ev);
 					};
 					readInfo.getValueAndBind = function(){
 						this.value = this.newVal;
@@ -112,7 +112,7 @@ module.exports = function(scope, key, options){
 		}),
 
 		// the observables read by the last calling of `scopeRead`
-		readInfo = new ObservedInfo(scopeRead, null, compute.computeInstance);
+		readInfo = new Observation(scopeRead, null, compute.computeInstance);
 
 	computeData.compute = compute;
 	return computeData;

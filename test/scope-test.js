@@ -2,7 +2,7 @@ require("./scope-define-test");
 var Scope = require('can-view-scope');
 var Map = require('can-map');
 var List = require('can-list');
-var observeReader = require('can-observe-info/reader/reader');
+var observeReader = require('can-observation/reader/reader');
 var compute = require('can-compute');
 var ReferenceMap = require('../reference-map');
 
