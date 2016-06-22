@@ -50,16 +50,16 @@
     "npmAlgorithm": "flat"
   },
   "dependencies": {
-    "can-compute": "^3.0.0-pre.1",
-    "can-construct": "^3.0.0-pre.1",
-    "can-list": "^3.0.0-pre.1",
+    "can-compute": "^3.0.0-pre.5",
+    "can-construct": "^3.0.0-pre.6",
+    "can-list": "^3.0.0-pre.4",
     "can-observation": "^3.0.0-pre.0",
-    "can-simple-map": "^3.0.0-pre.1",
-    "can-util": "^3.0.0-pre.21"
+    "can-simple-map": "^3.0.0-pre.3",
+    "can-util": "^3.0.0-pre.28"
   },
   "devDependencies": {
-    "can-map": "^3.0.0-pre.1",
-    "can-define": "^0.7.5",
+    "can-map": "^3.0.0-pre.7",
+    "can-define": "^0.7.7",
     "bit-docs": "0.0.7",
     "jshint": "^2.9.1",
     "cssify": "^0.6.0",
