@@ -4,7 +4,8 @@
 
 Observable scopes.
 
-- <code>[__can-view-scope__ ](#can-view-scope-)</code>
+
+- <code>[__can-view-scope__ function](#can-view-scope-function)</code>
   - <code>[new Scope(context, [parent])](#new-scopecontext-parent)</code>
     - _prototype_
       - <code>[scope.add(context)](#scopeaddcontext)</code>
@@ -15,7 +16,7 @@ Observable scopes.
 ## API
 
 
-## <code>__can-view-scope__ </code>
+## <code>__can-view-scope__ function</code>
 Create a lookup node for [can.mustache.key keys]. 
 
 
@@ -102,7 +103,7 @@ scope.attr("baz"); // -> "qux"
 
 - __returns__ <code>{Object}</code>:
   An object with the following values:
-  
+    
 ## Contributing
 
 ### Making a Build
