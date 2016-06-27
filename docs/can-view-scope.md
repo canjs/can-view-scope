@@ -1,4 +1,4 @@
-@module {constructor} can-view-scope Scope
+@module {function} can-view-scope Scope
 @inherits can-construct
 @test can/view/scope/test.html
 @group can.view.Scope.types types
