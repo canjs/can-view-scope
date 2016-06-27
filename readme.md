@@ -4,7 +4,6 @@
 
 Observable scopes.
 
-
 - <code>[__can-view-scope__ function](#can-view-scope-function)</code>
   - <code>[new Scope(context, [parent])](#new-scopecontext-parent)</code>
     - _prototype_
@@ -17,7 +16,7 @@ Observable scopes.
 
 
 ## <code>__can-view-scope__ function</code>
-Create a lookup node for [can.mustache.key keys]. 
+Create a lookup node for [can-mustache.key keys]. 
 
 
 
@@ -37,7 +36,7 @@ Create a lookup node for [can.mustache.key keys].
   scope.
   
 
-- __returns__ <code>{}</code>:
+- __returns__ <code>{[Scope](#new-scopecontext-parent)}</code>:
   Returns a scope instance.
   
 
@@ -57,7 +56,7 @@ scope.attr("baz"); // -> "qux"
   The context of the new scope object.
   
 
-- __returns__ <code>{}</code>:
+- __returns__ <code>{[Scope](#new-scopecontext-parent)}</code>:
   A scope object.
   
 
@@ -65,7 +64,7 @@ scope.attr("baz"); // -> "qux"
 
 
 
-1. __key__ <code>{can.mustache.key}</code>:
+1. __key__ <code>{can-mustache.key}</code>:
   A dot seperated path.  Use `"."` if you have a
   property name that includes a dot.
   
@@ -77,15 +76,15 @@ scope.attr("baz"); // -> "qux"
 #### <code>scope.compute(key, [options])</code>
 
 
-1. __key__ <code>{can.mustache.key}</code>:
+1. __key__ <code>{can-mustache.key}</code>:
   A dot seperated path.  Use `"."` if you have a
   property name that includes a dot.
   
-1. __options__ <code>{can.view.Scope.readOptions}</code>:
+1. __options__ <code>{can-view-scope.readOptions}</code>:
   Options that configure how the `key` gets read.
   
 
-- __returns__ <code>{can.compute}</code>:
+- __returns__ <code>{can-compute.computed}</code>:
   A compute that can get or set `key`.
   
 
@@ -93,17 +92,17 @@ scope.attr("baz"); // -> "qux"
 
 
 
-1. __key__ <code>{can.mustache.key}</code>:
+1. __key__ <code>{can-mustache.key}</code>:
   A dot seperated path.  Use `"."` if you have a
   property name that includes a dot.
   
-1. __options__ <code>{can.view.Scope.readOptions}</code>:
+1. __options__ <code>{can-view-scope.readOptions}</code>:
   Options that configure how the `key` gets read.
   
 
 - __returns__ <code>{Object}</code>:
   An object with the following values:
-    
+      
 ## Contributing
 
 ### Making a Build

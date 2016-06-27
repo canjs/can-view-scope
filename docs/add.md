@@ -12,7 +12,7 @@ scope.attr("baz"); // -> "qux"
 
 @param {*} context The context of the new scope object.
 
-@return {can.view.Scope}  A scope object.
+@return {can-view-scope}  A scope object.
 
 @body
 
@@ -25,7 +25,7 @@ parent `scope` object.
     var list = [{name: "Justin"},{name: "Brian"}],
         justin = list[0];
 
-    var curScope = new can.view.Scope(list).add(justin);
+    var curScope = new Scope(list).add(justin);
 
     curScope.attr("name") //-> "Justin"
     curScope.attr("length") //-> 2

@@ -2,7 +2,7 @@
 
 @signature `scope.attr(key)`
 
-@param {can.mustache.key} key A dot seperated path.  Use `"\."` if you have a
+@param {can-mustache.key} key A dot seperated path.  Use `"\."` if you have a
 property name that includes a dot.
 
 @return {*} The found value or undefined if no value is found.
@@ -18,7 +18,7 @@ will be explored.
     var list = [{name: "Justin"},{name: "Brian"}],
         justin = list[0];
 
-    var curScope = new can.view.Scope(list).add(justin);
+    var curScope = new Scope(list).add(justin);
 
     curScope.attr("name"); //-> "Justin"
     curScope.attr("length"); //-> 2
@@ -33,7 +33,7 @@ that many levels up.
 
     var justin = list[0];
     var brian = list[1];
-    var curScope = new can.view.Scope(list).add(justin).add(brian);
+    var curScope = new Scope(list).add(justin).add(brian);
 
     curScope.attr("name"); //-> "Brian"
     curScope.attr("surname"); //-> "CanJS"
