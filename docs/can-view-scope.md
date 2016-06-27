@@ -1,4 +1,4 @@
-@module {function} can-view-scope Scope
+@module {function} can-view-scope
 @parent can-infrastructure
 @inherits can-construct
 @test can/view/scope/test.html
