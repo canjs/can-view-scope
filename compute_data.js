@@ -68,7 +68,7 @@ module.exports = function(scope, key, options){
 	};
 	// the object we are returning
 	var computeData = {},
-		// a function that can be passed to getValueAndBind, or used as a setter
+		// a function that can be passed to Observation, or used as a setter
 		scopeRead = function (newVal) {
 			if(arguments.length) {
 				return scopeReader(scope, key, options, computeData, newVal);
@@ -79,7 +79,7 @@ module.exports = function(scope, key, options){
 		compute = makeCompute(undefined,{
 			on: function() {
 				// setup the observing
-				readInfo.getValueAndBind();
+				readInfo.start();
 
 				if( isFastPath(computeData) ) {
 					// When the one dependency changes, we can simply get its newVal and
@@ -90,11 +90,11 @@ module.exports = function(scope, key, options){
 						} else {
 							// restore
 							readInfo.dependencyChange = Observation.prototype.dependencyChange;
-							readInfo.getValueAndBind = Observation.prototype.getValueAndBind;
+							readInfo.start = Observation.prototype.start;
 						}
 						return Observation.prototype.dependencyChange.call(this, ev);
 					};
-					readInfo.getValueAndBind = function(){
+					readInfo.start = function(){
 						this.value = this.newVal;
 					};
 				}

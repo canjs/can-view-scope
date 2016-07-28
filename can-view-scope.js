@@ -246,7 +246,7 @@ assign(Scope.prototype,{
 
 	// ## Scope.prototype.get
 	// Gets a value from the scope without being observable.
-	get: Observation.ignore(function (key, options) {
+	get: function (key, options) {
 
 		options = assign({
 			isArgument: true
@@ -254,6 +254,9 @@ assign(Scope.prototype,{
 
 		var res = this.read(key, options);
 		return res.value;
+	},
+	peak: Observation.ignore(function(key, options){
+		return this.get(key, options);
 	}),
 	// ## Scope.prototype.getScope
 	// Returns the first scope that passes the `tester` function.
@@ -335,7 +338,7 @@ assign(Scope.prototype,{
 	// ## Scope.prototype.attr
 	// Gets or sets a value in the scope without being observable.
 	attr: Observation.ignore(function (key, value, options) {
-
+		console.warn("can-view-scope::attr is deprecated, please use peak, get or set");
 
 		options = assign({
 			isArgument: true

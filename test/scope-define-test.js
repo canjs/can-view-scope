@@ -14,8 +14,8 @@ test("basics",function(){
 	var items = new DefineMap({ people: [{name: "Justin"},{name: "Brian"}], count: 1000 });
 
 	var itemsScope = new Scope(items),
-	arrayScope = new Scope(itemsScope.attr("people"), itemsScope),
-	firstItem = new Scope( arrayScope.attr('0'), arrayScope );
+	arrayScope = new Scope(itemsScope.peak("people"), itemsScope),
+	firstItem = new Scope( arrayScope.peak('0'), arrayScope );
 
 	var nameInfo;
 	var c = compute(function(){
@@ -50,9 +50,9 @@ test('backtrack path (#163)', function () {
 			format: 'str'
 		}, base = new Scope(row),
 		cur = base.add(col);
-	equal(cur.attr('.'), col, 'got col');
-	equal(cur.attr('..'), row, 'got row');
-	equal(cur.attr('../first'), 'Justin', 'got row');
+	equal(cur.peak('.'), col, 'got col');
+	equal(cur.peak('..'), row, 'got row');
+	equal(cur.peak('../first'), 'Justin', 'got row');
 });
 
 test('nested properties with compute', function () {

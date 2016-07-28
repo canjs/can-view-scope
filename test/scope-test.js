@@ -15,8 +15,8 @@ test("basics",function(){
 	var items = new Map({ people: [{name: "Justin"},[{name: "Brian"}]], count: 1000 });
 
 	var itemsScope = new Scope(items),
-	arrayScope = new Scope(itemsScope.attr('people'), itemsScope),
-	firstItem = new Scope( arrayScope.attr('0'), arrayScope );
+	arrayScope = new Scope(itemsScope.peak('people'), itemsScope),
+	firstItem = new Scope( arrayScope.peak('0'), arrayScope );
 
 	var nameInfo;
 	var c = compute(function(){
@@ -51,9 +51,9 @@ test('backtrack path (#163)', function () {
 			format: 'str'
 		}, base = new Scope(row),
 		cur = base.add(col);
-	equal(cur.attr('.'), col, 'got col');
-	equal(cur.attr('..'), row, 'got row');
-	equal(cur.attr('../first'), 'Justin', 'got row');
+	equal(cur.peak('.'), col, 'got col');
+	equal(cur.peak('..'), row, 'got row');
+	equal(cur.peak('../first'), 'Justin', 'got row');
 });
 
 test('nested properties with compute', function () {
@@ -293,19 +293,19 @@ test("Scope attributes can be set (#1297, #1304)", function(){
 		}
 	});
 
-	scope.attr("name", "Wilbur");
-	equal(scope.attr("name"), "Wilbur", "Value updated");
+	scope.set("name", "Wilbur");
+	equal(scope.get("name"), "Wilbur", "Value updated");
 
-	scope.attr("other.person.name", "Dave");
-	equal(scope.attr("other.person.name"), "Dave", "Value updated");
+	scope.set("other.person.name", "Dave");
+	equal(scope.get("other.person.name"), "Dave", "Value updated");
 
-	scope.attr("other.comp", "Changed");
+	scope.set("other.comp", "Changed");
 	equal(comp(), "Changed", "Compute updated");
 
 	scope = new Scope(map);
-	scope.attr("other.name", "Brian");
+	scope.set("other.name", "Brian");
 
-	equal(scope.attr("other.name"), "Brian", "Value updated");
+	equal(scope.get("other.name"), "Brian", "Value updated");
 	equal(map.attr("other.name"), "Brian", "Name update in map");
 });
 
@@ -351,7 +351,7 @@ test("A scope's %root is the last context", function(){
 	// the top.
 	var scope = refs.add(map).add(new Scope.Refs()).add(new Map());
 
-	var root = scope.attr("%root");
+	var root = scope.peak("%root");
 
 	ok(!(root instanceof Scope.Refs), "root isn't a reference");
 	equal(root, map, "The root is the map passed into the scope");
@@ -363,7 +363,7 @@ test("can set scope attributes with ../ (#2132)", function(){
 	var scope = new Scope(map);
 	var top = scope.add(new Map());
 
-	top.attr("../foo", "bar");
+	top.set("../foo", "bar");
 
 	equal(map.attr("foo"), "bar");
 
@@ -374,7 +374,7 @@ test("can read parent context with ../ (#2244)", function(){
 	var scope = new Scope(map);
 	var top = scope.add(new Map());
 
-	equal( top.attr("../"), map, "looked up value correctly");
+	equal( top.peak("../"), map, "looked up value correctly");
 
 });
 
