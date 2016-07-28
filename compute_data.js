@@ -103,7 +103,7 @@ module.exports = function(scope, key, options){
 				compute.computeInstance.hasDependencies = !isEmptyObject(readInfo.newObserved);
 			},
 			off: function(){
-				readInfo.teardown();
+				readInfo.stop();
 			},
 			set: scopeRead,
 			get: scopeRead,
