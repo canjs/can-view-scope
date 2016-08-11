@@ -79,31 +79,31 @@ module.exports = function(scope, key, options){
 		compute = makeCompute(undefined,{
 			on: function() {
 				// setup the observing
-				readInfo.start();
+				observation.start();
 
 				if( isFastPath(computeData) ) {
 					// When the one dependency changes, we can simply get its newVal and
 					// save it.  If it's a function, we need to start binding the old way.
-					readInfo.dependencyChange = function(ev, newVal){
+					observation.dependencyChange = function(ev, newVal){
 						if(typeof newVal !== "function") {
 							this.newVal = newVal;
 						} else {
 							// restore
-							readInfo.dependencyChange = Observation.prototype.dependencyChange;
-							readInfo.start = Observation.prototype.start;
+							observation.dependencyChange = Observation.prototype.dependencyChange;
+							observation.start = Observation.prototype.start;
 						}
 						return Observation.prototype.dependencyChange.call(this, ev);
 					};
-					readInfo.start = function(){
+					observation.start = function(){
 						this.value = this.newVal;
 					};
 				}
 				// TODO deal with this right
-				compute.computeInstance.value = readInfo.value;
-				compute.computeInstance.hasDependencies = !isEmptyObject(readInfo.newObserved);
+				compute.computeInstance.value = observation.value;
+				compute.computeInstance.hasDependencies = !isEmptyObject(observation.newObserved);
 			},
 			off: function(){
-				readInfo.stop();
+				observation.stop();
 			},
 			set: scopeRead,
 			get: scopeRead,
@@ -112,8 +112,8 @@ module.exports = function(scope, key, options){
 		}),
 
 		// the observables read by the last calling of `scopeRead`
-		readInfo = new Observation(scopeRead, null, compute.computeInstance);
-
+		observation = new Observation(scopeRead, null, compute.computeInstance);
+	compute.computeInstance.observation = observation;
 	computeData.compute = compute;
 	return computeData;
 
