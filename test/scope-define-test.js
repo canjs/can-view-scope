@@ -166,3 +166,18 @@ test('Can read static properties on constructors (#634)', function () {
 	equal(scope.computeData('constructor.static_prop')
 		.compute(), 'baz', 'static prop');
 });
+
+
+test("setting props in a compute (#18)", function(){
+	var map = new DefineMap({complete: true});
+	var computeVal = compute(map);
+
+	var base = new Scope(computeVal);
+	var complete = base.computeData('complete')
+		.compute;
+	equal(complete(), true, 'can read the value')
+
+	complete(false);
+
+	QUnit.equal( map.complete, false, "value set");
+});
