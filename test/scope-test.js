@@ -1,7 +1,7 @@
 require("./scope-define-test");
 var Scope = require('can-view-scope');
 var Map = require('can-map');
-var List = require('can-list');
+require('can-list');
 var observeReader = require('can-observation/reader/reader');
 var compute = require('can-compute');
 var ReferenceMap = require('../reference-map');
@@ -385,4 +385,4 @@ test("trying to read constructor from refs scope is ok", function(){
 	});
 	construct.bind("change", function(){});
 	equal(construct(), ReferenceMap);
-})
+});
