@@ -176,7 +176,7 @@ assign(Scope.prototype,{
 					currentReads = keyReads.slice(nameIndex);
 				},
 				earlyExit: function (parentValue, nameIndex) {
-					if (nameIndex > setObserveDepth) {
+					if (nameIndex > setObserveDepth || (nameIndex === setObserveDepth && (keyReads[nameIndex].key in parentValue) )) {
 						currentSetObserve = currentObserve;
 						currentSetReads = currentReads;
 						setObserveDepth = nameIndex;

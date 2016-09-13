@@ -181,3 +181,30 @@ test("setting props in a compute (#18)", function(){
 
 	QUnit.equal( map.complete, false, "value set");
 });
+
+test("undefined DefineMap props should be a scope hit (#20)", function(){
+
+	var MyType = DefineMap.extend("MyType",{
+		value: "string"
+	});
+	var EmptyType = DefineMap.extend("EmptyType",{});
+
+	var instance = new MyType();
+
+	var scope = new Scope(instance).add(new EmptyType());
+
+	var c1 = scope.computeData("value").compute;
+	c1.on("change", function(){});
+	c1("BAR");
+
+	QUnit.equal(instance.value, "BAR");
+
+	var instance2 = new MyType();
+	var scope2 = new Scope(instance2).add(compute());
+	var c2 = scope2.computeData("value").compute;
+	c2.on("change", function(){});
+	c2("BAR");
+
+	QUnit.equal(instance2.value, "BAR");
+
+});
