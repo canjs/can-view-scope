@@ -386,3 +386,12 @@ test("trying to read constructor from refs scope is ok", function(){
 	construct.bind("change", function(){});
 	equal(construct(), ReferenceMap);
 });
+
+test("reading from a string in a nested scope doesn't throw an error (#22)",function(){
+	var foo = compute('foo');
+	var bar = compute('bar');
+	var scope = new Scope(foo);
+	var localScope = scope.add(bar);
+
+	equal(localScope.read('foo').value, undefined);
+});
