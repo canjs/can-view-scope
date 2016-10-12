@@ -5,6 +5,7 @@
 @group can-view-scope.static static
 @group can-view-scope.prototype prototype
 @group can-view-scope.types types
+@package ../package.json
 
 @description Create a lookup node for [can-mustache.key keys].
 
