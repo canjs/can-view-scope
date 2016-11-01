@@ -425,5 +425,10 @@ test("Optimize for compute().observableProperty (#29)", function(){
 
 	changeNumber++;
 	map.attr("value", "b");
+});
 
+test("read should support passing %scope (#24)", function() {
+	var scope = new Scope(new Map({ foo: "", bar: "" }));
+
+	equal(scope.read("%scope").value, scope, "looked up %scope correctly");
 });
