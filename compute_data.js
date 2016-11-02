@@ -15,13 +15,19 @@ var isEmptyObject = require('can-util/js/is-empty-object/is-empty-object');
 // observing values will be used.
 
 var isFastPath = function(computeData){
-	return computeData.reads &&
+	if(  computeData.reads &&
 				// a single property read
-				computeData.reads.length === 1 &&
-				// on a map
-				types.isMapLike(computeData.root) &&
-				// that isn't calling a function
-				!isFunction(computeData.root[computeData.reads[0].key]);
+				computeData.reads.length === 1 ) {
+		var root = computeData.root;
+		if( types.isCompute(root) ) {
+			root = root();
+		}
+		// on a map
+		return types.isMapLike(root) &&
+			// that isn't calling a function
+			!isFunction(root[computeData.reads[0].key]);
+	}
+	return;
 };
 
 var scopeReader = function(scope, key, options, computeData, newVal){
@@ -78,18 +84,21 @@ module.exports = function(scope, key, options){
 					// When the one dependency changes, we can simply get its newVal and
 					// save it.  If it's a function, we need to start binding the old way.
 					observation.dependencyChange = function(ev, newVal){
-						if(typeof newVal !== "function") {
+
+						if(types.isMapLike(ev.target) && typeof newVal !== "function") {
 							this.newVal = newVal;
 						} else {
 							// restore
 							observation.dependencyChange = Observation.prototype.dependencyChange;
 							observation.start = Observation.prototype.start;
+							compute.fastPath = false;
 						}
 						return Observation.prototype.dependencyChange.call(this, ev);
 					};
 					observation.start = function(){
 						this.value = this.newVal;
 					};
+					compute.fastPath = true;
 				}
 				// TODO deal with this right
 				compute.computeInstance.value = observation.value;

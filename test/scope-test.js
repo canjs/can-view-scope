@@ -395,3 +395,35 @@ test("reading from a string in a nested scope doesn't throw an error (#22)",func
 
 	equal(localScope.read('foo').value, undefined);
 });
+
+test("Optimize for compute().observableProperty (#29)", function(){
+	var map = new Map({value: "a"});
+	var wrap = compute(map);
+
+	var scope = new Scope(wrap);
+
+	var scopeCompute = scope.compute("value");
+
+	var changeNumber = 0;
+	scopeCompute.on("change", function(ev, newVal, oldVal){
+		if(changeNumber === 1) {
+			QUnit.equal(newVal, "b");
+			QUnit.equal(oldVal, "a");
+			QUnit.ok(scopeCompute.fastPath, "still fast path");
+			changeNumber++;
+			wrap(new Map({value: "c"}));
+		} else if(changeNumber === 2) {
+			QUnit.equal(newVal, "c", "got new value");
+			QUnit.equal(oldVal, "b", "got old value");
+			QUnit.notOk(scopeCompute.fastPath, "still fast path");
+		}
+
+	});
+
+
+	QUnit.ok(scopeCompute.fastPath, "fast path");
+
+	changeNumber++;
+	map.attr("value", "b");
+
+});
