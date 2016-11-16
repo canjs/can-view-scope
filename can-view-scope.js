@@ -9,6 +9,7 @@ var makeComputeData = require('./compute_data');
 var assign = require('can-util/js/assign/assign');
 var each = require('can-util/js/each/each');
 var namespace = require('can-util/namespace');
+var dev = require('can-util/js/dev/dev');
 
 /**
  * @add can.view.Scope
@@ -255,8 +256,14 @@ assign(Scope.prototype,{
 		var res = this.read(key, options);
 		return res.value;
 	},
-	peak: Observation.ignore(function(key, options){
+	peek: Observation.ignore(function(key, options){
 		return this.get(key, options);
+	}),
+	peak: Observation.ignore(function(key, options){
+		//!steal-remove-start
+		dev.warn('peak is deprecated, please use peek instead');
+		//!steal-remove-end
+		return this.peek(key, options);
 	}),
 	// ## Scope.prototype.getScope
 	// Returns the first scope that passes the `tester` function.
@@ -338,7 +345,7 @@ assign(Scope.prototype,{
 	// ## Scope.prototype.attr
 	// Gets or sets a value in the scope without being observable.
 	attr: Observation.ignore(function (key, value, options) {
-		console.warn("can-view-scope::attr is deprecated, please use peak, get or set");
+		console.warn("can-view-scope::attr is deprecated, please use peek, get or set");
 
 		options = assign({
 			isArgument: true
