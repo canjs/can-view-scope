@@ -1,4 +1,4 @@
-var types = require("can-util/js/types/types");
+var types = require("can-types");
 var SimpleMap = require("can-simple-map");
 
 // this is a very simple can-map like object
