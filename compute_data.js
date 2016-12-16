@@ -2,7 +2,7 @@ var Observation = require('can-observation');
 var observeReader = require('can-observation/reader/reader');
 var makeCompute = require('can-compute');
 
-var types = require('can-util/js/types/types');
+var types = require('can-types');
 var isFunction = require('can-util/js/is-function/is-function');
 var isEmptyObject = require('can-util/js/is-empty-object/is-empty-object');
 

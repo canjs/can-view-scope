@@ -8,7 +8,7 @@ var ReferenceMap = require('./reference-map');
 var makeComputeData = require('./compute_data');
 var assign = require('can-util/js/assign/assign');
 var each = require('can-util/js/each/each');
-var namespace = require('can-util/namespace');
+var namespace = require('can-namespace');
 var dev = require('can-util/js/dev/dev');
 
 /**
