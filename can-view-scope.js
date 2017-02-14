@@ -92,6 +92,11 @@ assign(Scope.prototype,{
 			return { value: this.getRoot() };
 		}
 
+		// return a reference to itself when looking up "%scope"
+		if (attr === "%scope") {
+			return { value: this };
+		}
+
 		// Identify context based keys.  Context based keys try to
 		// specify a particular context a key should be within.
 		var isInCurrentContext = attr.substr(0, 2) === './',
