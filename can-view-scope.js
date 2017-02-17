@@ -46,14 +46,14 @@ assign(Scope, {
 
 	// ## Scope.refsScope
 	// A scope with a references scope in it and no parent.
-	refsScope: function(){
-		return new Scope( new this.Refs() );
+	refsScope: function() {
+		return new Scope(new this.Refs());
 	}
 });
 /**
  * @prototype
  */
-assign(Scope.prototype,{
+assign(Scope.prototype, {
 
 	// ## Scope.prototype.add
 	// Creates a new scope and sets the current scope to be the parent.
@@ -64,7 +64,7 @@ assign(Scope.prototype,{
 	// ]).add({name: "Brian"});
 	// scope.attr("name") //-> "Brian"
 	// ```
-	add: function (context, meta) {
+	add: function(context, meta) {
 		if (context !== this._context) {
 			return new this.constructor(context, this, meta);
 		} else {
@@ -86,15 +86,19 @@ assign(Scope.prototype,{
 	 *   @option {Array<String>} reads An array of properties that can be used to read from the rootObserve to get the value.
 	 *   @option {*} value the found value
 	 */
-	read: function (attr, options) {
+	read: function(attr, options) {
 		// If it's the root, jump right to it.
-		if(attr === "%root") {
-			return { value: this.getRoot() };
+		if (attr === "%root") {
+			return {
+				value: this.getRoot()
+			};
 		}
 
 		// return a reference to itself when looking up "%scope"
 		if (attr === "%scope") {
-			return { value: this };
+			return {
+				value: this
+			};
 		}
 
 		// Identify context based keys.  Context based keys try to
@@ -104,85 +108,83 @@ assign(Scope.prototype,{
 			isCurrentContext = attr === "." || attr === "this",
 			isParentContext = attr === "..",
 			isContextBased = isInCurrentContext ||
-				isInParentContext ||
-				isCurrentContext ||
-				isParentContext;
+			isInParentContext ||
+			isCurrentContext ||
+			isParentContext;
 
 		// `notContext` contexts should be skipped if the key is "context based".
 		// For example, the context that holds `%index`.
-		if(isContextBased && this._meta.notContext) {
+		if (isContextBased && this._meta.notContext) {
 			return this._parent.read(attr, options);
 		}
 
 		// If true, lookup stops after the current context.
 		var currentScopeOnly;
 
-		if(isInCurrentContext) {
+		if (isInCurrentContext) {
 			// Stop lookup from checking parent scopes.
 			// Set flag to halt lookup from walking up scope.
 			currentScopeOnly = true;
 			attr = attr.substr(2);
-		}
-		else if (isInParentContext) {
+		} else if (isInParentContext || isParentContext) {
 			// walk up until we find a parent that can have context.
 			// the `isContextBased` check above won't catch it when you go from
 			// `../foo` to `foo` because `foo` isn't context based.
 			var parent = this._parent;
-			while(parent._meta.notContext) {
+			while (parent._meta.notContext) {
 				parent = parent._parent;
 			}
 
+			if (isParentContext) {
+				return {
+					value: parent._context
+				};
+			}
+
 			return parent.read(attr.substr(3) || ".", options);
-		}
-		else if ( isCurrentContext ) {
+		} else if (isCurrentContext) {
 			return {
 				value: this._context
 			};
 		}
-		else if ( isParentContext ) {
-			return {
-				value: this._parent._context
-			};
-		}
-
 		// if it's a reference scope, read from there.
 		var keyReads = observeReader.reads(attr);
-		if(keyReads[0].key.charAt(0) === "*") {
+		if (keyReads[0].key.charAt(0) === "*") {
 			return this.getRefs()._read(keyReads, options, true);
 		} else {
-			return this._read(keyReads,options, currentScopeOnly);
+			return this._read(keyReads, options, currentScopeOnly);
 		}
 	},
 	// ## Scope.prototype._read
 	//
-	_read: function(keyReads, options, currentScopeOnly){
+	_read: function(keyReads, options, currentScopeOnly) {
 
 		// The current scope and context we are trying to find "keyReads" within.
 		var currentScope = this,
 			currentContext,
 
-		// If no value can be found, this is a list of of every observed
-		// object and property name to observe.
+			// If no value can be found, this is a list of of every observed
+			// object and property name to observe.
 			undefinedObserves = [],
 
-		// Tracks the first found observe.
+			// Tracks the first found observe.
 			currentObserve,
-		// Tracks the reads to get the value from `currentObserve`.
+			// Tracks the reads to get the value from `currentObserve`.
 			currentReads,
 
-		// Tracks the most likely observable to use as a setter.
+			// Tracks the most likely observable to use as a setter.
 			setObserveDepth = -1,
 			currentSetReads,
 			currentSetObserve,
 
 			readOptions = assign({
 				/* Store found observable, incase we want to set it as the rootObserve. */
-				foundObservable: function (observe, nameIndex) {
+				foundObservable: function(observe, nameIndex) {
 					currentObserve = observe;
 					currentReads = keyReads.slice(nameIndex);
 				},
-				earlyExit: function (parentValue, nameIndex) {
-					if (nameIndex > setObserveDepth || (nameIndex === setObserveDepth && (typeof parentValue === "object" && keyReads[nameIndex].key in parentValue) )) {
+				earlyExit: function(parentValue, nameIndex) {
+					if (nameIndex > setObserveDepth || (nameIndex === setObserveDepth && (typeof parentValue === "object" && keyReads[nameIndex].key in parentValue))) {
 						currentSetObserve = currentObserve;
 						currentSetReads = currentReads;
 						setObserveDepth = nameIndex;
@@ -201,8 +203,8 @@ assign(Scope.prototype,{
 
 
 
-			if ( currentContext !== null &&
-					// if its a primitive type, keep looking up the scope, since there won't be any properties
+			if (currentContext !== null &&
+				// if its a primitive type, keep looking up the scope, since there won't be any properties
 				(typeof currentContext === "object" || typeof currentContext === "function")
 			) {
 
@@ -231,7 +233,7 @@ assign(Scope.prototype,{
 			}
 
 			//
-			if(currentScopeOnly) {
+			if (currentScopeOnly) {
 				currentScope = null;
 			} else {
 				// Move up to the next scope.
@@ -252,7 +254,7 @@ assign(Scope.prototype,{
 
 	// ## Scope.prototype.get
 	// Gets a value from the scope without being observable.
-	get: function (key, options) {
+	get: function(key, options) {
 
 		options = assign({
 			isArgument: true
@@ -261,10 +263,10 @@ assign(Scope.prototype,{
 		var res = this.read(key, options);
 		return res.value;
 	},
-	peek: Observation.ignore(function(key, options){
+	peek: Observation.ignore(function(key, options) {
 		return this.get(key, options);
 	}),
-	peak: Observation.ignore(function(key, options){
+	peak: Observation.ignore(function(key, options) {
 		//!steal-remove-start
 		dev.warn('peak is deprecated, please use peek instead');
 		//!steal-remove-end
@@ -272,10 +274,10 @@ assign(Scope.prototype,{
 	}),
 	// ## Scope.prototype.getScope
 	// Returns the first scope that passes the `tester` function.
-	getScope: function(tester){
+	getScope: function(tester) {
 		var scope = this;
 		while (scope) {
-			if(tester(scope)) {
+			if (tester(scope)) {
 				return scope;
 			}
 			scope = scope._parent;
@@ -283,7 +285,7 @@ assign(Scope.prototype,{
 	},
 	// ## Scope.prototype.getContext
 	// Returns the first context whose scope passes the `tester` function.
-	getContext: function(tester){
+	getContext: function(tester) {
 		var res = this.getScope(tester);
 		return res && res._context;
 	},
@@ -291,29 +293,29 @@ assign(Scope.prototype,{
 	// Returns the first references scope.
 	// Used by `.read` when looking up `*key` and by the references
 	// view binding.
-	getRefs: function(){
-		return this.getScope(function(scope){
-			return scope._context  instanceof Scope.Refs;
+	getRefs: function() {
+		return this.getScope(function(scope) {
+			return scope._context instanceof Scope.Refs;
 		});
 	},
 	// ## Scope.prototype.getRoot
 	// Returns the top most context that is not a references scope.
 	// Used by `.read` to provide `%root`.
-	getRoot: function(){
+	getRoot: function() {
 		var cur = this,
 			child = this;
 
-		while(cur._parent) {
+		while (cur._parent) {
 			child = cur;
 			cur = cur._parent;
 		}
 
-		if(cur._context instanceof Scope.Refs) {
+		if (cur._context instanceof Scope.Refs) {
 			cur = child;
 		}
 		return cur._context;
 	},
-	set: function(key, value, options){
+	set: function(key, value, options) {
 		// Use `.read` to read everything upto, but not including the last property name
 		// to find the object we want to set some property on.
 		// For example:
@@ -326,11 +328,11 @@ assign(Scope.prototype,{
 			contextPath,
 			propName;
 
-		if(slashIndex > dotIndex) {
+		if (slashIndex > dotIndex) {
 			contextPath = key.substring(0, slashIndex);
 			propName = key.substring(slashIndex + 1, key.length);
 		} else {
-			if(dotIndex !== -1) {
+			if (dotIndex !== -1) {
 				contextPath = key.substring(0, dotIndex);
 				propName = key.substring(dotIndex + 1, key.length);
 			} else {
@@ -339,7 +341,7 @@ assign(Scope.prototype,{
 			}
 		}
 
-		if(key.charAt(0) === "*") {
+		if (key.charAt(0) === "*") {
 			observeReader.write(this.getRefs()._context, key, value, options);
 		} else {
 			var context = this.read(contextPath, options).value;
@@ -349,7 +351,7 @@ assign(Scope.prototype,{
 
 	// ## Scope.prototype.attr
 	// Gets or sets a value in the scope without being observable.
-	attr: Observation.ignore(function (key, value, options) {
+	attr: Observation.ignore(function(key, value, options) {
 		console.warn("can-view-scope::attr is deprecated, please use peek, get or set");
 
 		options = assign({
@@ -357,7 +359,7 @@ assign(Scope.prototype,{
 		}, options);
 
 		// Allow setting a value on the context
-		if(arguments.length === 2) {
+		if (arguments.length === 2) {
 			return this.set(key, value, options);
 
 		} else {
@@ -371,13 +373,13 @@ assign(Scope.prototype,{
 	// ## Scope.prototype.computeData
 	// Finds the first location of the key in the scope and then provides a get-set compute that represents the key's value
 	// and other information about where the value was found.
-	computeData: function (key, options) {
+	computeData: function(key, options) {
 		return makeComputeData(this, key, options);
 	},
 
 	// ## Scope.prototype.compute
 	// Provides a get-set compute that represents a key's value.
-	compute: function (key, options) {
+	compute: function(key, options) {
 		return this.computeData(key, options)
 			.compute;
 	},
@@ -387,22 +389,22 @@ assign(Scope.prototype,{
 	// right before the last Refs.  And it does not include the ref.
 	// this is a helper function to provide lexical semantics for refs.
 	// This will not be needed for leakScope: false.
-	cloneFromRef: function(){
+	cloneFromRef: function() {
 		var contexts = [];
 		var scope = this,
 			context,
 			parent;
 		while (scope) {
 			context = scope._context;
-			if(context instanceof Scope.Refs) {
+			if (context instanceof Scope.Refs) {
 				parent = scope._parent;
 				break;
 			}
 			contexts.unshift(context);
 			scope = scope._parent;
 		}
-		if(parent) {
-			each(contexts, function(context){
+		if (parent) {
+			each(contexts, function(context) {
 				parent = parent.add(context);
 			});
 			return parent;
@@ -412,7 +414,7 @@ assign(Scope.prototype,{
 	}
 });
 
-function Options(data, parent, meta){
+function Options(data, parent, meta) {
 	if (!data.helpers && !data.partials && !data.tags) {
 		data = {
 			helpers: data
