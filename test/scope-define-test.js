@@ -208,3 +208,16 @@ test("undefined DefineMap props should be a scope hit (#20)", function(){
 	QUnit.equal(instance2.value, "BAR");
 
 });
+
+
+test("that .set with ../ is able to skip notContext scopes (#43)", function(){
+	var instance = new DefineMap({prop: 0});
+	var notContextContext = {NAME: "NOT CONTEXT"};
+	var top = {NAME: "TOP"};
+	var scope = new Scope(instance).add(notContextContext,{notContext: true}).add(top);
+
+
+	scope.set("../prop",1);
+
+	QUnit.equal( instance.prop, 1);
+});
