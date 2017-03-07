@@ -175,7 +175,7 @@ test("setting props in a compute (#18)", function(){
 	var base = new Scope(computeVal);
 	var complete = base.computeData('complete')
 		.compute;
-	equal(complete(), true, 'can read the value')
+	equal(complete(), true, 'can read the value');
 
 	complete(false);
 
@@ -220,4 +220,11 @@ test("that .set with ../ is able to skip notContext scopes (#43)", function(){
 	scope.set("../prop",1);
 
 	QUnit.equal( instance.prop, 1);
+});
+
+QUnit.test("this works everywhere (#45)", function(){
+	var obj = {foo: "bar"};
+	var scope = new Scope(obj);
+	// this.foo works
+	QUnit.equal(scope.get("this.foo"),"bar");
 });
