@@ -103,7 +103,9 @@ assign(Scope.prototype, {
 
 		// Identify context based keys.  Context based keys try to
 		// specify a particular context a key should be within.
-		var isInCurrentContext = attr.substr(0, 2) === './',
+		var isDotSlash = attr.substr(0, 2) === './',
+			isThisDot = attr.substr(0,5) === "this.",
+		    isInCurrentContext = isDotSlash || isThisDot,
 			isInParentContext = attr.substr(0, 3) === "../",
 			isCurrentContext = attr === "." || attr === "this",
 			isParentContext = attr === "..",
@@ -125,7 +127,7 @@ assign(Scope.prototype, {
 			// Stop lookup from checking parent scopes.
 			// Set flag to halt lookup from walking up scope.
 			currentScopeOnly = true;
-			attr = attr.substr(2);
+			attr = isDotSlash ? attr.substr(2) : attr.substr(5);
 		} else if (isInParentContext || isParentContext) {
 			// walk up until we find a parent that can have context.
 			// the `isContextBased` check above won't catch it when you go from
