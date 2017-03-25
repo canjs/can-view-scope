@@ -41,7 +41,9 @@
     "can-observation": "^3.0.1",
     "can-simple-map": "^3.0.0",
     "can-types": "^1.0.1",
-    "can-util": "^3.2.2"
+    "can-util": "^3.2.2",
+	"can-reflect": "^0.0.0",
+	"can-symbol": "^0.0.0"
   },
   "devDependencies": {
     "can-map": "^3.0.0",

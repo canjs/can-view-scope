@@ -401,27 +401,27 @@ test("Optimize for compute().observableProperty (#29)", function(){
 	var wrap = compute(map);
 
 	var scope = new Scope(wrap);
-
-	var scopeCompute = scope.compute("value");
+	var scopeKeyData = scope.computeData("value");
+	var scopeCompute = scopeKeyData.compute;
 
 	var changeNumber = 0;
 	scopeCompute.on("change", function(ev, newVal, oldVal){
 		if(changeNumber === 1) {
 			QUnit.equal(newVal, "b");
 			QUnit.equal(oldVal, "a");
-			QUnit.ok(scopeCompute.fastPath, "still fast path");
+			QUnit.ok(scopeKeyData.fastPath, "still fast path");
 			changeNumber++;
 			wrap(new Map({value: "c"}));
 		} else if(changeNumber === 2) {
 			QUnit.equal(newVal, "c", "got new value");
 			QUnit.equal(oldVal, "b", "got old value");
-			QUnit.notOk(scopeCompute.fastPath, "still fast path");
+			QUnit.notOk(scopeKeyData.fastPath, "still fast path");
 		}
 
 	});
 
 
-	QUnit.ok(scopeCompute.fastPath, "fast path");
+	QUnit.ok(scopeKeyData.fastPath, "fast path");
 
 	changeNumber++;
 	map.attr("value", "b");
@@ -431,4 +431,21 @@ test("read should support passing %scope (#24)", function() {
 	var scope = new Scope(new Map({ foo: "", bar: "" }));
 
 	equal(scope.read("%scope").value, scope, "looked up %scope correctly");
+});
+
+
+test("a compute can observe the ScopeKeyData", function(){
+	var map = new Map({value: "a", other: "b"});
+	var wrap = compute(map);
+
+	var scope = new Scope(wrap);
+	var scopeKeyData = scope.computeData("value");
+
+	var c = compute(function(){
+		return scopeKeyData.getValue() + map.attr("other");
+	});
+
+	c.on("change", function(ev, newValue){
+
+	});
 });
