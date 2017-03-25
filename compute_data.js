@@ -65,8 +65,10 @@ var ScopeKeyData = function(scope, key, options){
 	this.reads = undefined;
 	this.setRoot = undefined;
 };
+// This isn't working right yet.  It's working b/c it's falling through.
+// The observation isn't bound for some reason.
 ScopeKeyData.prototype.getValue = function(){
-	//Observation.add(this);
+	Observation.add(this);
 	return this.observation.get();
 };
 // this is used by the Observation.
