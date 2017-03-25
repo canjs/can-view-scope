@@ -446,6 +446,8 @@ test("a compute can observe the ScopeKeyData", function(){
 	});
 
 	c.on("change", function(ev, newValue){
-
+		QUnit.equal(newValue,"Ab");
 	});
+
+	map.attr("value","A");
 });
