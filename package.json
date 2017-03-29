@@ -1,6 +1,6 @@
 {
   "name": "can-view-scope",
-  "version": "3.2.0-pre.0",
+  "version": "3.2.0-pre.1",
   "description": "Observable scopes",
   "homepage": "http://canjs.com",
   "repository": {
@@ -41,11 +41,11 @@
     "can-simple-map": "^3.1.4-pre.1",
     "can-types": "^1.0.1",
     "can-util": "^3.2.2",
-	"can-reflect": "^0.0.1",
-	"can-symbol": "^0.0.1"
+    "can-reflect": "^0.0.1",
+    "can-symbol": "^0.0.1"
   },
   "devDependencies": {
-	"can-list": "^3.0.4-pre.1",
+    "can-list": "^3.0.4-pre.1",
     "can-map": "^3.0.7-pre.1",
     "can-define": "^1.2.0-pre.1",
     "bit-docs": "0.0.7",
