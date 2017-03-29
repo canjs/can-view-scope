@@ -4,7 +4,6 @@ var makeCompute = require('can-compute');
 
 var types = require('can-types');
 var isFunction = require('can-util/js/is-function/is-function');
-var isEmptyObject = require('can-util/js/is-empty-object/is-empty-object');
 
 
 var canReflect = require('can-reflect');
@@ -19,7 +18,13 @@ var canSymbol = require('can-symbol');
 // However, if the property changes to a compute, then the slower `can.compute.read` method of
 // observing values will be used.
 
-var isFastPath = function(computeData){
+// ideally, we would know the order things were read.  If the last thing read
+// was something we can observe, and the value of it matched the value of the observation,
+// and the key matched the key of the observation
+// it's a fair bet that we can just listen to that last object.
+// If the `this` is not that object ... freak out.  Though `this` is not necessarily part of it.  can-observation could make
+// this work.
+var getFastPathRoot = function(computeData){
 	if(  computeData.reads &&
 				// a single property read
 				computeData.reads.length === 1 ) {
@@ -30,9 +35,13 @@ var isFastPath = function(computeData){
 		// on a map
 		return types.isMapLike(root) &&
 			// that isn't calling a function
-			!isFunction(root[computeData.reads[0].key]);
+			!isFunction(root[computeData.reads[0].key]) && root;
 	}
 	return;
+};
+
+var isEventObject = function(obj){
+	return obj && obj.target && typeof obj.batchNum === "number" && obj.type;
 };
 
 
@@ -104,7 +113,8 @@ canReflect.set(ScopeKeyData.prototype, canOnValue, function(handler){
 	if(!this.handlers.length) {
 		canReflect.onValue(this.observation, this.dispatch.bind(this));
 		// TODO: we should check this sometime in the background.
-		if( isFastPath(this) ) {
+		var fastPathRoot = getFastPathRoot(this);
+		if( fastPathRoot ) {
 			// rewrite the observation to call its event handlers
 
 			var self = this,
@@ -112,10 +122,13 @@ canReflect.set(ScopeKeyData.prototype, canOnValue, function(handler){
 
 			this.fastPath = true;
 			// there won't be an event in the future ...
-			observation.dependencyChange = function(ev, newVal){
+			observation.dependencyChange = function(target, newVal, altNewValue){
+				if(isEventObject(newVal)) {
+					newVal = altNewValue;
+				}
 				// but I think we will be able to get at it b/c there should only be one
 				// dependency we are binding to ...
-				if(types.isMapLike(ev.target) && typeof newVal !== "function") {
+				if(target === fastPathRoot && typeof newVal !== "function") {
 					this.newVal = newVal;
 				} else {
 					// restore
@@ -124,7 +137,7 @@ canReflect.set(ScopeKeyData.prototype, canOnValue, function(handler){
 					self.fastPath = false;
 				}
 
-				return Observation.prototype.dependencyChange.call(this, ev);
+				return Observation.prototype.dependencyChange.call(this, target, newVal, altNewValue);
 			};
 			observation.start = function(){
 				this.value = this.newVal;
