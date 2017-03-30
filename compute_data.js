@@ -42,7 +42,7 @@ var getFastPathRoot = function(computeData){
 };
 
 var isEventObject = function(obj){
-	return obj && obj.target && typeof obj.batchNum === "number" && obj.type;
+	return obj && typeof obj.batchNum === "number" && typeof obj.type === "string";
 };
 
 
@@ -67,6 +67,7 @@ var ScopeKeyData = function(scope, key, options){
 	this.options = options;
 	this.observation = new Observation(this.read, this);
 	this.handlers = [];
+	this.dispatchHandler = this.dispatch.bind(this);
 
 	// things added later
 	this.fastPath = undefined;
@@ -115,7 +116,7 @@ var canOnValue = canSymbol.for("can.onValue"),
 	canOffValue = canSymbol.for("can.offValue");
 canReflect.set(ScopeKeyData.prototype, canOnValue, function(handler){
 	if(!this.handlers.length) {
-		canReflect.onValue(this.observation, this.dispatch.bind(this));
+		canReflect.onValue(this.observation, this.dispatchHandler);
 		// TODO: we should check this sometime in the background.
 		var fastPathRoot = getFastPathRoot(this);
 		if( fastPathRoot ) {
@@ -162,6 +163,9 @@ ScopeKeyData.prototype.dispatch = function(){
 canReflect.set(ScopeKeyData.prototype, canOffValue, function(handler){
 	var index = this.handlers.indexOf(handler);
 	this.handlers.splice(index, 1);
+	if(!this.handlers.length) {
+		canReflect.offValue(this.observation, this.dispatchHandler);
+	}
 });
 
 canReflect.set(ScopeKeyData.prototype, canSymbol.for("can.getValue"), function(handler){
@@ -194,6 +198,7 @@ Object.defineProperty(ScopeKeyData.prototype,"compute",{
 				return scopeKeyData.setValue(newValue);
 			}
 		});
+		compute.computeInstance._observation = this.observation;
 		Object.defineProperty(this, "compute", {
 			value: compute,
 			writable: false,

@@ -451,3 +451,27 @@ test("a compute can observe the ScopeKeyData", function(){
 
 	map.attr("value","A");
 });
+
+QUnit.asyncTest("unbinding clears all event bindings", function(){
+	var map = new Map({value: "a", other: "b"});
+	var wrap = compute(map);
+
+	var scope = new Scope(wrap);
+	var scopeKeyData = scope.computeData("value");
+
+	var c = compute(function(){
+		return scopeKeyData.getValue() + map.attr("other");
+	});
+
+	var handlers = function(ev, newValue){
+		QUnit.equal(newValue,"Ab");
+	};
+	c.on("change", handlers);
+
+	c.off("change", handlers);
+
+	setTimeout(function () {
+		equal(map._bindings, 0, "there are no bindings");
+		start();
+	}, 30);
+});
