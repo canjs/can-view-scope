@@ -198,7 +198,10 @@ Object.defineProperty(ScopeKeyData.prototype,"compute",{
 				return scopeKeyData.setValue(newValue);
 			}
 		});
-		compute.computeInstance._observation = this.observation;
+		// this is important so it will always call observation.get
+		// This is something that should be "fixed" somehow for everything
+		// related to observations.
+		compute.computeInstance.observation = this.observation;
 		Object.defineProperty(this, "compute", {
 			value: compute,
 			writable: false,
