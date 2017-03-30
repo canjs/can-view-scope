@@ -1,3 +1,4 @@
+"use strict";
 var Observation = require('can-observation');
 var observeReader = require('can-observation/reader/reader');
 var makeCompute = require('can-compute');
@@ -106,6 +107,9 @@ ScopeKeyData.prototype.setValue = function(newVal){
 		this.startingScope.set(this.key, newVal, this.options);
 	}
 };
+ScopeKeyData.prototype.hasDependencies = function(){
+	return this.observation.hasDependencies();
+};
 
 var canOnValue = canSymbol.for("can.onValue"),
 	canOffValue = canSymbol.for("can.offValue");
@@ -166,6 +170,9 @@ canReflect.set(ScopeKeyData.prototype, canSymbol.for("can.getValue"), function(h
 
 canReflect.set(ScopeKeyData.prototype, canSymbol.for("can.setValue"), ScopeKeyData.prototype.getValue);
 
+canReflect.set(ScopeKeyData.prototype, canSymbol.for("can.valueHasDependencies"), ScopeKeyData.prototype.hasDependencies);
+
+
 
 // once a compute is read, cache it
 Object.defineProperty(ScopeKeyData.prototype,"compute",{
@@ -187,9 +194,14 @@ Object.defineProperty(ScopeKeyData.prototype,"compute",{
 				return scopeKeyData.setValue(newValue);
 			}
 		});
-		this.compute = compute;
+		Object.defineProperty(this, "compute", {
+			value: compute,
+			writable: false,
+			configurable: false
+		});
 		return compute;
-	}
+	},
+	configurable: true
 });
 
 
