@@ -31,7 +31,7 @@ var getFastPathRoot = function(computeData){
 				computeData.reads.length === 1 ) {
 		var root = computeData.root;
 		if( types.isCompute(root) ) {
-			root = root();
+			root = canReflect.getValue(root);
 		}
 		// on a map
 		return types.isMapLike(root) &&
@@ -79,7 +79,6 @@ var ScopeKeyData = function(scope, key, options){
 // This isn't working right yet.  It's working b/c it's falling through.
 // The observation isn't bound for some reason.
 ScopeKeyData.prototype.getValue = function(){
-	Observation.add(this);
 	return this.observation.get();
 };
 // this is used by the Observation.
@@ -168,11 +167,9 @@ canReflect.set(ScopeKeyData.prototype, canOffValue, function(handler){
 	}
 });
 
-canReflect.set(ScopeKeyData.prototype, canSymbol.for("can.getValue"), function(handler){
-	return this.observation.get();
-});
+canReflect.set(ScopeKeyData.prototype, canSymbol.for("can.getValue"), ScopeKeyData.prototype.getValue);
 
-canReflect.set(ScopeKeyData.prototype, canSymbol.for("can.setValue"), ScopeKeyData.prototype.getValue);
+canReflect.set(ScopeKeyData.prototype, canSymbol.for("can.setValue"), ScopeKeyData.prototype.setValue);
 
 canReflect.set(ScopeKeyData.prototype, canSymbol.for("can.valueHasDependencies"), ScopeKeyData.prototype.hasDependencies);
 
@@ -217,67 +214,8 @@ Object.defineProperty(ScopeKeyData.prototype,"compute",{
 
 
 module.exports = function(scope, key, options){
-	options = options || {
+	return new ScopeKeyData(scope, key, options || {
 		args: []
-	};
-	return new ScopeKeyData(scope, key, options);
-	/*
-	// the object we are returning
-	var computeData = {},
-		// a function that can be passed to Observation, or used as a setter
-		scopeRead = function (newVal) {
-			if(arguments.length) {
-				return scopeReader(scope, key, options, computeData, newVal);
-			} else {
-				return scopeReader(scope, key, options, computeData);
-			}
-		},
-		compute = makeCompute(undefined,{
-			on: function() {
-				// setup the observing
-				observation.start();
-
-				if( isFastPath(computeData) ) {
-					// When the one dependency changes, we can simply get its newVal and
-					// save it.  If it's a function, we need to start binding the old way.
-					observation.dependencyChange = function(ev, newVal){
-
-						if(types.isMapLike(ev.target) && typeof newVal !== "function") {
-							this.newVal = newVal;
-						} else {
-							// restore
-							observation.dependencyChange = Observation.prototype.dependencyChange;
-							observation.start = Observation.prototype.start;
-							compute.fastPath = false;
-						}
-						return Observation.prototype.dependencyChange.call(this, ev);
-					};
-					observation.start = function(){
-						this.value = this.newVal;
-					};
-					compute.fastPath = true;
-				}
-				// TODO deal with this right
-				compute.computeInstance.value = observation.value;
-				compute.computeInstance.hasDependencies = !isEmptyObject(observation.newObserved);
-			},
-			off: function(){
-				observation.stop();
-			},
-			set: scopeRead,
-			get: scopeRead,
-			// a hack until we clean up can.compute for 3.0
-			__selfUpdater: true
-		}),
-
-		// the observables read by the last calling of `scopeRead`
-
-	compute.computeInstance.observation = observation;
-
-	computeData.observation = new Observation(scopeRead);
-
-
-	computeData.compute = compute;
-	return computeData;*/
+	});
 
 };

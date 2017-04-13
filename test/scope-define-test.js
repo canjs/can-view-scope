@@ -48,7 +48,8 @@ test('backtrack path (#163)', function () {
 	}),
 		col = {
 			format: 'str'
-		}, base = new Scope(row),
+		},
+		base = new Scope(row),
 		cur = base.add(col);
 	equal(cur.peek('.'), col, 'got col');
 	equal(cur.peek('..'), row, 'got row');

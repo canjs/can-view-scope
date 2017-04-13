@@ -138,16 +138,12 @@ assign(Scope.prototype, {
 			}
 
 			if (isParentContext) {
-				return {
-					value: parent._context
-				};
+				return observeReader.read(parent._context, [], options);
 			}
 
 			return parent.read(attr.substr(3) || ".", options);
 		} else if (isCurrentContext) {
-			return {
-				value: this._context
-			};
+			return observeReader.read(this._context, [], options);
 		}
 		// if it's a reference scope, read from there.
 		var keyReads = observeReader.reads(attr);

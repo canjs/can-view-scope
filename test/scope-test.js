@@ -475,3 +475,13 @@ QUnit.asyncTest("unbinding clears all event bindings", function(){
 		start();
 	}, 30);
 });
+
+QUnit.test("computes are read as this and . and  ../", function(){
+	var value = compute(1);
+	var scope = new Scope(value);
+	QUnit.equal(scope.get("this"), 1, "this read value");
+	QUnit.equal(scope.get("this"), 1, ". read value");
+	scope = scope.add({});
+
+	QUnit.equal(scope.get(".."), 1, ".. read value");
+});
