@@ -509,6 +509,15 @@ QUnit.test("computes are set as this and . and  ../", function(){
 	QUnit.equal(scope.get(".."), 4, ".. read value");
 });
 
+QUnit.test("maps are set with this.foo and ./foo", function(){
+	var map = compute(new Map({value: 1}));
+	var scope = new Scope(map);
+	scope.set("this.value",2);
+	QUnit.equal(scope.get("this.value"), 2, "this read value");
+	scope.set("./value",3);
+	QUnit.equal(scope.get("./value"), 3, ". read value");
+});
+
 QUnit.test("scopeKeyData fires during batch", function(){
 	var map = new Map({value: "a", other: "b"});
 
