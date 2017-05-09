@@ -6,9 +6,10 @@ var makeCompute = require('can-compute');
 var types = require('can-types');
 var isFunction = require('can-util/js/is-function/is-function');
 
-
+var CID = require("can-cid");
 var canReflect = require('can-reflect');
 var canSymbol = require('can-symbol');
+
 
 
 
@@ -62,6 +63,7 @@ var isEventObject = function(obj){
 //    within CanJS code.  All of our helpers should be made to work with "faster"
 //    observable values: Observation -> ScopeKeyData -> Compute -> compute
 var ScopeKeyData = function(scope, key, options){
+	CID(this);
 	this.startingScope = scope;
 	this.key = key;
 	this.options = options;
@@ -76,11 +78,15 @@ var ScopeKeyData = function(scope, key, options){
 	this.reads = undefined;
 	this.setRoot = undefined;
 };
-// This isn't working right yet.  It's working b/c it's falling through.
-// The observation isn't bound for some reason.
+// have things bind to this, not the underlying observation.  This makes it
+// so performance optimizations will work.
 ScopeKeyData.prototype.getValue = function(){
-	return this.observation.get();
+	Observation.add(this);
+	return this.getObservationValue();
 };
+ScopeKeyData.prototype.getObservationValue = Observation.ignore(function(){
+	return this.observation.get();
+});
 // this is used by the Observation.
 // We use the observation for `getValue`
 ScopeKeyData.prototype.read = function(){
@@ -152,6 +158,7 @@ canReflect.set(ScopeKeyData.prototype, canOnValue, function(handler){
 	this.handlers.push(handler);
 });
 
+// Does this need to use the event queue?
 ScopeKeyData.prototype.dispatch = function(){
 	var handlers = this.handlers.slice(0);
 	for(var i = 0, len = handlers.length; i < len; i++) {
