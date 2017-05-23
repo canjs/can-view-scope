@@ -11,6 +11,7 @@ var each = require('can-util/js/each/each');
 var namespace = require('can-namespace');
 var dev = require('can-util/js/dev/dev');
 var canReflect = require("can-reflect");
+var canLog = require('can-util/js/log/log');
 
 /**
  * @add can.view.Scope
@@ -378,7 +379,7 @@ assign(Scope.prototype, {
 	// ## Scope.prototype.attr
 	// Gets or sets a value in the scope without being observable.
 	attr: Observation.ignore(function(key, value, options) {
-		console.warn("can-view-scope::attr is deprecated, please use peek, get or set");
+		canLog.warn("can-view-scope::attr is deprecated, please use peek, get or set");
 
 		options = assign({
 			isArgument: true
