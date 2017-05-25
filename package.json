@@ -37,14 +37,14 @@
     "can-cid": "^1.0.3",
     "can-compute": "^3.1.0-pre.3",
     "can-construct": "^3.0.0",
+    "can-event": "^3.0.0",
     "can-namespace": "1.0.0",
     "can-observation": "^3.2.0-pre.6",
     "can-reflect": "0.0.2",
     "can-simple-map": "^3.2.0-pre.0",
     "can-symbol": "0.0.3",
     "can-types": "^1.0.1",
-    "can-util": "^3.2.2",
-    "can-event": "^3.0.0"
+    "can-util": "^3.2.2"
   },
   "devDependencies": {
     "can-list": "^3.1.0-pre.1",

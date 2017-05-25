@@ -320,6 +320,8 @@ assign(Scope.prototype, {
 		return cur._context;
 	},
 	set: function(key, value, options) {
+		options = options || {};
+
 		// Use `.read` to read everything upto, but not including the last property name
 		// to find the object we want to set some property on.
 		// For example:
