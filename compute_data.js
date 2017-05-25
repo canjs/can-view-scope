@@ -6,6 +6,7 @@ var makeCompute = require('can-compute');
 var types = require('can-types');
 var isFunction = require('can-util/js/is-function/is-function');
 
+var canBatch = require('can-event/batch/batch');
 var CID = require("can-cid");
 var canReflect = require('can-reflect');
 var canSymbol = require('can-symbol');
@@ -162,6 +163,7 @@ canReflect.set(ScopeKeyData.prototype, canOnValue, function(handler){
 ScopeKeyData.prototype.dispatch = function(){
 	var handlers = this.handlers.slice(0);
 	for(var i = 0, len = handlers.length; i < len; i++) {
+		canBatch.batchNum = this.observation.batchNum;
 		handlers[i].apply(this, arguments);
 	}
 };
