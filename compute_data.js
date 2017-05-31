@@ -2,6 +2,7 @@
 var Observation = require('can-observation');
 var observeReader = require('can-observation/reader/reader');
 var makeCompute = require('can-compute');
+var assign = require('can-util/js/assign/assign');
 
 var types = require('can-types');
 var isFunction = require('can-util/js/is-function/is-function');
@@ -67,8 +68,8 @@ var ScopeKeyData = function(scope, key, options){
 	CID(this);
 	this.startingScope = scope;
 	this.key = key;
-	this.options = options;
 	this.observation = new Observation(this.read, this);
+	this.options = assign({ observation: this.observation }, options);
 	this.handlers = [];
 	this.dispatchHandler = this.dispatch.bind(this);
 

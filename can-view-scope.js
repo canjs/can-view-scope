@@ -369,12 +369,17 @@ assign(Scope.prototype, {
 				propName = key;
 			}
 		}
-		
+
 		if (key.charAt(0) === "*") {
 			observeReader.write(this.getRefs()._context, key, value, options);
 		} else {
 			var context = this.read(contextPath, options).value;
-			observeReader.write(context, propName, value, options);
+			if(!canReflect.isObservableLike(context) && canReflect.isObservableLike(context[propName])) {
+				dev.warn("can-view-scope: Merging " + propName + " into " + contextPath + " because its parent is non-observable");
+				canReflect.setValue(context[propName], value);
+			} else {
+				observeReader.write(context, propName, value, options);
+			}
 		}
 	},
 
