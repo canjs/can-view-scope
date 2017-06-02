@@ -375,7 +375,10 @@ assign(Scope.prototype, {
 		} else {
 			var context = this.read(contextPath, options).value;
 			if(!canReflect.isObservableLike(context) && canReflect.isObservableLike(context[propName])) {
-				dev.warn("can-view-scope: Merging " + propName + " into " + contextPath + " because its parent is non-observable");
+				dev.warn("can-view-scope: Merging data into \"" + propName + "\" because its parent is non-observable");
+				canReflect.eachKey(context[propName], function(value, prop) {
+					canReflect.deleteKeyValue(context[propName], prop);
+				});
 				canReflect.setValue(context[propName], value);
 			} else {
 				observeReader.write(context, propName, value, options);
