@@ -3,10 +3,7 @@ var Observation = require('can-observation');
 var observeReader = require('can-observation/reader/reader');
 var makeCompute = require('can-compute');
 var assign = require('can-util/js/assign/assign');
-
-var types = require('can-types');
 var isFunction = require('can-util/js/is-function/is-function');
-
 var canBatch = require('can-event/batch/batch');
 var CID = require("can-cid");
 var canReflect = require('can-reflect');
@@ -29,15 +26,15 @@ var canSymbol = require('can-symbol');
 // If the `this` is not that object ... freak out.  Though `this` is not necessarily part of it.  can-observation could make
 // this work.
 var getFastPathRoot = function(computeData){
-	if(  computeData.reads &&
+	if( computeData.reads &&
 				// a single property read
 				computeData.reads.length === 1 ) {
 		var root = computeData.root;
-		if( types.isCompute(root) ) {
+		if( root && root[canSymbol.for("can.getValue")] ) {
 			root = canReflect.getValue(root);
 		}
 		// on a map
-		return types.isMapLike(root) &&
+		return root && canReflect.isObservableLike(root) && canReflect.isMapLike(root) &&
 			// that isn't calling a function
 			!isFunction(root[computeData.reads[0].key]) && root;
 	}
