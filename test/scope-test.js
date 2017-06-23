@@ -5,8 +5,10 @@ require('can-list');
 var observeReader = require('can-observation/reader/reader');
 var compute = require('can-compute');
 var ReferenceMap = require('../reference-map');
+var canSymbol = require("can-symbol");
 
 var QUnit = require('steal-qunit');
+var canBatch = require("can-event/batch/batch");
 
 QUnit.module('can/view/scope');
 
@@ -401,27 +403,27 @@ test("Optimize for compute().observableProperty (#29)", function(){
 	var wrap = compute(map);
 
 	var scope = new Scope(wrap);
-
-	var scopeCompute = scope.compute("value");
+	var scopeKeyData = scope.computeData("value");
+	var scopeCompute = scopeKeyData.compute;
 
 	var changeNumber = 0;
 	scopeCompute.on("change", function(ev, newVal, oldVal){
 		if(changeNumber === 1) {
 			QUnit.equal(newVal, "b");
 			QUnit.equal(oldVal, "a");
-			QUnit.ok(scopeCompute.fastPath, "still fast path");
+			QUnit.ok(scopeKeyData.fastPath, "still fast path");
 			changeNumber++;
 			wrap(new Map({value: "c"}));
 		} else if(changeNumber === 2) {
 			QUnit.equal(newVal, "c", "got new value");
 			QUnit.equal(oldVal, "b", "got old value");
-			QUnit.notOk(scopeCompute.fastPath, "still fast path");
+			QUnit.notOk(scopeKeyData.fastPath, "still fast path");
 		}
 
 	});
 
 
-	QUnit.ok(scopeCompute.fastPath, "fast path");
+	QUnit.ok(scopeKeyData.fastPath, "fast path");
 
 	changeNumber++;
 	map.attr("value", "b");
@@ -431,4 +433,106 @@ test("read should support passing %scope (#24)", function() {
 	var scope = new Scope(new Map({ foo: "", bar: "" }));
 
 	equal(scope.read("%scope").value, scope, "looked up %scope correctly");
+});
+
+
+test("a compute can observe the ScopeKeyData", 2, function(){
+	var map = new Map({value: "a", other: "b"});
+	var wrap = compute(map);
+
+	var scope = new Scope(wrap);
+	var scopeKeyData = scope.computeData("value");
+
+	var oldOnValue = scopeKeyData[canSymbol.for("can.onValue")];
+
+	scopeKeyData[canSymbol.for("can.onValue")] = function(){
+		QUnit.ok(true, "bound on the scopeKeyData");
+		return oldOnValue.apply(this, arguments);
+	};
+
+	var c = compute(function(){
+		return scopeKeyData.getValue() + map.attr("other");
+	});
+
+	c.on("change", function(ev, newValue){
+		QUnit.equal(newValue,"Ab");
+	});
+
+	map.attr("value","A");
+
+});
+
+QUnit.asyncTest("unbinding clears all event bindings", function(){
+	var map = new Map({value: "a", other: "b"});
+	var wrap = compute(map);
+
+	var scope = new Scope(wrap);
+	var scopeKeyData = scope.computeData("value");
+
+	var c = compute(function(){
+		return scopeKeyData.getValue() + map.attr("other");
+	});
+
+	var handlers = function(ev, newValue){
+		QUnit.equal(newValue,"Ab");
+	};
+	c.on("change", handlers);
+
+	c.off("change", handlers);
+
+	setTimeout(function () {
+		equal(map.__bindEvents._lifecycleBindings, 0, "there are no bindings");
+		start();
+	}, 30);
+});
+
+QUnit.test("computes are read as this and . and  ../", function(){
+	var value = compute(1);
+	var scope = new Scope(value);
+	QUnit.equal(scope.get("this"), 1, "this read value");
+	QUnit.equal(scope.get("."), 1, ". read value");
+	scope = scope.add({});
+
+	QUnit.equal(scope.get(".."), 1, ".. read value");
+});
+
+QUnit.test("computes are set as this and . and  ../", function(){
+	var value = compute(1);
+	var scope = new Scope(value);
+	scope.set("this",2);
+	QUnit.equal(scope.get("this"), 2, "this read value");
+	scope.set(".",3);
+	QUnit.equal(scope.get("this"), 3, ". read value");
+
+	scope = scope.add({});
+	scope.set("..",4);
+	QUnit.equal(scope.get(".."), 4, ".. read value");
+});
+
+QUnit.test("maps are set with this.foo and ./foo", function(){
+	var map = compute(new Map({value: 1}));
+	var scope = new Scope(map);
+	scope.set("this.value",2);
+	QUnit.equal(scope.get("this.value"), 2, "this read value");
+	scope.set("./value",3);
+	QUnit.equal(scope.get("./value"), 3, ". read value");
+});
+
+QUnit.test("scopeKeyData fires during batch", function(){
+	var map = new Map({value: "a", other: "b"});
+
+	var scope = new Scope(map);
+
+	var batchNum;
+	map.on("value", function(){
+		batchNum = canBatch.batchNum;
+	});
+
+	var scopeKeyData = scope.computeData("value");
+
+	scopeKeyData[canSymbol.for("can.onValue")](function(value){
+		QUnit.equal(batchNum, canBatch.batchNum);
+	});
+
+	map.attr("value","A");
 });

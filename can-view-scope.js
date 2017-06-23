@@ -10,6 +10,7 @@ var assign = require('can-util/js/assign/assign');
 var each = require('can-util/js/each/each');
 var namespace = require('can-namespace');
 var dev = require('can-util/js/dev/dev');
+var canReflect = require("can-reflect");
 var canLog = require('can-util/js/log/log');
 
 /**
@@ -49,6 +50,20 @@ assign(Scope, {
 	// A scope with a references scope in it and no parent.
 	refsScope: function() {
 		return new Scope(new this.Refs());
+	},
+	keyInfo: function(attr){
+		var info = {};
+		info.isDotSlash = attr.substr(0, 2) === './';
+		info.isThisDot = attr.substr(0,5) === "this.";
+		info.isInCurrentContext = info.isDotSlash || info.isThisDot;
+		info.isInParentContext = attr.substr(0, 3) === "../";
+		info.isCurrentContext = attr === "." || attr === "this";
+		info.isParentContext = attr === "..";
+		info.isContextBased = info.isInCurrentContext ||
+			info.isInParentContext ||
+			info.isCurrentContext ||
+			info.isParentContext;
+		return info;
 	}
 });
 /**
@@ -72,7 +87,6 @@ assign(Scope.prototype, {
 			return this;
 		}
 	},
-
 	// ## Scope.prototype.read
 	// Reads from the scope chain and returns the first non-`undefined` value.
 	// `read` deals mostly with setting up "context based" keys to start reading
@@ -104,32 +118,23 @@ assign(Scope.prototype, {
 
 		// Identify context based keys.  Context based keys try to
 		// specify a particular context a key should be within.
-		var isDotSlash = attr.substr(0, 2) === './',
-			isThisDot = attr.substr(0,5) === "this.",
-		    isInCurrentContext = isDotSlash || isThisDot,
-			isInParentContext = attr.substr(0, 3) === "../",
-			isCurrentContext = attr === "." || attr === "this",
-			isParentContext = attr === "..",
-			isContextBased = isInCurrentContext ||
-			isInParentContext ||
-			isCurrentContext ||
-			isParentContext;
+		var keyInfo = Scope.keyInfo(attr);
 
 		// `notContext` contexts should be skipped if the key is "context based".
 		// For example, the context that holds `%index`.
-		if (isContextBased && this._meta.notContext) {
+		if (keyInfo.isContextBased && this._meta.notContext) {
 			return this._parent.read(attr, options);
 		}
 
 		// If true, lookup stops after the current context.
 		var currentScopeOnly;
 
-		if (isInCurrentContext) {
+		if (keyInfo.isInCurrentContext) {
 			// Stop lookup from checking parent scopes.
 			// Set flag to halt lookup from walking up scope.
 			currentScopeOnly = true;
-			attr = isDotSlash ? attr.substr(2) : attr.substr(5);
-		} else if (isInParentContext || isParentContext) {
+			attr = keyInfo.isDotSlash ? attr.substr(2) : attr.substr(5);
+		} else if (keyInfo.isInParentContext || keyInfo.isParentContext) {
 			// walk up until we find a parent that can have context.
 			// the `isContextBased` check above won't catch it when you go from
 			// `../foo` to `foo` because `foo` isn't context based.
@@ -138,17 +143,13 @@ assign(Scope.prototype, {
 				parent = parent._parent;
 			}
 
-			if (isParentContext) {
-				return {
-					value: parent._context
-				};
+			if (keyInfo.isParentContext) {
+				return observeReader.read(parent._context, [], options);
 			}
 
 			return parent.read(attr.substr(3) || ".", options);
-		} else if (isCurrentContext) {
-			return {
-				value: this._context
-			};
+		} else if (keyInfo.isCurrentContext) {
+			return observeReader.read(this._context, [], options);
 		}
 		// if it's a reference scope, read from there.
 		var keyReads = observeReader.reads(attr);
@@ -319,6 +320,8 @@ assign(Scope.prototype, {
 		return cur._context;
 	},
 	set: function(key, value, options) {
+		options = options || {};
+
 		// Use `.read` to read everything upto, but not including the last property name
 		// to find the object we want to set some property on.
 		// For example:
@@ -326,19 +329,42 @@ assign(Scope.prototype, {
 		//  - `../foo.bar` -> `../foo`
 		//  - `../foo` -> `..`
 		//  - `foo` -> `.`
+		var keyInfo = Scope.keyInfo(key);
+		if ( keyInfo.isCurrentContext ) {
+			return canReflect.setValue(this._context, value);
+		}
+		else if (keyInfo.isInParentContext || keyInfo.isParentContext) {
+			// walk up until we find a parent that can have context.
+			// the `isContextBased` check above won't catch it when you go from
+			// `../foo` to `foo` because `foo` isn't context based.
+			var parent = this._parent;
+			while (parent._meta.notContext) {
+				parent = parent._parent;
+			}
+
+			if (keyInfo.isParentContext) {
+				return canReflect.setValue(parent._context, value);
+			}
+
+			return parent.set(key.substr(3) || ".", value, options);
+		}
+
 		var dotIndex = key.lastIndexOf('.'),
 			slashIndex = key.lastIndexOf('/'),
 			contextPath,
 			propName;
 
 		if (slashIndex > dotIndex) {
+			// ../foo
 			contextPath = key.substring(0, slashIndex);
 			propName = key.substring(slashIndex + 1, key.length);
 		} else {
 			if (dotIndex !== -1) {
+				// ./foo
 				contextPath = key.substring(0, dotIndex);
 				propName = key.substring(dotIndex + 1, key.length);
 			} else {
+				// foo.bar
 				contextPath = ".";
 				propName = key;
 			}
@@ -348,7 +374,17 @@ assign(Scope.prototype, {
 			observeReader.write(this.getRefs()._context, key, value, options);
 		} else {
 			var context = this.read(contextPath, options).value;
-			observeReader.write(context, propName, value, options);
+			if(!canReflect.isObservableLike(context) && canReflect.isObservableLike(context[propName])) {
+				if(canReflect.isMapLike(context[propName])) {
+					dev.warn("can-view-scope: Merging data into \"" + propName + "\" because its parent is non-observable");
+					canReflect.eachKey(context[propName], function(value, prop) {
+						canReflect.deleteKeyValue(context[propName], prop);
+					});
+				}
+				canReflect.setValue(context[propName], value);
+			} else {
+				observeReader.write(context, propName, value, options);
+			}
 		}
 	},
 
