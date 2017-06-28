@@ -374,14 +374,17 @@ assign(Scope.prototype, {
 			observeReader.write(this.getRefs()._context, key, value, options);
 		} else {
 			var context = this.read(contextPath, options).value;
+
 			if(!canReflect.isObservableLike(context) && canReflect.isObservableLike(context[propName])) {
 				if(canReflect.isMapLike(context[propName])) {
 					dev.warn("can-view-scope: Merging data into \"" + propName + "\" because its parent is non-observable");
-					canReflect.eachKey(context[propName], function(value, prop) {
-						canReflect.deleteKeyValue(context[propName], prop);
-					});
+					canReflect.assignDeep(context[propName], value);
 				}
-				canReflect.setValue(context[propName], value);
+				else if(canReflect.isValueLike(context[propName])){
+					canReflect.setValue(context[propName], value);
+				} else {
+					observeReader.write(context, propName, value, options);
+				}
 			} else {
 				observeReader.write(context, propName, value, options);
 			}

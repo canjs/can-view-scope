@@ -1,7 +1,7 @@
 require("./scope-define-test");
 var Scope = require('can-view-scope');
 var Map = require('can-map');
-require('can-list');
+var List = require('can-list');
 var observeReader = require('can-observation/reader/reader');
 var compute = require('can-compute');
 var ReferenceMap = require('../reference-map');
@@ -535,4 +535,14 @@ QUnit.test("scopeKeyData fires during batch", function(){
 	});
 
 	map.attr("value","A");
+});
+
+QUnit.test("setting a key on a non observable context", function(){
+	var context = {colors: new List([])};
+
+	var scope = new Scope(context);
+
+	scope.set("colors", ["red"]);
+
+	QUnit.deepEqual(context.colors.attr(), ["red"], "can updateDeep");
 });
