@@ -206,6 +206,7 @@ Object.defineProperty(ScopeKeyData.prototype,"compute",{
 		// This is something that should be "fixed" somehow for everything
 		// related to observations.
 		compute.computeInstance.observation = this.observation;
+		compute.computeInstance._canObserve = false;
 		Object.defineProperty(this, "compute", {
 			value: compute,
 			writable: false,
