@@ -1,6 +1,6 @@
 "use strict";
 var Observation = require('can-observation');
-var observeReader = require('can-observation/reader/reader');
+var observeReader = require('can-stache-key');
 var makeCompute = require('can-compute');
 var assign = require('can-util/js/assign/assign');
 var isFunction = require('can-util/js/is-function/is-function');

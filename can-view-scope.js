@@ -2,7 +2,7 @@
 //
 // This allows you to define a lookup context and parent contexts that a key's value can be retrieved from.
 // If no parent scope is provided, only the scope's context will be explored for values.
-var observeReader = require('can-observation/reader/reader');
+var observeReader = require('can-stache-key');
 var Observation = require('can-observation');
 var ReferenceMap = require('./reference-map');
 var makeComputeData = require('./compute_data');
