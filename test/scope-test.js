@@ -1,14 +1,15 @@
 require("./scope-define-test");
 var Scope = require('can-view-scope');
 var Map = require('can-map');
-require('can-list');
-var observeReader = require('can-observation/reader/reader');
+var List = require('can-list');
+var observeReader = require('can-stache-key');
 var compute = require('can-compute');
 var ReferenceMap = require('../reference-map');
 var canSymbol = require("can-symbol");
 
 var QUnit = require('steal-qunit');
 var canBatch = require("can-event/batch/batch");
+var canReflect = require("can-reflect");
 
 QUnit.module('can/view/scope');
 
@@ -535,4 +536,45 @@ QUnit.test("scopeKeyData fires during batch", function(){
 	});
 
 	map.attr("value","A");
+});
+
+QUnit.test("setting a key on a non observable context", function(){
+	var context = {colors: new List([])};
+
+	var scope = new Scope(context);
+
+	scope.set("colors", ["red"]);
+
+	QUnit.deepEqual(context.colors.attr(), ["red"], "can updateDeep");
+});
+
+QUnit.test("observing scope key data does not observe observation", function(){
+	var map = new Map({value: "a"});
+
+	var scope = new Scope(map);
+
+	var computeData = scope.computeData("value");
+	var oldOnValue = computeData.observation[canSymbol.for("can.onValue")];
+	var bindCount = 0;
+
+	computeData.observation[canSymbol.for("can.onValue")] = function(){
+		bindCount ++;
+		return oldOnValue.apply(this, arguments);
+	};
+
+	var valueCompute = computeData.compute;
+	var oldComputeOnValue = valueCompute.computeInstance[canSymbol.for("can.onValue")];
+	valueCompute.computeInstance[canSymbol.for("can.onValue")] = function(){
+		bindCount ++;
+		return oldComputeOnValue.apply(this, arguments);
+	};
+
+	var c = compute(function(){
+		return valueCompute();
+	});
+
+	c.on("change", function(){});
+
+	QUnit.equal(bindCount,2, "there should only be one event bound");
+
 });

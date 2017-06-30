@@ -2,7 +2,7 @@
 //
 // This allows you to define a lookup context and parent contexts that a key's value can be retrieved from.
 // If no parent scope is provided, only the scope's context will be explored for values.
-var observeReader = require('can-observation/reader/reader');
+var observeReader = require('can-stache-key');
 var Observation = require('can-observation');
 var ReferenceMap = require('./reference-map');
 var makeComputeData = require('./compute_data');
@@ -374,14 +374,17 @@ assign(Scope.prototype, {
 			observeReader.write(this.getRefs()._context, key, value, options);
 		} else {
 			var context = this.read(contextPath, options).value;
+
 			if(!canReflect.isObservableLike(context) && canReflect.isObservableLike(context[propName])) {
 				if(canReflect.isMapLike(context[propName])) {
 					dev.warn("can-view-scope: Merging data into \"" + propName + "\" because its parent is non-observable");
-					canReflect.eachKey(context[propName], function(value, prop) {
-						canReflect.deleteKeyValue(context[propName], prop);
-					});
+					canReflect.updateDeep(context[propName], value);
 				}
-				canReflect.setValue(context[propName], value);
+				else if(canReflect.isValueLike(context[propName])){
+					canReflect.setValue(context[propName], value);
+				} else {
+					observeReader.write(context, propName, value, options);
+				}
 			} else {
 				observeReader.write(context, propName, value, options);
 			}
