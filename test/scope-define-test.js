@@ -2,7 +2,7 @@
 var Scope = require('can-view-scope');
 var DefineMap = require('can-define/map/map');
 var DefineList = require('can-define/list/list');
-var observeReader = require('can-observation/reader/reader');
+var observeReader = require('can-stache-key');
 var compute = require('can-compute');
 
 var QUnit = require('steal-qunit');
@@ -48,7 +48,8 @@ test('backtrack path (#163)', function () {
 	}),
 		col = {
 			format: 'str'
-		}, base = new Scope(row),
+		},
+		base = new Scope(row),
 		cur = base.add(col);
 	equal(cur.peek('.'), col, 'got col');
 	equal(cur.peek('..'), row, 'got row');
