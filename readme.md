@@ -1,5 +1,7 @@
 # can-view-scope
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/canjs/can-view-scope.svg)](https://greenkeeper.io/)
+
 [![Build Status](https://travis-ci.org/canjs/can-view-scope.png?branch=master)](https://travis-ci.org/canjs/can-view-scope)
 
 Observable scopes.
