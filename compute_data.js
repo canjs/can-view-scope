@@ -171,6 +171,9 @@ canReflect.set(ScopeKeyData.prototype, canOffValue, function(handler){
 	this.handlers.splice(index, 1);
 	if(!this.handlers.length) {
 		canReflect.offValue(this.observation, this.dispatchHandler);
+
+		this.observation.dependencyChange = Observation.prototype.dependencyChange;
+		this.observation.start = Observation.prototype.start;
 	}
 });
 

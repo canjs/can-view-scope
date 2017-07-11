@@ -10,6 +10,7 @@ var canSymbol = require("can-symbol");
 var QUnit = require('steal-qunit');
 var canBatch = require("can-event/batch/batch");
 var canReflect = require("can-reflect");
+var Observation = require('can-observation');
 
 QUnit.module('can/view/scope');
 
@@ -577,4 +578,19 @@ QUnit.test("observing scope key data does not observe observation", function(){
 
 	QUnit.equal(bindCount,2, "there should only be one event bound");
 
+});
+
+QUnit.test("scopeKeyData offValue resets dependencyChange/start", function() {
+	var map = new Map({value: "a", other: "b"});
+	var wrap = compute(map);
+
+	var scope = new Scope(wrap);
+	var scopeKeyData = scope.computeData("value");
+
+	var handler = function() {};
+	canReflect.onValue(scopeKeyData, handler);
+	canReflect.offValue(scopeKeyData, handler);
+
+	QUnit.equal(scopeKeyData.observation.dependencyChange, Observation.prototype.dependencyChange, 'dependencyChange should be restored');
+	QUnit.equal(scopeKeyData.observation.start, Observation.prototype.start, 'start should be restored');
 });
