@@ -6,6 +6,7 @@ var observeReader = require('can-stache-key');
 var compute = require('can-compute');
 var ReferenceMap = require('../reference-map');
 var canSymbol = require("can-symbol");
+var stache = require('can-stache');
 
 var QUnit = require('steal-qunit');
 var canBatch = require("can-event/batch/batch");
@@ -593,4 +594,28 @@ QUnit.test("scopeKeyData offValue resets dependencyChange/start", function() {
 
 	QUnit.equal(scopeKeyData.observation.dependencyChange, Observation.prototype.dependencyChange, 'dependencyChange should be restored');
 	QUnit.equal(scopeKeyData.observation.start, Observation.prototype.start, 'start should be restored');
+});
+
+QUnit.test("Rendering a template with a custom scope (#55)", function() {
+	var scope = new Scope({});
+	
+	
+	var template = stache('<foo-bar {^.}="*bar" />{{*bar.foo}}');
+	scope = scope.add( new Scope.Refs() ); // works with custom scope
+	try {
+		template(scope); // throws "Cannot read property '_read' of undefined"
+		QUnit.ok(true, "Did not throw error");
+	}
+	catch(e) {
+		QUnit.ok(false, e.message);
+	}
+	
+	// try {
+	// 	var scopeRefs = scope.getRefs();
+	// 	scopeRefs._read;
+	// 	QUnit.ok(true, "Did not throw");
+	// }
+	// catch(e) {
+	// 	QUnit.ok(false, e.message);
+	// }
 });

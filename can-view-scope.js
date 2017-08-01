@@ -298,9 +298,16 @@ assign(Scope.prototype, {
 	// Used by `.read` when looking up `*key` and by the references
 	// view binding.
 	getRefs: function() {
-		return this.getScope(function(scope) {
+		var lastScope;
+		var refScope = this.getScope(function(scope) {
+			lastScope = scope;
 			return scope._context instanceof Scope.Refs;
 		});
+		if(!refScope) {
+			lastScope._parent = new Scope.Refs();
+			refScope = lastScope._parent;
+		}
+		return refScope;
 	},
 	// ## Scope.prototype.getRoot
 	// Returns the top most context that is not a references scope.
