@@ -594,3 +594,32 @@ QUnit.test("scopeKeyData offValue resets dependencyChange/start", function() {
 	QUnit.equal(scopeKeyData.observation.dependencyChange, Observation.prototype.dependencyChange, 'dependencyChange should be restored');
 	QUnit.equal(scopeKeyData.observation.start, Observation.prototype.start, 'start should be restored');
 });
+
+QUnit.test("Rendering a template with a custom scope (#55)", function() {
+	var scope = new Scope({}),
+		scopeRefs;
+	
+	try {
+		scopeRefs = scope.getRefs();
+		scopeRefs._read;
+		QUnit.ok(true, "Did not throw");
+	}
+	catch(e) {
+		QUnit.ok(false, e.message);
+	}
+
+	QUnit.equal(scope.get('name'), undefined, "No name");
+	scope.set('name', 'John');
+	QUnit.equal(scope.get('name'), 'John', "Got the name");
+	scope = scope.add({name: 'Justin'});
+	QUnit.equal(scope.get('name'), 'Justin', "Got the top scope name");
+
+	try {
+		var scopeRefs = scope.getRefs();
+		scopeRefs._read;
+		QUnit.ok(true, "Did not throw");
+	}
+	catch(e) {
+		QUnit.ok(false, e.message);
+	}
+});
