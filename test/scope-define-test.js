@@ -6,6 +6,7 @@ var observeReader = require('can-stache-key');
 var compute = require('can-compute');
 
 var QUnit = require('steal-qunit');
+var canDev = require('can-util/js/dev/dev');
 
 QUnit.module('can-view-scope with define');
 
@@ -229,3 +230,60 @@ QUnit.test("this works everywhere (#45)", function(){
 	// this.foo works
 	QUnit.equal(scope.get("this.foo"),"bar");
 });
+
+test("Adding scope to scope just returns the original scope (CanJS/#3462)", function() {
+	var TestMap = DefineMap.extend({
+		todo: {
+			value: {
+				complete: false,
+				id: undefined,
+				name: undefined
+			}
+		}
+	});
+	var testMap = new TestMap();
+	var scope = new Scope();
+	var parentScope = new Scope(testMap);
+	// scope = new Scope({}, parentScope); // -> Works properly
+	scope = scope.add(parentScope);
+
+	try {
+		scope.set("todo.name", "");
+		QUnit.ok(true, "Set todo.name on scope");
+	}
+	catch(e) {
+		QUnit.ok(false, e.message);
+	}
+});
+
+if (System.env.indexOf('production') < 0) {
+	test("Give warning when a scope is added to a scope with 'add' (CanJS/#3462)", function() {
+
+		var _warn = canDev.warn, 
+			gotCalled = false;
+
+		canDev.warn = function(text) {
+			equal(text, "Adding a scope to a scope with scope.add() is not supported. Use 'scope = new Scope(context, parentScope)' instead.");
+			gotCalled = true;
+		}
+
+		var TestMap = DefineMap.extend({
+			todo: {
+				value: {
+					complete: false,
+					id: undefined,
+					name: undefined
+				}
+			}
+		});
+		var testMap = new TestMap();
+		var scope = new Scope();
+		var parentScope = new Scope(testMap);
+		// scope = new Scope({}, parentScope); // -> Works properly
+		scope = scope.add(parentScope);
+
+		QUnit.ok(gotCalled, "canDev.warn() was called");
+
+		canDev.warn = _warn;
+	});
+}

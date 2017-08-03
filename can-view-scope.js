@@ -81,9 +81,20 @@ assign(Scope.prototype, {
 	// scope.attr("name") //-> "Brian"
 	// ```
 	add: function(context, meta) {
-		if (context !== this._context) {
+		var isScope = context.constructor === this.constructor;
+		//!steal-remove-start
+		if (isScope) {
+			dev.warn("Adding a scope to a scope with scope.add() is not supported. Use 'scope = new Scope(context, parentScope)' instead.");
+		}
+		//!steal-remove-end
+
+		if (context !== this._context && !isScope) {
 			return new this.constructor(context, this, meta);
-		} else {
+		}
+		else if (context._context) {
+			return new this.constructor(context._context, this, meta);
+		}
+		else {
 			return this;
 		}
 	},
