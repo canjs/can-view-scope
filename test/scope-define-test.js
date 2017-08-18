@@ -4,9 +4,6 @@ var DefineMap = require('can-define/map/map');
 var DefineList = require('can-define/list/list');
 var observeReader = require('can-stache-key');
 var compute = require('can-compute');
-var stache = require('can-stache');
-var stacheBindings = require('can-stache-bindings');
-var canEvent = require('can-event');
 var QUnit = require('steal-qunit');
 
 QUnit.module('can-view-scope with define');
@@ -232,7 +229,7 @@ QUnit.test("this works everywhere (#45)", function(){
 	QUnit.equal(scope.get("this.foo"),"bar");
 });
 
-QUnit.test("'this' and %context give the context", 2, function(){
+QUnit.test("'this' and %context give the context", 1, function(){
 	var vm;
 	var MyMap = DefineMap.extend({
 		doSomething: function(){
@@ -242,15 +239,8 @@ QUnit.test("'this' and %context give the context", 2, function(){
 
 	vm = new MyMap();
 
-	var template = stache("<button ($click)='this.doSomething()'>Default Args</button>");
-	var frag = template(vm);
-	var button = frag.firstChild;
+	var compute = new Scope(vm).computeData('this.doSomething', {isArgument: true, args: []}).compute;
 
-	canEvent.trigger.call(button, "click");
+	compute()();
 
-	template = stache("<button ($click)='%context.doSomething()'>Default Args</button>");
-	frag = template(vm);
-	button = frag.firstChild;
-
-	canEvent.trigger.call(button, "click");
 });
