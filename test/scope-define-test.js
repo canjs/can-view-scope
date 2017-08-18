@@ -4,7 +4,6 @@ var DefineMap = require('can-define/map/map');
 var DefineList = require('can-define/list/list');
 var observeReader = require('can-stache-key');
 var compute = require('can-compute');
-
 var QUnit = require('steal-qunit');
 
 QUnit.module('can-view-scope with define');
@@ -228,4 +227,20 @@ QUnit.test("this works everywhere (#45)", function(){
 	var scope = new Scope(obj);
 	// this.foo works
 	QUnit.equal(scope.get("this.foo"),"bar");
+});
+
+QUnit.test("'this' and %context give the context", 1, function(){
+	var vm;
+	var MyMap = DefineMap.extend({
+		doSomething: function(){
+			QUnit.equal(this, vm, "event callback called on context");
+		}
+	});
+
+	vm = new MyMap();
+
+	var compute = new Scope(vm).computeData('this.doSomething', {isArgument: true, args: []}).compute;
+
+	compute()();
+
 });

@@ -55,7 +55,8 @@ assign(Scope, {
 		var info = {};
 		info.isDotSlash = attr.substr(0, 2) === './';
 		info.isThisDot = attr.substr(0,5) === "this.";
-		info.isInCurrentContext = info.isDotSlash || info.isThisDot;
+		info.isThisAt = attr.substr(0,5) === "this@";
+		info.isInCurrentContext = info.isDotSlash || info.isThisDot || info.isThisAt;
 		info.isInParentContext = attr.substr(0, 3) === "../";
 		info.isCurrentContext = attr === "." || attr === "this";
 		info.isParentContext = attr === "..";
