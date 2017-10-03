@@ -615,11 +615,23 @@ QUnit.test("Rendering a template with a custom scope (#55)", function() {
 	QUnit.equal(scope.get('name'), 'Justin', "Got the top scope name");
 
 	try {
-		var scopeRefs = scope.getRefs();
+		scopeRefs = scope.getRefs();
 		scopeRefs._read;
 		QUnit.ok(true, "Did not throw");
 	}
 	catch(e) {
 		QUnit.ok(false, e.message);
 	}
+});
+
+
+QUnit.test("generated refs scope is a Scope", function() {
+
+	var scope = new Scope({});
+	QUnit.equal(scope._parent, undefined, "scope initially has no parent");
+	var refScope = scope.getRefs();
+
+	QUnit.ok(refScope instanceof Scope, "refScope is a scope");
+	QUnit.ok(refScope._context instanceof Scope.Refs, "refScope context is a refs object");
+	QUnit.equal(scope._parent, refScope, "refScope is a parent of scope");
 });
