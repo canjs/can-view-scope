@@ -305,7 +305,7 @@ assign(Scope.prototype, {
 			return scope._context instanceof Scope.Refs;
 		});
 		if(!refScope) {
-			lastScope._parent = new Scope.Refs();
+			lastScope._parent = Scope.refsScope();
 			refScope = lastScope._parent;
 		}
 		return refScope;
