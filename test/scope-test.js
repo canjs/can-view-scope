@@ -11,6 +11,7 @@ var QUnit = require('steal-qunit');
 var canBatch = require("can-event/batch/batch");
 var canReflect = require("can-reflect");
 var Observation = require('can-observation');
+var testHelpers = require('can-test-helpers');
 
 QUnit.module('can/view/scope');
 
@@ -313,6 +314,15 @@ test("Scope attributes can be set (#1297, #1304)", function(){
 	equal(map.attr("other.name"), "Brian", "Name update in map");
 });
 
+test("Setting a value to an attribute with an undefined parent errors (canjs/can-stache-bindings#298)", function(){
+	var teardown = testHelpers.dev.willError(/Attempting to set a value at (.+) where (.+) is undefined./);
+
+	var scope = new Scope({});
+	scope.set("person.name", "Christopher");
+
+	QUnit.equal(teardown(), 1, "saw errors");
+});
+
 test("computeData.compute get/sets computes in maps", function(){
 	var cmpt = compute(4);
 	var map = new Map();
@@ -598,7 +608,7 @@ QUnit.test("scopeKeyData offValue resets dependencyChange/start", function() {
 QUnit.test("Rendering a template with a custom scope (#55)", function() {
 	var scope = new Scope({}),
 		scopeRefs;
-	
+
 	try {
 		scopeRefs = scope.getRefs();
 		scopeRefs._read;

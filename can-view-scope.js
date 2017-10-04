@@ -382,6 +382,13 @@ assign(Scope.prototype, {
 			observeReader.write(this.getRefs()._context, key, value, options);
 		} else {
 			var context = this.read(contextPath, options).value;
+			if (context === undefined) {
+				//!steal-remove-start
+				dev.error('Attempting to set a value at ' + key + ' where ' + contextPath + ' is undefined.');
+				//!steal-remove-end
+
+				return;
+			}
 
 			if(!canReflect.isObservableLike(context) && canReflect.isObservableLike(context[propName])) {
 				if(canReflect.isMapLike(context[propName])) {
