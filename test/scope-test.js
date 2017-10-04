@@ -314,7 +314,7 @@ test("Scope attributes can be set (#1297, #1304)", function(){
 	equal(map.attr("other.name"), "Brian", "Name update in map");
 });
 
-test("Setting a value to an attribute with an undefined parent errors (canjs/can-stache-bindings#298)", function(){
+testHelpers.dev.devOnlyTest("Setting a value to an attribute with an undefined parent errors (canjs/can-stache-bindings#298)", function(){
 	var teardown = testHelpers.dev.willError(/Attempting to set a value at (.+) where (.+) is undefined./);
 
 	var scope = new Scope({});
