@@ -1,15 +1,15 @@
 "use strict";
 var Observation = require('can-observation');
 var observeReader = require('can-stache-key');
-var makeCompute = require('can-compute');
 var assign = require('can-util/js/assign/assign');
 var isFunction = require('can-util/js/is-function/is-function');
-var canBatch = require('can-event/batch/batch');
-var CID = require("can-cid");
+var singleReference = require("can-util/js/single-reference/single-reference");
 var canReflect = require('can-reflect');
 var canSymbol = require('can-symbol');
-
-
+var KeyTree = require('can-key-tree');
+var queues = require('can-queues');
+var ObservationRecorder = require('can-observation-recorder');
+var CIDSet = require("can-cid/set/set");
 
 
 // The goal of this is to create a high-performance compute that represents a key value from can.view.Scope.
@@ -40,7 +40,7 @@ var getFastPathRoot = function(computeData){
 	}
 	return;
 };
-
+var peek = ObservationRecorder.ignore(canReflect.getValue.bind(canReflect));
 var isEventObject = function(obj){
 	return obj && typeof obj.batchNum === "number" && typeof obj.type === "string";
 };
@@ -54,21 +54,22 @@ var isEventObject = function(obj){
 // 1.  Make something that can be passed to can-view-live directly, hopefully
 //     avoiding creating expensive computes.  Instead we will only be creating
 //     `ScopeKeyData` which are thin wrappers.
-//
-// 2. Support the old "computeData" data type structure. If someone reads the
-//    .compute property, they will get a compute that behaves the same way.
-//
-// 3. We should begin eliminating creating computes in as many places as possible
-//    within CanJS code.  All of our helpers should be made to work with "faster"
-//    observable values: Observation -> ScopeKeyData -> Compute -> compute
 var ScopeKeyData = function(scope, key, options){
-	CID(this);
+	this.handlers = new KeyTree([Object, Array], {
+		onFirst: this.setup.bind(this),
+		onEmpty: this.teardown.bind(this)
+	});
+
 	this.startingScope = scope;
 	this.key = key;
-	this.observation = new Observation(this.read, this);
+	var observation = this.observation = new Observation(this.read, this);
+	// this makes it so we can track the `this` of depenency changes
+	this.observation.onDependencyChange = function(value){
+		observation.dependencyChange(this, value);
+	};
+
 	this.options = assign({ observation: this.observation }, options);
-	this.handlers = [];
-	this.dispatchHandler = this.dispatch.bind(this);
+	this.dispatch = this.dispatch.bind(this);
 
 	// things added later
 	this.fastPath = undefined;
@@ -76,140 +77,160 @@ var ScopeKeyData = function(scope, key, options){
 	this.initialValue = undefined;
 	this.reads = undefined;
 	this.setRoot = undefined;
+	var valueDependencies = new CIDSet();
+	valueDependencies.add(observation);
+	this.dependencies = {valueDependencies: valueDependencies};
 };
-// have things bind to this, not the underlying observation.  This makes it
-// so performance optimizations will work.
-ScopeKeyData.prototype.getValue = function(){
-	Observation.add(this);
-	return this.getObservationValue();
-};
-ScopeKeyData.prototype.getObservationValue = Observation.ignore(function(){
-	return this.observation.get();
-});
-// this is used by the Observation.
-// We use the observation for `getValue`
-ScopeKeyData.prototype.read = function(){
-	if (this.root) {
-		// if we've figured out a root observable, start reading from there
-		return observeReader.read(this.root, this.reads, this.options).value;
-	}
-	// If the key has not already been located in a observable then we need to search the scope for the
-	// key.  Once we find the key then we need to return it's value and if it is found in an observable
-	// then we need to store the observable so the next time this compute is called it can grab the value
-	// directly from the observable.
-	var data = this.startingScope.read(this.key, this.options);
-	this.scope = data.scope;
-	this.reads = data.reads;
-	this.root = data.rootObserve;
-	this.setRoot = data.setRoot;
-	return this.initialValue = data.value;
-};
-ScopeKeyData.prototype.setValue = function(newVal){
-	var root = this.root || this.setRoot;
-	if(root) {
-		observeReader.write(root, this.reads, newVal, this.options);
-	} else {
-		this.startingScope.set(this.key, newVal, this.options);
-	}
-};
-ScopeKeyData.prototype.hasDependencies = function(){
-	return this.observation.hasDependencies();
-};
-
-var canOnValue = canSymbol.for("can.onValue"),
-	canOffValue = canSymbol.for("can.offValue");
-canReflect.set(ScopeKeyData.prototype, canOnValue, function(handler){
-	if(!this.handlers.length) {
-		canReflect.onValue(this.observation, this.dispatchHandler);
+ScopeKeyData.prototype = {
+	constructor: ScopeKeyData,
+	dispatch: function(newVal){
+		var old = this.value;
+		this.value = newVal;
+		// adds callback handlers to be called w/i their respective queue.
+		queues.enqueueByQueue(this.handlers.getNode([]), this, [newVal, old], function() {
+			return {};
+		});
+	},
+	setup: function(){
+		this.bound = true;
+		canReflect.onValue(this.observation, this.dispatch, "notify");
 		// TODO: we should check this sometime in the background.
 		var fastPathRoot = getFastPathRoot(this);
 		if( fastPathRoot ) {
 			// rewrite the observation to call its event handlers
-
-			var self = this,
-				observation = this.observation;
-
-			this.fastPath = true;
-			// there won't be an event in the future ...
-			observation.dependencyChange = function(target, newVal, altNewValue){
-				if(isEventObject(newVal)) {
-					newVal = altNewValue;
-				}
-				// but I think we will be able to get at it b/c there should only be one
-				// dependency we are binding to ...
-				if(target === fastPathRoot && typeof newVal !== "function") {
-					this.newVal = newVal;
-				} else {
-					// restore
-					observation.dependencyChange = Observation.prototype.dependencyChange;
-					observation.start = Observation.prototype.start;
-					self.fastPath = false;
-				}
-
-				return Observation.prototype.dependencyChange.call(this, target, newVal, altNewValue);
-			};
-			observation.start = function(){
-				this.value = this.newVal;
-			};
-
+			this.toFastPath(fastPathRoot);
 		}
-	}
-	this.handlers.push(handler);
-});
+		this.value = peek(this.observation);
+	},
+	teardown: function() {
+		this.bound = false;
+		canReflect.offValue(this.observation, this.dispatch, "notify");
+		this.toSlowPath();
+	},
+	set: function(newVal){
+		var root = this.root || this.setRoot;
+		if(root) {
+			observeReader.write(root, this.reads, newVal, this.options);
+		} else {
+			this.startingScope.set(this.key, newVal, this.options);
+		}
+	},
+	get: function() {
+		if (ObservationRecorder.isRecording()) {
+			ObservationRecorder.add(this);
+			if (!this.bound) {
+				Observation.temporarilyBind(this);
+			}
+		}
 
-// Does this need to use the event queue?
-ScopeKeyData.prototype.dispatch = function(){
-	var handlers = this.handlers.slice(0);
-	for(var i = 0, len = handlers.length; i < len; i++) {
-		canBatch.batchNum = this.observation.batchNum;
-		handlers[i].apply(this, arguments);
+		if (this.bound === true) {
+			return this.value;
+		} else {
+			return this.observation.get();
+		}
+	},
+	on: function(handler, queue) {
+		this.handlers.add([queue || "mutate", handler]);
+	},
+	off: function(handler, queue) {
+		this.handlers.delete([queue || "mutate", handler]);
+	},
+	toFastPath: function(fastPathRoot){
+		var self = this,
+			observation = this.observation;
+
+		this.fastPath = true;
+		// there won't be an event in the future ...
+		observation.dependencyChange = function(target, newVal){
+			if(isEventObject(newVal)) {
+				throw "no event objects!";
+			}
+			// but I think we will be able to get at it b/c there should only be one
+			// dependency we are binding to ...
+			if(target === fastPathRoot && typeof newVal !== "function") {
+				this.newVal = newVal;
+			} else {
+				// restore
+				self.toSlowPath();
+			}
+
+			return Observation.prototype.dependencyChange.apply(this, arguments);
+		};
+		observation.start = function(){
+			this.value = this.newVal;
+		};
+	},
+	toSlowPath: function(){
+		this.observation.dependencyChange = Observation.prototype.dependencyChange;
+		this.observation.start = Observation.prototype.start;
+		this.fastPath = false;
+	},
+	read: function(){
+		if (this.root) {
+			// if we've figured out a root observable, start reading from there
+			return observeReader.read(this.root, this.reads, this.options).value;
+		}
+		// If the key has not already been located in a observable then we need to search the scope for the
+		// key.  Once we find the key then we need to return it's value and if it is found in an observable
+		// then we need to store the observable so the next time this compute is called it can grab the value
+		// directly from the observable.
+		var data = this.startingScope.read(this.key, this.options);
+		this.scope = data.scope;
+		this.reads = data.reads;
+		this.root = data.rootObserve;
+		this.setRoot = data.setRoot;
+		return this.initialValue = data.value;
+	},
+	hasDependencies: function(){
+		return this.observation.hasDependencies();
 	}
 };
 
-canReflect.set(ScopeKeyData.prototype, canOffValue, function(handler){
-	var index = this.handlers.indexOf(handler);
-	this.handlers.splice(index, 1);
-	if(!this.handlers.length) {
-		canReflect.offValue(this.observation, this.dispatchHandler);
-
-		this.observation.dependencyChange = Observation.prototype.dependencyChange;
-		this.observation.start = Observation.prototype.start;
+canReflect.assignSymbols(ScopeKeyData.prototype, {
+	"can.getValue": ScopeKeyData.prototype.get,
+	"can.setValue": ScopeKeyData.prototype.set,
+	"can.onValue": ScopeKeyData.prototype.on,
+	"can.offValue": ScopeKeyData.prototype.off,
+	"can.valueHasDependencies": ScopeKeyData.prototype.hasDependencies,
+	"can.getValueDependencies": function(){
+		return this.dependencies;
 	}
 });
 
-canReflect.set(ScopeKeyData.prototype, canSymbol.for("can.getValue"), ScopeKeyData.prototype.getValue);
+var Compute = function(newVal){
+	if(arguments.length) {
+		return this.set(newVal);
+	} else {
+		return this.get();
+	}
+};
 
-canReflect.set(ScopeKeyData.prototype, canSymbol.for("can.setValue"), ScopeKeyData.prototype.setValue);
-
-canReflect.set(ScopeKeyData.prototype, canSymbol.for("can.valueHasDependencies"), ScopeKeyData.prototype.hasDependencies);
-
-
-
-// once a compute is read, cache it
+// Creates a compute-like for legacy reasons ...
 Object.defineProperty(ScopeKeyData.prototype,"compute",{
 	get: function(){
 		var scopeKeyData = this;
-		var compute = makeCompute(undefined,{
-			on: function(updater) {
-				scopeKeyData[canOnValue](updater);
-				// this uses a lot of inside knowledge
-				this.value = scopeKeyData.observation.value;
-			},
-			off: function(updater){
-				scopeKeyData[canOffValue](updater);
-			},
-			get: function(){
-				return scopeKeyData.observation.get();
-			},
-			set: function(newValue){
-				return scopeKeyData.setValue(newValue);
-			}
+		var compute = Compute.bind(this);
+		compute.on = compute.bind = compute.addEventListener = function(event, handler) {
+			var translationHandler = function(newVal, oldVal) {
+				handler.call(compute, {type:'change'}, newVal, oldVal);
+			};
+			singleReference.set(handler, this, translationHandler);
+			scopeKeyData.on(translationHandler);
+		};
+		compute.off = compute.unbind = compute.removeEventListener = function(event, handler) {
+			scopeKeyData.off( singleReference.getAndDelete(handler, this) );
+		};
+
+		canReflect.assignSymbols(compute, {
+			"can.getValue": scopeKeyData.get.bind(scopeKeyData),
+			"can.setValue": scopeKeyData.set.bind(scopeKeyData),
+			"can.onValue": compute.on,
+			"can.offValue": compute.off,
+			"can.valueHasDependencies": scopeKeyData.hasDependencies.bind(scopeKeyData)
 		});
-		// this is important so it will always call observation.get
-		// This is something that should be "fixed" somehow for everything
-		// related to observations.
-		compute.computeInstance.observation = this.observation;
-		compute.computeInstance._canObserve = false;
+		compute.isComputed = true;
+
+
 		Object.defineProperty(this, "compute", {
 			value: compute,
 			writable: false,
@@ -219,9 +240,6 @@ Object.defineProperty(ScopeKeyData.prototype,"compute",{
 	},
 	configurable: true
 });
-
-
-
 
 
 module.exports = function(scope, key, options){
