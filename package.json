@@ -40,7 +40,6 @@
     "can-observation": "^4.0.0-pre.0",
     "can-observation-recorder": "0.X",
     "can-reflect": "^1.2.1",
-
     "can-stache-key": "^1.0.0-pre.2",
     "can-symbol": "^1.0.0",
     "can-util": "^3.9.5"
