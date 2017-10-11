@@ -645,3 +645,9 @@ QUnit.test("generated refs scope is a Scope", function() {
 	QUnit.ok(refScope._context instanceof Scope.Refs, "refScope context is a refs object");
 	QUnit.equal(scope._parent, refScope, "refScope is a parent of scope");
 });
+
+QUnit.test("./ scope lookup should read current scope", function () {
+	var map = new Map();
+	var scope = new Scope(map);
+	QUnit.equal(scope.attr("./"), map);
+});
