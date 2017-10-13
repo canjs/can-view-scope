@@ -3,9 +3,9 @@ var canReflect = require('can-reflect');
 
 var Compute = function(newVal){
 	if(arguments.length) {
-		return this.set(newVal);
+		return canReflect.setValue(this, newVal);
 	} else {
-		return this.get();
+		return canReflect.getValue(this);
 	}
 };
 
