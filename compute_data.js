@@ -198,14 +198,6 @@ canReflect.assignSymbols(ScopeKeyData.prototype, {
 	}
 });
 
-var Compute = function(newVal){
-	if(arguments.length) {
-		return this.set(newVal);
-	} else {
-		return this.get();
-	}
-};
-
 // Creates a compute-like for legacy reasons ...
 Object.defineProperty(ScopeKeyData.prototype,"compute",{
 	get: function(){
