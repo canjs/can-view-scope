@@ -684,3 +684,15 @@ test("undefined props should be a scope hit (#20)", function(){
 	QUnit.equal(instance2.attr("value"), "BAR");
 
 });
+
+QUnit.test("ScopeKeyData can.valueHasDependencies", function(){
+	var map = new SimpleMap({age: 21});
+	var base = new Scope(map);
+	var age = base.computeData('age');
+
+
+	QUnit.equal(canReflect.valueHasDependencies(age), undefined, "undefined");
+	canReflect.onValue(age, function(){});
+
+	QUnit.equal(canReflect.valueHasDependencies(age), true, "undefined");
+});

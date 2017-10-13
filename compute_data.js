@@ -182,7 +182,7 @@ ScopeKeyData.prototype = {
 		return this.initialValue = data.value;
 	},
 	hasDependencies: function(){
-		return this.observation.hasDependencies();
+		return canReflect.valueHasDependencies( this.observation );
 	}
 };
 
