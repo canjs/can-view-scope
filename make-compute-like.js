@@ -23,11 +23,21 @@ module.exports = function(observable) {
     };
 
     canReflect.assignSymbols(compute, {
-        "can.getValue": observable.get.bind(observable),
-        "can.setValue": observable.set.bind(observable),
-        "can.onValue": compute.on,
-        "can.offValue": compute.off,
-        "can.valueHasDependencies": observable.hasDependencies.bind(observable)
+        "can.getValue": function(){
+            return canReflect.getValue(observable);
+        },
+        "can.setValue": function(){
+            return canReflect.setValue(observable);
+        },
+        "can.onValue": function(){
+            return canReflect.onValue(observable);
+        },
+        "can.offValue": function(){
+            return canReflect.offValue(observable);
+        },
+        "can.valueHasDependencies": function(){
+            return canReflect.valueHasDependencies(observable);
+        }
     });
     compute.isComputed = true;
     return compute;
