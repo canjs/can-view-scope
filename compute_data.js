@@ -3,13 +3,14 @@ var Observation = require('can-observation');
 var observeReader = require('can-stache-key');
 var assign = require('can-util/js/assign/assign');
 var isFunction = require('can-util/js/is-function/is-function');
-var singleReference = require("can-util/js/single-reference/single-reference");
+
 var canReflect = require('can-reflect');
 var canSymbol = require('can-symbol');
 var KeyTree = require('can-key-tree');
 var queues = require('can-queues');
 var ObservationRecorder = require('can-observation-recorder');
 var CIDSet = require("can-cid/set/set");
+var makeComputeLike = require("./make-compute-like");
 
 
 // The goal of this is to create a high-performance compute that represents a key value from can.view.Scope.
@@ -208,28 +209,7 @@ var Compute = function(newVal){
 // Creates a compute-like for legacy reasons ...
 Object.defineProperty(ScopeKeyData.prototype,"compute",{
 	get: function(){
-		var scopeKeyData = this;
-		var compute = Compute.bind(this);
-		compute.on = compute.bind = compute.addEventListener = function(event, handler) {
-			var translationHandler = function(newVal, oldVal) {
-				handler.call(compute, {type:'change'}, newVal, oldVal);
-			};
-			singleReference.set(handler, this, translationHandler);
-			scopeKeyData.on(translationHandler);
-		};
-		compute.off = compute.unbind = compute.removeEventListener = function(event, handler) {
-			scopeKeyData.off( singleReference.getAndDelete(handler, this) );
-		};
-
-		canReflect.assignSymbols(compute, {
-			"can.getValue": scopeKeyData.get.bind(scopeKeyData),
-			"can.setValue": scopeKeyData.set.bind(scopeKeyData),
-			"can.onValue": compute.on,
-			"can.offValue": compute.off,
-			"can.valueHasDependencies": scopeKeyData.hasDependencies.bind(scopeKeyData)
-		});
-		compute.isComputed = true;
-
+		var compute = makeComputeLike(this);
 
 		Object.defineProperty(this, "compute", {
 			value: compute,
