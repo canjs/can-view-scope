@@ -37,7 +37,13 @@ module.exports = function(observable) {
         },
         "can.valueHasDependencies": function(){
             return canReflect.valueHasDependencies(observable);
-        }
+        },
+        "can.getPriority": function(){
+    		return canReflect.getPriority( observable );
+    	},
+    	"can.setPriority": function(newPriority){
+    		canReflect.setPriority( observable, newPriority );
+    	}
     });
     compute.isComputed = true;
     return compute;

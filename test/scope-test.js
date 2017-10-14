@@ -696,3 +696,19 @@ QUnit.test("ScopeKeyData can.valueHasDependencies", function(){
 
 	QUnit.equal(canReflect.valueHasDependencies(age), true, "undefined");
 });
+
+QUnit.test("get and set Priority", function(){
+	var map = new SimpleMap({age: 21});
+	var base = new Scope(map);
+	var age = base.computeData('age');
+
+	canReflect.setPriority(age, 5);
+
+
+	QUnit.equal(canReflect.getPriority(age), 5, "set priority");
+
+	var compute = age.compute;
+
+	QUnit.equal(canReflect.getPriority(compute), 5, "set priority");
+
+});

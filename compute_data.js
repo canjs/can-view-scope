@@ -195,6 +195,12 @@ canReflect.assignSymbols(ScopeKeyData.prototype, {
 	"can.valueHasDependencies": ScopeKeyData.prototype.hasDependencies,
 	"can.getValueDependencies": function(){
 		return this.dependencies;
+	},
+	"can.getPriority": function(){
+		return canReflect.getPriority( this.observation );
+	},
+	"can.setPriority": function(newPriority){
+		canReflect.setPriority( this.observation, newPriority );
 	}
 });
 
