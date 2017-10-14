@@ -71,6 +71,11 @@ var ScopeKeyData = function(scope, key, options){
 
 	this.options = assign({ observation: this.observation }, options);
 	this.dispatch = this.dispatch.bind(this);
+	//!steal-remove-start
+	Object.defineProperty(this.dispatch,"name",{
+		value: "ScopeKeyData<"+this.key+">.dispatch"
+	});
+	//!steal-remove-end
 
 	// things added later
 	this.fastPath = undefined;
