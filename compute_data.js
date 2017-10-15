@@ -57,26 +57,33 @@ var isEventObject = function(obj){
 //     avoiding creating expensive computes.  Instead we will only be creating
 //     `ScopeKeyData` which are thin wrappers.
 var ScopeKeyData = function(scope, key, options){
+
+	this.startingScope = scope;
+	this.key = key;
+	this.options = assign({ observation: this.observation }, options);
+
+
+	this.dispatch = this.dispatch.bind(this);
+	//!steal-remove-start
+	this.read = this.read.bind(this);
+	Object.defineProperty(this.read,"name",{
+		value: "ScopeKeyData{{"+key+"}}.read"
+	});
+	Object.defineProperty(this.dispatch,"name",{
+		value: "ScopeKeyData{{"+key+"}}.dispatch"
+	});
+	//!steal-remove-end
+
 	this.handlers = new KeyTree([Object, Array], {
 		onFirst: this.setup.bind(this),
 		onEmpty: this.teardown.bind(this)
 	});
 
-	this.startingScope = scope;
-	this.key = key;
 	var observation = this.observation = new Observation(this.read, this);
 	// this makes it so we can track the `this` of depenency changes
 	this.observation.onDependencyChange = function(value){
 		observation.dependencyChange(this, value);
 	};
-
-	this.options = assign({ observation: this.observation }, options);
-	this.dispatch = this.dispatch.bind(this);
-	//!steal-remove-start
-	Object.defineProperty(this.dispatch,"name",{
-		value: "ScopeKeyData<"+this.key+">.dispatch"
-	});
-	//!steal-remove-end
 
 	// things added later
 	this.fastPath = undefined;
