@@ -26,14 +26,14 @@ module.exports = function(observable) {
         "can.getValue": function(){
             return canReflect.getValue(observable);
         },
-        "can.setValue": function(){
-            return canReflect.setValue(observable);
+        "can.setValue": function(newVal){
+            return canReflect.setValue(observable, newVal);
         },
-        "can.onValue": function(){
-            return canReflect.onValue(observable);
+        "can.onValue": function(handler, queue){
+            return canReflect.onValue(observable, handler, queue);
         },
-        "can.offValue": function(){
-            return canReflect.offValue(observable);
+        "can.offValue": function(handler, queue){
+            return canReflect.offValue(observable, handler, queue);
         },
         "can.valueHasDependencies": function(){
             return canReflect.valueHasDependencies(observable);
