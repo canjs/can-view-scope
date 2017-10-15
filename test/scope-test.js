@@ -8,7 +8,8 @@ var canReflect = require("can-reflect");
 var Observation = require('can-observation');
 var testHelpers = require('can-test-helpers');
 var SimpleMap = require('can-simple-map');
-var SimpleObservable = require('can-simple-observable')
+var SimpleObservable = require('can-simple-observable');
+var ObservationRecorder = require('can-observation-recorder');
 
 QUnit.module('can/view/scope');
 
@@ -711,4 +712,30 @@ QUnit.test("get and set Priority", function(){
 
 	QUnit.equal(canReflect.getPriority(compute), 5, "set priority");
 
+});
+
+QUnit.test("fast path checking does not leak ObservationRecord.adds", function(){
+	// reading values in setup can cause problems ... these will
+	// leak to outer scope
+	var map = new SimpleMap({age: 21});
+	// make getter behave like can-define
+	Object.defineProperty(map,"age",{
+		get: function(){
+			return this.attr("age")
+		},
+		set: function(newVal){
+			this.attr("age",newVal)
+		}
+	});
+
+	var base = new Scope(map);
+	var age = base.computeData('age');
+
+	ObservationRecorder.start();
+	age.get();
+	var dependencies = ObservationRecorder.stop();
+
+	QUnit.equal(dependencies.keyDependencies.size, 0, "no key dependencies");
+	QUnit.equal(dependencies.valueDependencies.size, 1, "only sees age");
+	QUnit.ok(dependencies.valueDependencies.has(age), "only sees age");
 });

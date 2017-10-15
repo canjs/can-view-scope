@@ -26,6 +26,8 @@ var makeComputeLike = require("./make-compute-like");
 // it's a fair bet that we can just listen to that last object.
 // If the `this` is not that object ... freak out.  Though `this` is not necessarily part of it.  can-observation could make
 // this work.
+
+var peek = ObservationRecorder.ignore(canReflect.getValue.bind(canReflect));
 var getFastPathRoot = function(computeData){
 	if( computeData.reads &&
 				// a single property read
@@ -37,11 +39,11 @@ var getFastPathRoot = function(computeData){
 		// on a map
 		return root && canReflect.isObservableLike(root) && canReflect.isMapLike(root) &&
 			// that isn't calling a function
-			!isFunction(root[computeData.reads[0].key]) && root;
+			peek(root, computeData.reads[0].key) && root;
 	}
 	return;
 };
-var peek = ObservationRecorder.ignore(canReflect.getValue.bind(canReflect));
+
 var isEventObject = function(obj){
 	return obj && typeof obj.batchNum === "number" && typeof obj.type === "string";
 };
