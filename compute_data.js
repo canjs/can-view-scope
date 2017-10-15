@@ -26,8 +26,9 @@ var makeComputeLike = require("./make-compute-like");
 // If the `this` is not that object ... freak out.  Though `this` is not necessarily part of it.  can-observation could make
 // this work.
 
-var peek = ObservationRecorder.ignore(canReflect.getValue.bind(canReflect));
-var getFastPathRoot = function(computeData){
+var peekValue = ObservationRecorder.ignore(canReflect.getValue.bind(canReflect));
+
+var getFastPathRoot = ObservationRecorder.ignore(function(computeData){
 	if( computeData.reads &&
 				// a single property read
 				computeData.reads.length === 1 ) {
@@ -38,10 +39,10 @@ var getFastPathRoot = function(computeData){
 		// on a map
 		return root && canReflect.isObservableLike(root) && canReflect.isMapLike(root) &&
 			// that isn't calling a function
-			peek(root, computeData.reads[0].key) && root;
+			typeof root[computeData.reads[0].key] !== "function" && root;
 	}
 	return;
-};
+});
 
 var isEventObject = function(obj){
 	return obj && typeof obj.batchNum === "number" && typeof obj.type === "string";
@@ -61,9 +62,15 @@ var ScopeKeyData = function(scope, key, options){
 	this.startingScope = scope;
 	this.key = key;
 	this.options = assign({ observation: this.observation }, options);
+	var observation;
 
+	// shifts the arguments so we can make sure the root is what we expect
+	var onDependencyChange = function(value){
+		observation.dependencyChange(this, value);
+	};
 
 	this.dispatch = this.dispatch.bind(this);
+
 	//!steal-remove-start
 	this.read = this.read.bind(this);
 	Object.defineProperty(this.read,"name",{
@@ -72,6 +79,10 @@ var ScopeKeyData = function(scope, key, options){
 	Object.defineProperty(this.dispatch,"name",{
 		value: "ScopeKeyData{{"+key+"}}.dispatch"
 	});
+
+	Object.defineProperty(onDependencyChange,"name",{
+		value: "Observation{{"+key+"}}.onDependencyChange"
+	});
 	//!steal-remove-end
 
 	this.handlers = new KeyTree([Object, Array], {
@@ -79,11 +90,9 @@ var ScopeKeyData = function(scope, key, options){
 		onEmpty: this.teardown.bind(this)
 	});
 
-	var observation = this.observation = new Observation(this.read, this);
+	observation = this.observation = new Observation(this.read, this);
 	// this makes it so we can track the `this` of depenency changes
-	this.observation.onDependencyChange = function(value){
-		observation.dependencyChange(this, value);
-	};
+	this.observation.onDependencyChange = onDependencyChange;
 
 	// things added later
 	this.fastPath = undefined;
@@ -114,7 +123,7 @@ ScopeKeyData.prototype = {
 			// rewrite the observation to call its event handlers
 			this.toFastPath(fastPathRoot);
 		}
-		this.value = peek(this.observation);
+		this.value = peekValue(this.observation);
 	},
 	teardown: function() {
 		this.bound = false;
