@@ -43,7 +43,8 @@ module.exports = function(observable) {
     	},
     	"can.setPriority": function(newPriority){
     		canReflect.setPriority( observable, newPriority );
-    	}
+    	},
+		"can.isValueLike": true
     });
     compute.isComputed = true;
     return compute;
