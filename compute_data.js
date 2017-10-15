@@ -2,7 +2,6 @@
 var Observation = require('can-observation');
 var observeReader = require('can-stache-key');
 var assign = require('can-util/js/assign/assign');
-var isFunction = require('can-util/js/is-function/is-function');
 
 var canReflect = require('can-reflect');
 var canSymbol = require('can-symbol');
