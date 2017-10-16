@@ -104,7 +104,7 @@ assign(Scope.prototype, {
 	 */
 	read: function(attr, options) {
 		// If it's the root, jump right to it.
-		if (attr === "%root") {
+		if (attr === "%root" || attr === "./") {
 			return {
 				value: this.getRoot()
 			};
