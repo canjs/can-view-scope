@@ -48,6 +48,12 @@ var isEventObject = function(obj){
 	return obj && typeof obj.batchNum === "number" && typeof obj.type === "string";
 };
 
+function makeMeta(handler, context, args) {
+	return {
+		log: [ canReflect.getName(handler), "called because", canReflect.getName(context), "changed to", JSON.stringify(args[0]), "from", JSON.stringify(args[1]) ],
+	};
+}
+
 
 // could we make this an observation first ... and have a getter for the compute?
 
@@ -69,19 +75,24 @@ var ScopeKeyData = function(scope, key, options){
 		observation.dependencyChange(this, value);
 	};
 
+	this.read = this.read.bind(this);
 	this.dispatch = this.dispatch.bind(this);
 
 	//!steal-remove-start
-	this.read = this.read.bind(this);
-	Object.defineProperty(this.read,"name",{
-		value: "ScopeKeyData{{"+key+"}}.read"
+	canReflect.assignSymbols(this.read, {
+		"can.getName": function() {
+			return canReflect.getName(this) + ".read";
+		}.bind(this),
 	});
-	Object.defineProperty(this.dispatch,"name",{
-		value: "ScopeKeyData{{"+key+"}}.dispatch"
+	canReflect.assignSymbols(this.dispatch, {
+		"can.getName": function() {
+			return canReflect.getName(this) + ".dispatch";
+		}.bind(this),
 	});
-
-	Object.defineProperty(onDependencyChange,"name",{
-		value: "Observation{{"+key+"}}.onDependencyChange"
+	canReflect.assignSymbols(onDependencyChange, {
+		"can.getName": function() {
+			return canReflect.getName(this) + ".onDependencyChange";
+		}.bind(this),
 	});
 	//!steal-remove-end
 
@@ -110,9 +121,7 @@ ScopeKeyData.prototype = {
 		var old = this.value;
 		this.value = newVal;
 		// adds callback handlers to be called w/i their respective queue.
-		queues.enqueueByQueue(this.handlers.getNode([]), this, [newVal, old], function() {
-			return {};
-		});
+		queues.enqueueByQueue(this.handlers.getNode([]), this, [newVal, old], makeMeta);
 	},
 	setup: function(){
 		this.bound = true;
