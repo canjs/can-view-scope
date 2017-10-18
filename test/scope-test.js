@@ -739,3 +739,13 @@ QUnit.test("fast path checking does not leak ObservationRecord.adds", function()
 	QUnit.equal(dependencies.valueDependencies.size, 1, "only sees age");
 	QUnit.ok(dependencies.valueDependencies.has(age), "only sees age");
 });
+
+QUnit.test("unobservable reads can change", function(){
+	var obj = {age: 1};
+	var base = new Scope(obj);
+	var age = base.computeData('age');
+	canReflect.onValue(age,function(){});
+	QUnit.equal(canReflect.getValue(age), 1);
+	obj.age = 2;
+	QUnit.equal(canReflect.getValue(age), 2);
+});

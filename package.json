@@ -37,7 +37,7 @@
     "can-construct": "^3.2.0",
     "can-key-tree": "^0.X",
     "can-namespace": "1.0.0",
-    "can-observation": "^4.0.0-pre.0",
+    "can-observation": "^4.0.0-pre.8",
     "can-observation-recorder": "<2.0.0",
     "can-reflect": "^1.6.0",
     "can-stache-key": "^1.0.0-pre.2",

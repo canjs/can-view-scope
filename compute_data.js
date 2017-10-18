@@ -146,7 +146,7 @@ ScopeKeyData.prototype = {
 			}
 		}
 
-		if (this.bound === true) {
+		if (this.bound === true && this.observation.hasDependencies()) {
 			return this.value;
 		} else {
 			return this.observation.get();
