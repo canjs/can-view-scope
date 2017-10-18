@@ -79,20 +79,14 @@ var ScopeKeyData = function(scope, key, options){
 	this.dispatch = this.dispatch.bind(this);
 
 	//!steal-remove-start
-	canReflect.assignSymbols(this.read, {
-		"can.getName": function() {
-			return canReflect.getName(this) + ".read";
-		}.bind(this),
+	Object.defineProperty(this.read, "name", {
+		value: canReflect.getName(this) + ".read",
 	});
-	canReflect.assignSymbols(this.dispatch, {
-		"can.getName": function() {
-			return canReflect.getName(this) + ".dispatch";
-		}.bind(this),
+	Object.defineProperty(this.dispatch, "name", {
+		value: canReflect.getName(this) + ".dispatch",
 	});
-	canReflect.assignSymbols(onDependencyChange, {
-		"can.getName": function() {
-			return canReflect.getName(this) + ".onDependencyChange";
-		}.bind(this),
+	Object.defineProperty(onDependencyChange, "name", {
+		value: canReflect.getName(this) + ".onDependencyChange",
 	});
 	//!steal-remove-end
 
@@ -232,7 +226,13 @@ canReflect.assignSymbols(ScopeKeyData.prototype, {
 	},
 	"can.setPriority": function(newPriority){
 		canReflect.setPriority( this.observation, newPriority );
-	}
+	},
+
+	//!steal-remove-start
+	"can.getName": function() {
+		return canReflect.getName(this.constructor) + "{" + this.key + "}";
+	},
+	//!steal-remove-end
 });
 
 // Creates a compute-like for legacy reasons ...
