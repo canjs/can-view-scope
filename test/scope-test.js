@@ -647,7 +647,8 @@ QUnit.test("generated refs scope is a Scope", function() {
 });
 
 QUnit.test("./ scope lookup should read current scope", function () {
+	var parent = new Map();
 	var map = new Map();
-	var scope = new Scope(map);
+	var scope = new Scope(parent).add(map);
 	QUnit.equal(scope.attr("./"), map);
 });
