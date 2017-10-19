@@ -45,6 +45,7 @@
     "can-util": "^3.9.5"
   },
   "devDependencies": {
+    "can-queues": "<2.0.0",
     "can-simple-map": "^4.0.0-pre.2",
     "can-simple-observable": "^2.0.0-pre.3",
     "can-test-helpers": "^1.0.1",

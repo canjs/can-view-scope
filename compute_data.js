@@ -48,11 +48,7 @@ var isEventObject = function(obj){
 	return obj && typeof obj.batchNum === "number" && typeof obj.type === "string";
 };
 
-function makeMeta(handler, context, args) {
-	return {
-		log: [ canReflect.getName(handler), "called because", canReflect.getName(context), "changed to", args[0], "from", args[1] ],
-	};
-}
+
 
 
 // could we make this an observation first ... and have a getter for the compute?
@@ -70,23 +66,15 @@ var ScopeKeyData = function(scope, key, options){
 	this.options = assign({ observation: this.observation }, options);
 	var observation;
 
-	// shifts the arguments so we can make sure the root is what we expect
-	var onDependencyChange = function(value){
-		observation.dependencyChange(this, value);
-	};
-
 	this.read = this.read.bind(this);
 	this.dispatch = this.dispatch.bind(this);
 
 	//!steal-remove-start
 	Object.defineProperty(this.read, "name", {
-		value: canReflect.getName(this) + ".read",
+		value: "{{" + this.key + "}}::ScopeKeyData.read",
 	});
 	Object.defineProperty(this.dispatch, "name", {
 		value: canReflect.getName(this) + ".dispatch",
-	});
-	Object.defineProperty(onDependencyChange, "name", {
-		value: canReflect.getName(this) + ".onDependencyChange",
 	});
 	//!steal-remove-end
 
@@ -96,8 +84,7 @@ var ScopeKeyData = function(scope, key, options){
 	});
 
 	observation = this.observation = new Observation(this.read, this);
-	// this makes it so we can track the `this` of depenency changes
-	this.observation.onDependencyChange = onDependencyChange;
+
 
 	// things added later
 	this.fastPath = undefined;
@@ -115,7 +102,7 @@ ScopeKeyData.prototype = {
 		var old = this.value;
 		this.value = newVal;
 		// adds callback handlers to be called w/i their respective queue.
-		queues.enqueueByQueue(this.handlers.getNode([]), this, [newVal, old], makeMeta);
+		queues.enqueueByQueue(this.handlers.getNode([]), this, [newVal, old], null, [canReflect.getName(this), "changed to", newVal, "from", old]);
 	},
 	setup: function(){
 		this.bound = true;
