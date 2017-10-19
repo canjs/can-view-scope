@@ -50,7 +50,7 @@ var isEventObject = function(obj){
 
 function makeMeta(handler, context, args) {
 	return {
-		log: [ canReflect.getName(handler), "called because", canReflect.getName(context), "changed to", JSON.stringify(args[0]), "from", JSON.stringify(args[1]) ],
+		log: [ canReflect.getName(handler), "called because", canReflect.getName(context), "changed to", args[0], "from", args[1] ],
 	};
 }
 
