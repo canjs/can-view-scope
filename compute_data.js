@@ -230,7 +230,7 @@ canReflect.assignSymbols(ScopeKeyData.prototype, {
 
 	//!steal-remove-start
 	"can.getName": function() {
-		return canReflect.getName(this.constructor) + "{" + this.key + "}";
+		return canReflect.getName(this.constructor) + "{{" + this.key + "}}";
 	},
 	//!steal-remove-end
 });
