@@ -103,7 +103,7 @@ assign(Scope.prototype, {
 	 */
 	read: function(attr, options) {
 		// If it's the root, jump right to it.
-		if (attr === "%root" || attr === "./") {
+		if (attr === "%root") {
 			return {
 				value: this.getRoot()
 			};
@@ -114,6 +114,11 @@ assign(Scope.prototype, {
 			return {
 				value: this
 			};
+		}
+
+		// make `{{./}}` and alias for `{{.}}`
+		if (attr === "./") {
+			attr = ".";
 		}
 
 		// Identify context based keys.  Context based keys try to
