@@ -9,9 +9,8 @@ var makeComputeData = require('./compute_data');
 var assign = require('can-util/js/assign/assign');
 var each = require('can-util/js/each/each');
 var namespace = require('can-namespace');
-var dev = require('can-util/js/dev/dev');
 var canReflect = require("can-reflect");
-var canLog = require('can-util/js/log/log');
+var canLog = require('can-log/dev/dev');
 
 /**
  * @add can.view.Scope
@@ -273,7 +272,7 @@ assign(Scope.prototype, {
 	}),
 	peak: Observation.ignore(function(key, options) {
 		//!steal-remove-start
-		dev.warn('peak is deprecated, please use peek instead');
+		canLog.warn('peak is deprecated, please use peek instead');
 		//!steal-remove-end
 		return this.peek(key, options);
 	}),
@@ -384,7 +383,7 @@ assign(Scope.prototype, {
 			var context = this.read(contextPath, options).value;
 			if (context === undefined) {
 				//!steal-remove-start
-				dev.error('Attempting to set a value at ' + key + ' where ' + contextPath + ' is undefined.');
+				canLog.error('Attempting to set a value at ' + key + ' where ' + contextPath + ' is undefined.');
 				//!steal-remove-end
 
 				return;
@@ -392,7 +391,7 @@ assign(Scope.prototype, {
 
 			if(!canReflect.isObservableLike(context) && canReflect.isObservableLike(context[propName])) {
 				if(canReflect.isMapLike(context[propName])) {
-					dev.warn("can-view-scope: Merging data into \"" + propName + "\" because its parent is non-observable");
+					canLog.warn("can-view-scope: Merging data into \"" + propName + "\" because its parent is non-observable");
 					canReflect.updateDeep(context[propName], value);
 				}
 				else if(canReflect.isValueLike(context[propName])){
