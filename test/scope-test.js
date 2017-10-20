@@ -4,7 +4,7 @@ var Map = require('can-map');
 var List = require('can-list');
 var observeReader = require('can-stache-key');
 var compute = require('can-compute');
-var ReferenceMap = require('../reference-map');
+var TemplateContext = require('../template-context');
 var canSymbol = require("can-symbol");
 
 var QUnit = require('steal-qunit');
@@ -393,12 +393,12 @@ test("can read parent context with ../ (#2244)", function(){
 });
 
 test("trying to read constructor from refs scope is ok", function(){
-	var map = new ReferenceMap();
+	var map = new TemplateContext();
 	var construct = compute(function(){
 		return map.attr("constructor");
 	});
 	construct.bind("change", function(){});
-	equal(construct(), ReferenceMap);
+	equal(construct(), TemplateContext);
 });
 
 test("reading from a string in a nested scope doesn't throw an error (#22)",function(){
@@ -636,14 +636,12 @@ QUnit.test("Rendering a template with a custom scope (#55)", function() {
 
 
 QUnit.test("generated refs scope is a Scope", function() {
-
 	var scope = new Scope({});
 	QUnit.equal(scope._parent, undefined, "scope initially has no parent");
 	var refScope = scope.getRefs();
 
 	QUnit.ok(refScope instanceof Scope, "refScope is a scope");
 	QUnit.ok(refScope._context instanceof Scope.Refs, "refScope context is a refs object");
-	QUnit.equal(scope._parent, refScope, "refScope is a parent of scope");
 });
 
 QUnit.test("./ scope lookup should read current scope", function () {
@@ -651,4 +649,49 @@ QUnit.test("./ scope lookup should read current scope", function () {
 	var map = new Map();
 	var scope = new Scope(parent).add(map);
 	QUnit.equal(scope.attr("./"), map);
+});
+
+QUnit.test("getTemplateContext() gives a scope with the templateContext", function() {
+	var map = new Map();
+	var scope = new Scope(map);
+
+	var templateContext = scope.getTemplateContext();
+
+	QUnit.ok(templateContext instanceof Scope, 'templateContext is a Scope');
+	QUnit.ok(templateContext._context instanceof TemplateContext, 'templateContext context is a TemplateContext object');
+});
+
+QUnit.test("scope can be used to read the templateContext", function() {
+	var map = new Map();
+	var scope = new Scope(map);
+
+	var templateContext = scope.getTemplateContext();
+
+	QUnit.deepEqual(scope.peek("scope"), templateContext, "scope");
+
+	scope.set("scope.vars.name", "Kevin");
+	QUnit.equal(scope.peek("scope.vars.name"), "Kevin", "scope.vars.name === Kevin");
+	QUnit.equal(scope.peek("*name"), "Kevin", "*name === Kevin");
+
+	scope.set("*name", "Tracy");
+	QUnit.equal(scope.peek("*name"), "Tracy", "*name === Tracy");
+	QUnit.equal(scope.peek("scope.vars.name"), "Tracy", "scope.vars.name === Tracy");
+});
+
+testHelpers.dev.devOnlyTest("using {{>*self}} should show deprecation warning", function() {
+	var teardown = testHelpers.dev.willWarn("{{>*self}} is deprecated. Use {{>scope.view}} instead.");
+
+	var scope = new Scope({});
+	scope.peek("*self");
+
+	QUnit.equal(teardown(), 1, "deprecation warning displayed");
+});
+
+testHelpers.dev.devOnlyTest("using *foo should show deprecation warning", function() {
+	var teardown = testHelpers.dev.willWarn("{{*foo}} is deprecated. Use {{scope.vars.foo}} instead.");
+
+	var scope = new Scope({});
+	scope.peek("*foo");
+
+	QUnit.equal(teardown(), 1, "deprecation warning displayed");
 });
