@@ -197,6 +197,8 @@ assign(Scope.prototype, {
 				}
 			}, options);
 
+		var isRecording = Observation.isRecording();
+
 		// Goes through each scope context provided until it finds the key (attr).  Once the key is found
 		// then it's value is returned along with an observe, the current scope and reads.
 		// While going through each scope context searching for the key, each observable found is returned and
@@ -222,7 +224,17 @@ assign(Scope.prototype, {
 				var observes = getObserves();
 				// If a **value was was found**, return value and location data.
 				if (data.value !== undefined) {
-					Observation.addAll(observes);
+
+					if(!observes.length && isRecording) {
+						// if we didn't actually observe anything
+						// the reads and currentObserve don't mean anything
+						// we just point to the current object so setting is fast
+						currentObserve = data.parent;
+						currentReads = keyReads.slice(keyReads.length - 1);
+					} else {
+						Observation.addAll(observes);
+					}
+
 					return {
 						scope: currentScope,
 						rootObserve: currentObserve,
