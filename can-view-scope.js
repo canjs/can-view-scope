@@ -402,19 +402,7 @@ assign(Scope.prototype, {
 				return;
 			}
 
-			if(!canReflect.isObservableLike(context) && canReflect.isObservableLike(context[propName])) {
-				if(canReflect.isMapLike(context[propName])) {
-					dev.warn("can-view-scope: Merging data into \"" + propName + "\" because its parent is non-observable");
-					canReflect.updateDeep(context[propName], value);
-				}
-				else if(canReflect.isValueLike(context[propName])){
-					canReflect.setValue(context[propName], value);
-				} else {
-					observeReader.write(context, propName, value, options);
-				}
-			} else {
-				observeReader.write(context, propName, value, options);
-			}
+			observeReader.write(context, propName, value, options);
 		}
 	},
 
