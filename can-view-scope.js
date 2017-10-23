@@ -4,7 +4,7 @@
 // If no parent scope is provided, only the scope's context will be explored for values.
 var observeReader = require('can-stache-key');
 var Observation = require('can-observation');
-var ReferenceMap = require('./reference-map');
+var TemplateContext = require('./template-context');
 var makeComputeData = require('./compute_data');
 var assign = require('can-util/js/assign/assign');
 var each = require('can-util/js/each/each');
@@ -43,12 +43,12 @@ assign(Scope, {
 	read: observeReader.read,
 	// ## Scope.Refs
 	// A Map-like object used for the references scope.
-	Refs: ReferenceMap,
+	Refs: TemplateContext,
 
 	// ## Scope.refsScope
 	// A scope with a references scope in it and no parent.
 	refsScope: function() {
-		return new Scope(new this.Refs());
+		return new Scope(new TemplateContext());
 	},
 	keyInfo: function(attr){
 		var info = {};
@@ -59,10 +59,16 @@ assign(Scope, {
 		info.isInParentContext = attr.substr(0, 3) === "../";
 		info.isCurrentContext = attr === "." || attr === "this";
 		info.isParentContext = attr === "..";
+		info.isTemplateContext = attr === "scope";
+		info.isInLegacyRefsScope = attr.substr(0, 1) === "*";
+		info.isInTemplateContext = info.isTemplateContext ||
+			info.isInLegacyRefsScope ||
+			attr.substr(0, 5) === "scope";
 		info.isContextBased = info.isInCurrentContext ||
 			info.isInParentContext ||
 			info.isCurrentContext ||
-			info.isParentContext;
+			info.isParentContext ||
+			info.isInTemplateContext;
 		return info;
 	}
 });
@@ -116,7 +122,7 @@ assign(Scope.prototype, {
 			};
 		}
 
-		// make `{{./}}` and alias for `{{.}}`
+		// make `{{./}}` an alias for `{{.}}`
 		if (attr === "./") {
 			attr = ".";
 		}
@@ -132,7 +138,8 @@ assign(Scope.prototype, {
 		}
 
 		// If true, lookup stops after the current context.
-		var currentScopeOnly;
+		var currentScopeOnly,
+			parent;
 
 		if (keyInfo.isInCurrentContext) {
 			// Stop lookup from checking parent scopes.
@@ -143,7 +150,7 @@ assign(Scope.prototype, {
 			// walk up until we find a parent that can have context.
 			// the `isContextBased` check above won't catch it when you go from
 			// `../foo` to `foo` because `foo` isn't context based.
-			var parent = this._parent;
+			parent = this._parent;
 			while (parent._meta.notContext) {
 				parent = parent._parent;
 			}
@@ -155,14 +162,19 @@ assign(Scope.prototype, {
 			return parent.read(attr.substr(3) || ".", options);
 		} else if (keyInfo.isCurrentContext) {
 			return observeReader.read(this._context, [], options);
+		} else if (keyInfo.isInTemplateContext) {
+			parent = this.getTemplateContext();
+
+			if (keyInfo.isTemplateContext) {
+				return { value: parent };
+			}
+
+			return {
+				value: canReflect.getKeyValue(parent._context, attr)
+			};
 		}
-		// if it's a reference scope, read from there.
-		var keyReads = observeReader.reads(attr);
-		if (keyReads[0].key.charAt(0) === "*") {
-			return this.getRefs()._read(keyReads, options, true);
-		} else {
-			return this._read(keyReads, options, currentScopeOnly);
-		}
+
+		return this._read(observeReader.reads(attr), options, currentScopeOnly);
 	},
 	// ## Scope.prototype._read
 	//
@@ -303,16 +315,28 @@ assign(Scope.prototype, {
 	// Used by `.read` when looking up `*key` and by the references
 	// view binding.
 	getRefs: function() {
+		return this.getTemplateContext();
+	},
+	// ## Scope.prototype.getTemplateContext
+	// Returns the template context
+	getTemplateContext: function() {
 		var lastScope;
-		var refScope = this.getScope(function(scope) {
+
+		// find the first reference scope
+		var templateContext = this.getScope(function(scope) {
 			lastScope = scope;
-			return scope._context instanceof Scope.Refs;
+			return scope._context instanceof TemplateContext;
 		});
-		if(!refScope) {
-			lastScope._parent = Scope.refsScope();
-			refScope = lastScope._parent;
+
+		// if there is no reference scope, add one as the root
+		if(!templateContext) {
+			templateContext = new Scope(new TemplateContext());
+
+			// add templateContext to root of the scope chain so it
+			// can be found using `getScope` next time it is looked up
+			lastScope._parent = templateContext;
 		}
-		return refScope;
+		return templateContext;
 	},
 	// ## Scope.prototype.getRoot
 	// Returns the top most context that is not a references scope.
@@ -334,6 +358,9 @@ assign(Scope.prototype, {
 	set: function(key, value, options) {
 		options = options || {};
 
+		var keyInfo = Scope.keyInfo(key),
+			parent;
+
 		// Use `.read` to read everything upto, but not including the last property name
 		// to find the object we want to set some property on.
 		// For example:
@@ -341,15 +368,13 @@ assign(Scope.prototype, {
 		//  - `../foo.bar` -> `../foo`
 		//  - `../foo` -> `..`
 		//  - `foo` -> `.`
-		var keyInfo = Scope.keyInfo(key);
 		if ( keyInfo.isCurrentContext ) {
 			return canReflect.setValue(this._context, value);
-		}
-		else if (keyInfo.isInParentContext || keyInfo.isParentContext) {
+		} else if (keyInfo.isInParentContext || keyInfo.isParentContext) {
 			// walk up until we find a parent that can have context.
 			// the `isContextBased` check above won't catch it when you go from
 			// `../foo` to `foo` because `foo` isn't context based.
-			var parent = this._parent;
+			parent = this._parent;
 			while (parent._meta.notContext) {
 				parent = parent._parent;
 			}
@@ -359,6 +384,9 @@ assign(Scope.prototype, {
 			}
 
 			return parent.set(key.substr(3) || ".", value, options);
+		} else if (keyInfo.isInTemplateContext) {
+			parent = this.getTemplateContext();
+			return canReflect.setKeyValue(parent._context, key, value);
 		}
 
 		var dotIndex = key.lastIndexOf('.'),
@@ -382,31 +410,27 @@ assign(Scope.prototype, {
 			}
 		}
 
-		if (key.charAt(0) === "*") {
-			observeReader.write(this.getRefs()._context, key, value, options);
-		} else {
-			var context = this.read(contextPath, options).value;
-			if (context === undefined) {
-				//!steal-remove-start
-				canLog.error('Attempting to set a value at ' + key + ' where ' + contextPath + ' is undefined.');
-				//!steal-remove-end
+		var context = this.read(contextPath, options).value;
+		if (context === undefined) {
+			//!steal-remove-start
+			canLog.error('Attempting to set a value at ' + key + ' where ' + contextPath + ' is undefined.');
+			//!steal-remove-end
 
-				return;
+			return;
+		}
+
+		if(!canReflect.isObservableLike(context) && canReflect.isObservableLike(context[propName])) {
+			if(canReflect.isMapLike(context[propName])) {
+				canLog.warn("can-view-scope: Merging data into \"" + propName + "\" because its parent is non-observable");
+				canReflect.updateDeep(context[propName], value);
 			}
-
-			if(!canReflect.isObservableLike(context) && canReflect.isObservableLike(context[propName])) {
-				if(canReflect.isMapLike(context[propName])) {
-					canLog.warn("can-view-scope: Merging data into \"" + propName + "\" because its parent is non-observable");
-					canReflect.updateDeep(context[propName], value);
-				}
-				else if(canReflect.isValueLike(context[propName])){
-					canReflect.setValue(context[propName], value);
-				} else {
-					observeReader.write(context, propName, value, options);
-				}
+			else if(canReflect.isValueLike(context[propName])){
+				canReflect.setValue(context[propName], value);
 			} else {
 				observeReader.write(context, propName, value, options);
 			}
+		} else {
+			observeReader.write(context, propName, value, options);
 		}
 	},
 
@@ -426,10 +450,7 @@ assign(Scope.prototype, {
 		} else {
 			return this.get(key, options);
 		}
-
 	}),
-
-
 
 	// ## Scope.prototype.computeData
 	// Finds the first location of the key in the scope and then provides a get-set compute that represents the key's value
