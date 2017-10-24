@@ -162,19 +162,20 @@ assign(Scope.prototype, {
 			return parent.read(attr.substr(3) || ".", options);
 		} else if (keyInfo.isCurrentContext) {
 			return observeReader.read(this._context, [], options);
-		} else if (keyInfo.isInTemplateContext) {
-			parent = this.getTemplateContext();
-
-			if (keyInfo.isTemplateContext) {
-				return { value: parent };
-			}
-
-			return {
-				value: canReflect.getKeyValue(parent._context, attr)
-			};
+		} else if (keyInfo.isTemplateContext) {
+			return { value: this.getTemplateContext() };
 		}
 
-		return this._read(observeReader.reads(attr), options, currentScopeOnly);
+		// if it's a reference scope, read from there.
+		var keyReads = observeReader.reads(attr);
+		if (keyInfo.isInTemplateContext) {
+			if (keyReads[0].key === "scope") {
+				keyReads = keyReads.slice(1);
+			}
+			return this.getTemplateContext()._read(keyReads, options, true);
+		} else {
+			return this._read(keyReads, options, currentScopeOnly);
+		}
 	},
 	// ## Scope.prototype._read
 	//
