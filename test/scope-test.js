@@ -695,3 +695,10 @@ testHelpers.dev.devOnlyTest("using *foo should show deprecation warning", functi
 
 	QUnit.equal(teardown(), 1, "deprecation warning displayed");
 });
+
+QUnit.test("variables starting with 'scope' should not be read from templateContext (#104)", function() {
+	var map = new Map({ scope1: "this is scope1" });
+	var scope = new Scope(map);
+
+	QUnit.deepEqual(scope.peek("scope1"), "this is scope1", "scope1");
+});
