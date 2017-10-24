@@ -634,7 +634,6 @@ QUnit.test("Rendering a template with a custom scope (#55)", function() {
 	}
 });
 
-
 QUnit.test("generated refs scope is a Scope", function() {
 	var scope = new Scope({});
 	QUnit.equal(scope._parent, undefined, "scope initially has no parent");
@@ -701,4 +700,16 @@ QUnit.test("variables starting with 'scope' should not be read from templateCont
 	var scope = new Scope(map);
 
 	QUnit.deepEqual(scope.peek("scope1"), "this is scope1", "scope1");
+});
+
+QUnit.test("nested properties can be read from templateContext.vars", function() {
+	var foo = new Map({ bar: "baz" });
+
+	var map = new Map();
+	var scope = new Scope(map);
+
+	QUnit.ok(!scope.peek("scope.vars.foo.bar"), "vars.foo.bar === undefined");
+
+	scope.set("scope.vars.foo", foo);
+	QUnit.equal(scope.peek("scope.vars.foo.bar"), "baz", "vars.foo.bar === baz");
 });
