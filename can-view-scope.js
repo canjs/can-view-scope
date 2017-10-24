@@ -63,7 +63,7 @@ assign(Scope, {
 		info.isInLegacyRefsScope = attr.substr(0, 1) === "*";
 		info.isInTemplateContext = info.isTemplateContext ||
 			info.isInLegacyRefsScope ||
-			attr.substr(0, 5) === "scope";
+			attr.substr(0, 6) === "scope.";
 		info.isContextBased = info.isInCurrentContext ||
 			info.isInParentContext ||
 			info.isCurrentContext ||
