@@ -6,6 +6,18 @@ var dev = require("can-log/dev/dev");
 var getKeyValueSymbol = canSymbol.for("can.getKeyValue"),
 	setKeyValueSymbol = canSymbol.for("can.setKeyValue");
 
+// these values are context-specific, so should not be observable
+// if they were observable, {{scope.index}} would display the last value
+// for each item in a loop
+var nonObservableVars = {
+	index: true,
+	key: true,
+	element: true,
+	event: true,
+	viewModel: true,
+	arguments: true
+};
+
 var getKeyAndParent = function(parent, key) {
 	if (key.substr(0, 6) === "scope.") {
 		key = key.substr(6);
@@ -26,7 +38,10 @@ var getKeyAndParent = function(parent, key) {
 		//!steal-remove-end
 	}
 
-	// this is a separate block to handle scope.vars.whatever
+	if (nonObservableVars[key]) {
+		parent = parent.nonObservableVars;
+	}
+
 	if (key.substr(0, 5) === "vars.") {
 		key = key.substr(5);
 		parent = parent.vars;
@@ -38,10 +53,14 @@ var getKeyAndParent = function(parent, key) {
 	};
 };
 
-var TemplateContext = SimpleMap.extend({});
+var TemplateContext = SimpleMap.extend("TemplateContext", {});
 
 defineLazyValue(TemplateContext.prototype, "vars", function() {
 	return new SimpleMap({});
+});
+
+defineLazyValue(TemplateContext.prototype, "nonObservableVars", function() {
+	return {};
 });
 
 TemplateContext.prototype[getKeyValueSymbol] = function(originalKey) {
@@ -49,7 +68,11 @@ TemplateContext.prototype[getKeyValueSymbol] = function(originalKey) {
 	var key = keyAndParent.key;
 	var parent = keyAndParent.parent;
 
-	return SimpleMap.prototype[getKeyValueSymbol].call(parent, key);
+	if (parent instanceof SimpleMap) {
+		return SimpleMap.prototype[getKeyValueSymbol].call(parent, key);
+	} else {
+		return parent[key];
+	}
 };
 
 TemplateContext.prototype[setKeyValueSymbol] = function(originalKey, value) {
@@ -57,7 +80,11 @@ TemplateContext.prototype[setKeyValueSymbol] = function(originalKey, value) {
 	var key = keyAndParent.key;
 	var parent = keyAndParent.parent || this;
 
-	return SimpleMap.prototype[setKeyValueSymbol].call(parent, key, value);
+	if (parent instanceof SimpleMap) {
+		return SimpleMap.prototype[setKeyValueSymbol].call(parent, key, value);
+	} else {
+		return parent[key] = value;
+	}
 };
 
 module.exports = TemplateContext;
