@@ -15,7 +15,8 @@ var nonObservableVars = {
 	element: true,
 	event: true,
 	viewModel: true,
-	arguments: true
+	arguments: true,
+	lineNumber: true
 };
 
 var getKeyAndParent = function(parent, key) {
