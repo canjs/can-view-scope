@@ -611,7 +611,6 @@ QUnit.test("Rendering a template with a custom scope (#55)", function() {
 
 	try {
 		scopeRefs = scope.getRefs();
-		scopeRefs._read;
 		QUnit.ok(true, "Did not throw");
 	}
 	catch(e) {
@@ -626,7 +625,6 @@ QUnit.test("Rendering a template with a custom scope (#55)", function() {
 
 	try {
 		scopeRefs = scope.getRefs();
-		scopeRefs._read;
 		QUnit.ok(true, "Did not throw");
 	}
 	catch(e) {
@@ -719,14 +717,14 @@ QUnit.test("scope.index should not be observable", function() {
 	var templateContext = scope.getTemplateContext()._context;
 
 	canReflect.setKeyValue(templateContext, 'index', 0);
-	QUnit.equal( canReflect.getKeyValue(templateContext, 'index'), '0', '0');;
+	QUnit.equal( canReflect.getKeyValue(templateContext, 'index'), '0', '0');
 
 	canReflect.onKeyValue(templateContext, 'index', function(newVal) {
 		QUnit.ok(false, 'onKeyValue should not be fired');
 	});
 
 	canReflect.setKeyValue(templateContext, 'index', 1);
-	QUnit.equal( canReflect.getKeyValue(templateContext, 'index'), '1', '1');;
+	QUnit.equal( canReflect.getKeyValue(templateContext, 'index'), '1', '1');
 });
 
 QUnit.test("scope.key should not be observable", function() {
@@ -734,14 +732,14 @@ QUnit.test("scope.key should not be observable", function() {
 	var templateContext = scope.getTemplateContext()._context;
 
 	canReflect.setKeyValue(templateContext, 'key', 0);
-	QUnit.equal( canReflect.getKeyValue(templateContext, 'key'), '0', '0');;
+	QUnit.equal( canReflect.getKeyValue(templateContext, 'key'), '0', '0');
 
 	canReflect.onKeyValue(templateContext, 'key', function(newVal) {
 		QUnit.ok(false, 'onKeyValue should not be fired');
 	});
 
 	canReflect.setKeyValue(templateContext, 'key', 1);
-	QUnit.equal( canReflect.getKeyValue(templateContext, 'key'), '1', '1');;
+	QUnit.equal( canReflect.getKeyValue(templateContext, 'key'), '1', '1');
 });
 
 QUnit.test("scope.element should not be observable", function() {
@@ -749,14 +747,14 @@ QUnit.test("scope.element should not be observable", function() {
 	var templateContext = scope.getTemplateContext()._context;
 
 	canReflect.setKeyValue(templateContext, 'element', 0);
-	QUnit.equal( canReflect.getKeyValue(templateContext, 'element'), '0', '0');;
+	QUnit.equal( canReflect.getKeyValue(templateContext, 'element'), '0', '0');
 
 	canReflect.onKeyValue(templateContext, 'element', function(newVal) {
 		QUnit.ok(false, 'onKeyValue should not be fired');
 	});
 
 	canReflect.setKeyValue(templateContext, 'element', 1);
-	QUnit.equal( canReflect.getKeyValue(templateContext, 'element'), '1', '1');;
+	QUnit.equal( canReflect.getKeyValue(templateContext, 'element'), '1', '1');
 });
 
 QUnit.test("scope.event should not be observable", function() {
@@ -764,14 +762,14 @@ QUnit.test("scope.event should not be observable", function() {
 	var templateContext = scope.getTemplateContext()._context;
 
 	canReflect.setKeyValue(templateContext, 'event', 0);
-	QUnit.equal( canReflect.getKeyValue(templateContext, 'event'), '0', '0');;
+	QUnit.equal( canReflect.getKeyValue(templateContext, 'event'), '0', '0');
 
 	canReflect.onKeyValue(templateContext, 'event', function(newVal) {
 		QUnit.ok(false, 'onKeyValue should not be fired');
 	});
 
 	canReflect.setKeyValue(templateContext, 'event', 1);
-	QUnit.equal( canReflect.getKeyValue(templateContext, 'event'), '1', '1');;
+	QUnit.equal( canReflect.getKeyValue(templateContext, 'event'), '1', '1');
 });
 
 QUnit.test("scope.viewModel should not be observable", function() {
@@ -779,14 +777,14 @@ QUnit.test("scope.viewModel should not be observable", function() {
 	var templateContext = scope.getTemplateContext()._context;
 
 	canReflect.setKeyValue(templateContext, 'viewModel', 0);
-	QUnit.equal( canReflect.getKeyValue(templateContext, 'viewModel'), '0', '0');;
+	QUnit.equal( canReflect.getKeyValue(templateContext, 'viewModel'), '0', '0');
 
 	canReflect.onKeyValue(templateContext, 'viewModel', function(newVal) {
 		QUnit.ok(false, 'onKeyValue should not be fired');
 	});
 
 	canReflect.setKeyValue(templateContext, 'viewModel', 1);
-	QUnit.equal( canReflect.getKeyValue(templateContext, 'viewModel'), '1', '1');;
+	QUnit.equal( canReflect.getKeyValue(templateContext, 'viewModel'), '1', '1');
 });
 
 QUnit.test("scope.arguments should not be observable", function() {
@@ -794,12 +792,12 @@ QUnit.test("scope.arguments should not be observable", function() {
 	var templateContext = scope.getTemplateContext()._context;
 
 	canReflect.setKeyValue(templateContext, 'arguments', 0);
-	QUnit.equal( canReflect.getKeyValue(templateContext, 'arguments'), '0', '0');;
+	QUnit.equal( canReflect.getKeyValue(templateContext, 'arguments'), '0', '0');
 
 	canReflect.onKeyValue(templateContext, 'arguments', function(newVal) {
 		QUnit.ok(false, 'onKeyValue should not be fired');
 	});
 
 	canReflect.setKeyValue(templateContext, 'arguments', 1);
-	QUnit.equal( canReflect.getKeyValue(templateContext, 'arguments'), '1', '1');;
+	QUnit.equal( canReflect.getKeyValue(templateContext, 'arguments'), '1', '1');
 });
