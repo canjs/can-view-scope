@@ -801,3 +801,18 @@ QUnit.test("scope.arguments should not be observable", function() {
 	canReflect.setKeyValue(templateContext, 'arguments', 1);
 	QUnit.equal( canReflect.getKeyValue(templateContext, 'arguments'), '1', '1');
 });
+
+QUnit.test("scope.lineNumber should not be observable", function() {
+	var scope = new Scope();
+	var templateContext = scope.getTemplateContext()._context;
+
+	canReflect.setKeyValue(templateContext, 'lineNumber', 0);
+	QUnit.equal( canReflect.getKeyValue(templateContext, 'lineNumber'), '0', '0');
+
+	canReflect.onKeyValue(templateContext, 'lineNumber', function(newVal) {
+		QUnit.ok(false, 'onKeyValue should not be fired');
+	});
+
+	canReflect.setKeyValue(templateContext, 'lineNumber', 1);
+	QUnit.equal( canReflect.getKeyValue(templateContext, 'lineNumber'), '1', '1');
+});
