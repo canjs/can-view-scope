@@ -676,18 +676,24 @@ QUnit.test("scope can be used to read the templateContext", function() {
 });
 
 testHelpers.dev.devOnlyTest("using {{>*self}} should show deprecation warning", function() {
-	var teardown = testHelpers.dev.willWarn("{{>*self}} is deprecated. Use {{>scope.view}} instead.");
+	var teardown = testHelpers.dev.willWarn("filename: 10: {{>*self}} is deprecated. Use {{>scope.view}} instead.");
 
 	var scope = new Scope({});
+	var templateContext = scope.getTemplateContext()._context;
+	scope.set("scope.filename", "filename");
+	canReflect.setKeyValue(templateContext, "lineNumber", "10");
 	scope.peek("*self");
 
 	QUnit.equal(teardown(), 1, "deprecation warning displayed");
 });
 
 testHelpers.dev.devOnlyTest("using *foo should show deprecation warning", function() {
-	var teardown = testHelpers.dev.willWarn("{{*foo}} is deprecated. Use {{scope.vars.foo}} instead.");
+	var teardown = testHelpers.dev.willWarn("filename: 5: {{*foo}} is deprecated. Use {{scope.vars.foo}} instead.");
 
 	var scope = new Scope({});
+	var templateContext = scope.getTemplateContext()._context;
+	scope.set("scope.filename", "filename");
+	canReflect.setKeyValue(templateContext, "lineNumber", "5");
 	scope.peek("*foo");
 
 	QUnit.equal(teardown(), 1, "deprecation warning displayed");
