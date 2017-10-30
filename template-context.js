@@ -2,6 +2,7 @@ var canSymbol = require("can-symbol");
 var SimpleMap = require("can-simple-map");
 var defineLazyValue = require("can-define-lazy-value");
 var dev = require("can-log/dev/dev");
+var observation = require('can-observation');
 
 var getKeyValueSymbol = canSymbol.for("can.getKeyValue"),
 	setKeyValueSymbol = canSymbol.for("can.setKeyValue");
@@ -16,26 +17,40 @@ var nonObservableVars = {
 	event: true,
 	viewModel: true,
 	arguments: true,
-	lineNumber: true
+	lineNumber: true,
+	filename: true
 };
 
-var getKeyAndParent = function(parent, key) {
+var getKeyAndParent = observation.ignore(function(templateContext, key) {
+
+	var parent = templateContext;
+	//!steal-remove-start
+	var filename = templateContext.nonObservableVars.filename;
+	var lineNumber = templateContext.nonObservableVars.lineNumber;
+	//!steal-remove-end
+
 	if (key.substr(0, 6) === "scope.") {
 		key = key.substr(6);
-		parent = parent;
 	} else if (key === "*self") {
 		key = "view";
-		parent = parent;
 
 		//!steal-remove-start
-		dev.warn("{{>*self}} is deprecated. Use {{>scope.view}} instead.");
+		dev.warn(
+			(filename ? filename + ':' : '') +
+			(lineNumber ? lineNumber + ': ' : '') +
+			"{{>*self}} is deprecated. Use {{>scope.view}} instead."
+		);
 		//!steal-remove-end
 	} else if (key.substr(0, 1) === "*") {
 		key = key.substr(1);
 		parent = parent.vars;
 
 		//!steal-remove-start
-		dev.warn("{{*" + key + "}} is deprecated. Use {{scope.vars." + key + "}} instead.");
+		dev.warn(
+			(filename ? filename + ':' : '') +
+			(lineNumber ? lineNumber + ': ' : '') +
+			"{{*" + key + "}} is deprecated. Use {{scope.vars." + key + "}} instead."
+		);
 		//!steal-remove-end
 	}
 
@@ -52,7 +67,7 @@ var getKeyAndParent = function(parent, key) {
 		key: key,
 		parent: parent
 	};
-};
+});
 
 var TemplateContext = SimpleMap.extend("TemplateContext", {});
 
