@@ -17,16 +17,16 @@ var nonObservableVars = {
 	event: true,
 	viewModel: true,
 	arguments: true,
-	lineNumber: true
+	lineNumber: true,
+	filename: true
 };
 
 var getKeyAndParent = observation.ignore(function(templateContext, key) {
 
 	var parent = templateContext;
 	//!steal-remove-start
-	var getKeyValue = SimpleMap.prototype[getKeyValueSymbol];
-	var filename = getKeyValue.call(templateContext, 'filename');
-	var lineNumber = getKeyValue.call(templateContext, 'lineNumber');
+	var filename = templateContext.nonObservableVars.filename;
+	var lineNumber = templateContext.nonObservableVars.lineNumber;
 	//!steal-remove-end
 
 	if (key.substr(0, 6) === "scope.") {
