@@ -12,9 +12,6 @@ var namespace = require('can-namespace');
 var canReflect = require("can-reflect");
 var canLog = require('can-log/dev/dev');
 
-/**
- * @add can.view.Scope
- */
 function Scope(context, parent, meta) {
 	// The obj that will be looked on for values.
 	this._context = context;
@@ -33,9 +30,6 @@ function Scope(context, parent, meta) {
 	this.__cache = {};
 }
 
-/**
- * @static
- */
 assign(Scope, {
 	// ## Scope.read
 	// Scope.read was moved to can.compute.read
@@ -72,9 +66,7 @@ assign(Scope, {
 		return info;
 	}
 });
-/**
- * @prototype
- */
+
 assign(Scope.prototype, {
 
 	// ## Scope.prototype.add

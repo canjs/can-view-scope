@@ -1,4 +1,5 @@
 @function can-view-scope.compute compute
+@hide
 
 @signature `scope.compute(key, [options])`
 @release 2.1
