@@ -53,16 +53,17 @@ assign(Scope, {
 		info.isInParentContext = attr.substr(0, 3) === "../";
 		info.isCurrentContext = attr === "." || attr === "this";
 		info.isParentContext = attr === "..";
-		info.isTemplateContext = attr === "scope";
+		info.isScope = attr === "scope";
 		info.isInLegacyRefsScope = attr.substr(0, 1) === "*";
-		info.isInTemplateContext = info.isTemplateContext ||
+		info.isInTemplateContextVars = attr.substr(0, 11) === "scope.vars.";
+		info.isInTemplateContext =
 			info.isInLegacyRefsScope ||
+			info.isInTemplateContextVars ||
 			attr.substr(0, 6) === "scope.";
 		info.isContextBased = info.isInCurrentContext ||
 			info.isInParentContext ||
 			info.isCurrentContext ||
-			info.isParentContext ||
-			info.isInTemplateContext;
+			info.isParentContext;
 		return info;
 	}
 });
@@ -100,6 +101,11 @@ assign(Scope.prototype, {
 	 *   @option {*} value the found value
 	 */
 	read: function(attr, options) {
+		// ignore contexts that aren't special if we should only read from special contexts
+		if (options && options.special && !this._meta.special) {
+			return this._parent.read(attr, options);
+		}
+
 		// If it's the root, jump right to it.
 		if (attr === "%root") {
 			return {
@@ -130,8 +136,7 @@ assign(Scope.prototype, {
 		}
 
 		// If true, lookup stops after the current context.
-		var currentScopeOnly,
-			parent;
+		var currentScopeOnly;
 
 		if (keyInfo.isInCurrentContext) {
 			// Stop lookup from checking parent scopes.
@@ -142,7 +147,7 @@ assign(Scope.prototype, {
 			// walk up until we find a parent that can have context.
 			// the `isContextBased` check above won't catch it when you go from
 			// `../foo` to `foo` because `foo` isn't context based.
-			parent = this._parent;
+			var parent = this._parent;
 			while (parent._meta.notContext) {
 				parent = parent._parent;
 			}
@@ -154,20 +159,22 @@ assign(Scope.prototype, {
 			return parent.read(attr.substr(3) || ".", options);
 		} else if (keyInfo.isCurrentContext) {
 			return observeReader.read(this._context, [], options);
-		} else if (keyInfo.isTemplateContext) {
-			return { value: this.getTemplateContext() };
+		} else if (keyInfo.isScope) {
+			return { value: this };
+		} else if (keyInfo.isInTemplateContext) {
+			if (keyInfo.isInLegacyRefsScope) {
+				return { value: this.vars.get( attr.substr(1) ) };
+			}
+
+			if (keyInfo.isInTemplateContextVars) {
+				return { value: this.vars.get( attr.substr(11) ) };
+			}
+
+			return { value: this[ attr.substr(6) ] };
 		}
 
-		// if it's a reference scope, read from there.
 		var keyReads = observeReader.reads(attr);
-		if (keyInfo.isInTemplateContext) {
-			if (keyReads[0].key === "scope") {
-				keyReads = keyReads.slice(1);
-			}
-			return this.getTemplateContext()._read(keyReads, options, true);
-		} else {
-			return this._read(keyReads, options, currentScopeOnly);
-		}
+		return this._read(keyReads, options, currentScopeOnly);
 	},
 	// ## Scope.prototype._read
 	//
@@ -214,8 +221,6 @@ assign(Scope.prototype, {
 
 		while (currentScope) {
 			currentContext = currentScope._context;
-
-
 
 			if (currentContext !== null &&
 				// if its a primitive type, keep looking up the scope, since there won't be any properties
@@ -378,8 +383,15 @@ assign(Scope.prototype, {
 
 			return parent.set(key.substr(3) || ".", value, options);
 		} else if (keyInfo.isInTemplateContext) {
-			parent = this.getTemplateContext();
-			return canReflect.setKeyValue(parent._context, key, value);
+			if (keyInfo.isInLegacyRefsScope) {
+				return this.vars.set( key.substr(1), value );
+			}
+
+			if (keyInfo.isInTemplateContextVars) {
+				return this.vars.set( key.substr(11), value );
+			}
+
+//			return this[ key.substr(6) ] = value;
 		}
 
 		var dotIndex = key.lastIndexOf('.'),
@@ -487,6 +499,26 @@ assign(Scope.prototype, {
 			return this;
 		}
 	}
+});
+
+var readSpecial = function(key) {
+	return {
+		get: function() {
+			return this.read(key, { special: true }).value;
+		}
+	};
+};
+
+Object.defineProperties(Scope.prototype, {
+	vars: {
+		get: function() {
+			var templateContext = this.getTemplateContext()._context;
+			return templateContext.vars;
+		}
+	},
+
+	index: readSpecial("index"),
+	key: readSpecial("key")
 });
 
 function Options(data, parent, meta) {
