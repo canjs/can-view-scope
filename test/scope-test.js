@@ -676,8 +676,12 @@ QUnit.test("scope can be used to read from the templateContext", function() {
 QUnit.test("scope.index reads from special scopes", function() {
 	var map1 = new Map({ index: 1 });
 	var map2 = new Map({ index: 3 });
-	var scope = new Scope(map1)
-		.add({ index: 2 }, { special: true })
+	var scope = new Scope(map1);
+
+	QUnit.equal(scope.peek('scope.index'), undefined,
+		'scope.index returns undefined if no special context exists');
+
+	scope = scope.add({ index: 2 }, { special: true })
 		.add(map2)
 		.add({ index: 4 }, { special: true });
 

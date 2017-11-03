@@ -11,6 +11,7 @@ var each = require('can-util/js/each/each');
 var namespace = require('can-namespace');
 var canReflect = require("can-reflect");
 var canLog = require('can-log/dev/dev');
+var defineLazyValue = require('can-define-lazy-value');
 
 function Scope(context, parent, meta) {
 	// The obj that will be looked on for values.
@@ -103,6 +104,10 @@ assign(Scope.prototype, {
 	read: function(attr, options) {
 		// ignore contexts that aren't special if we should only read from special contexts
 		if (options && options.special && !this._meta.special) {
+			if (!this._parent) {
+				return { value: undefined };
+			}
+
 			return this._parent.read(attr, options);
 		}
 
@@ -170,7 +175,7 @@ assign(Scope.prototype, {
 				return { value: this.vars.get( attr.substr(11) ) };
 			}
 
-			return { value: this[ attr.substr(6) ] };
+			return this.read(attr.substr(6), { special: true });
 		}
 
 		var keyReads = observeReader.reads(attr);
@@ -501,24 +506,9 @@ assign(Scope.prototype, {
 	}
 });
 
-var readSpecial = function(key) {
-	return {
-		get: function() {
-			return this.read(key, { special: true }).value;
-		}
-	};
-};
-
-Object.defineProperties(Scope.prototype, {
-	vars: {
-		get: function() {
-			var templateContext = this.getTemplateContext()._context;
-			return templateContext.vars;
-		}
-	},
-
-	index: readSpecial("index"),
-	key: readSpecial("key")
+defineLazyValue(Scope.prototype, 'vars', function() {
+	var templateContext = this.getTemplateContext()._context;
+	return templateContext.vars;
 });
 
 function Options(data, parent, meta) {
