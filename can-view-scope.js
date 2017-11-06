@@ -71,7 +71,8 @@ assign(Scope, {
 		info.isLegacyView = attr === "*self";
 		info.isInLegacyRefsScope =
 			info.isLegacyView ||
-			attr.substr(0, 1) === "*";
+			attr.substr(0, 1) === "*" ||
+			attr.substr(0, 2) === "@*";
 		info.isInTemplateContextVars =
 			info.isInLegacyRefsScope ||
 			attr.substr(0, 11) === "scope.vars.";

@@ -671,6 +671,11 @@ QUnit.test("scope can be used to read from the templateContext", function() {
 	scope.set("*name", "Tracy");
 	QUnit.equal(scope.peek("*name"), "Tracy", "*name === Tracy");
 	QUnit.equal(scope.peek("scope.vars.name"), "Tracy", "scope.vars.name === Tracy");
+
+	var ageFn = function() { return "30"; };
+	scope.set("*age", ageFn);
+	QUnit.equal(scope.peek("@*age")(), "30", "@*age returns a function");
+	QUnit.equal(scope.peek("scope.vars.age"), "30", "scope.vars.age === 30");
 });
 
 QUnit.test("scope.index reads from special scopes", function() {
