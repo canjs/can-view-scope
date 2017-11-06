@@ -703,27 +703,27 @@ QUnit.test("scope.key reads from special scopes", function() {
 	QUnit.equal(scope._parent.peek('scope.key'), "two", 'scope.key is only read from special contexts');
 });
 
-//testHelpers.dev.devOnlyTest("using {{>*self}} should show deprecation warning", function() {
-//	var teardown = testHelpers.dev.willWarn("filename:10: {{>*self}} is deprecated. Use {{>scope.view}} instead.");
-//
-//	var scope = new Scope({});
-//	scope.set("scope.filename", "filename");
-//	scope.set("scope.lineNumber", "10");
-//	scope.peek("*self");
-//
-//	QUnit.equal(teardown(), 1, "deprecation warning displayed");
-//});
+testHelpers.dev.devOnlyTest("using {{>*self}} should show deprecation warning", function() {
+	var teardown = testHelpers.dev.willWarn("filename:10: {{>*self}} is deprecated. Use {{>scope.view}} instead.");
 
-//testHelpers.dev.devOnlyTest("using *foo should show deprecation warning", function() {
-//	var teardown = testHelpers.dev.willWarn("filename:5: {{*foo}} is deprecated. Use {{scope.vars.foo}} instead.");
-//
-//	var scope = new Scope({});
-//	scope.set("scope.filename", "filename");
-//	scope.set("scope.lineNumber", "5");
-//	scope.peek("*foo");
-//
-//	QUnit.equal(teardown(), 1, "deprecation warning displayed");
-//});
+	var scope = new Scope({});
+	scope.set("scope.filename", "filename");
+	scope.set("scope.lineNumber", "10");
+	scope.peek("*self");
+
+	QUnit.equal(teardown(), 1, "deprecation warning displayed");
+});
+
+testHelpers.dev.devOnlyTest("using *foo should show deprecation warning", function() {
+	var teardown = testHelpers.dev.willWarn("filename:5: {{*foo}} is deprecated. Use {{scope.vars.foo}} instead.");
+
+	var scope = new Scope({});
+	scope.set("scope.filename", "filename");
+	scope.set("scope.lineNumber", "5");
+	scope.peek("*foo");
+
+	QUnit.equal(teardown(), 1, "deprecation warning displayed");
+});
 
 QUnit.test("variables starting with 'scope' should not be read from templateContext (#104)", function() {
 	var map = new Map({ scope1: "this is scope1" });
@@ -732,119 +732,14 @@ QUnit.test("variables starting with 'scope' should not be read from templateCont
 	QUnit.deepEqual(scope.peek("scope1"), "this is scope1", "scope1");
 });
 
-//QUnit.test("nested properties can be read from templateContext.vars", function() {
-//	var foo = new Map({ bar: "baz" });
-//
-//	var map = new Map();
-//	var scope = new Scope(map);
-//
-//	QUnit.ok(!scope.peek("scope.vars.foo.bar"), "vars.foo.bar === undefined");
-//
-//	scope.set("scope.vars.foo", foo);
-//	QUnit.equal(scope.peek("scope.vars.foo.bar"), "baz", "vars.foo.bar === baz");
-//});
+QUnit.test("nested properties can be read from templateContext.vars", function() {
+	var foo = new Map({ bar: "baz" });
 
-//QUnit.test("scope.index should not be observable", function() {
-//	var scope = new Scope();
-//	var templateContext = scope.getTemplateContext()._context;
-//
-//	canReflect.setKeyValue(templateContext, 'index', 0);
-//	QUnit.equal( canReflect.getKeyValue(templateContext, 'index'), '0', '0');
-//
-//	canReflect.onKeyValue(templateContext, 'index', function(newVal) {
-//		QUnit.ok(false, 'onKeyValue should not be fired');
-//	});
-//
-//	canReflect.setKeyValue(templateContext, 'index', 1);
-//	QUnit.equal( canReflect.getKeyValue(templateContext, 'index'), '1', '1');
-//});
+	var map = new Map();
+	var scope = new Scope(map);
 
-//QUnit.test("scope.key should not be observable", function() {
-//	var scope = new Scope();
-//	var templateContext = scope.getTemplateContext()._context;
-//
-//	canReflect.setKeyValue(templateContext, 'key', 0);
-//	QUnit.equal( canReflect.getKeyValue(templateContext, 'key'), '0', '0');
-//
-//	canReflect.onKeyValue(templateContext, 'key', function(newVal) {
-//		QUnit.ok(false, 'onKeyValue should not be fired');
-//	});
-//
-//	canReflect.setKeyValue(templateContext, 'key', 1);
-//	QUnit.equal( canReflect.getKeyValue(templateContext, 'key'), '1', '1');
-//});
+	QUnit.ok(!scope.peek("scope.vars.foo.bar"), "vars.foo.bar === undefined");
 
-//QUnit.test("scope.element should not be observable", function() {
-//	var scope = new Scope();
-//	var templateContext = scope.getTemplateContext()._context;
-//
-//	canReflect.setKeyValue(templateContext, 'element', 0);
-//	QUnit.equal( canReflect.getKeyValue(templateContext, 'element'), '0', '0');
-//
-//	canReflect.onKeyValue(templateContext, 'element', function(newVal) {
-//		QUnit.ok(false, 'onKeyValue should not be fired');
-//	});
-//
-//	canReflect.setKeyValue(templateContext, 'element', 1);
-//	QUnit.equal( canReflect.getKeyValue(templateContext, 'element'), '1', '1');
-//});
-
-//QUnit.test("scope.event should not be observable", function() {
-//	var scope = new Scope();
-//	var templateContext = scope.getTemplateContext()._context;
-//
-//	canReflect.setKeyValue(templateContext, 'event', 0);
-//	QUnit.equal( canReflect.getKeyValue(templateContext, 'event'), '0', '0');
-//
-//	canReflect.onKeyValue(templateContext, 'event', function(newVal) {
-//		QUnit.ok(false, 'onKeyValue should not be fired');
-//	});
-//
-//	canReflect.setKeyValue(templateContext, 'event', 1);
-//	QUnit.equal( canReflect.getKeyValue(templateContext, 'event'), '1', '1');
-//});
-
-//QUnit.test("scope.viewModel should not be observable", function() {
-//	var scope = new Scope();
-//	var templateContext = scope.getTemplateContext()._context;
-//
-//	canReflect.setKeyValue(templateContext, 'viewModel', 0);
-//	QUnit.equal( canReflect.getKeyValue(templateContext, 'viewModel'), '0', '0');
-//
-//	canReflect.onKeyValue(templateContext, 'viewModel', function(newVal) {
-//		QUnit.ok(false, 'onKeyValue should not be fired');
-//	});
-//
-//	canReflect.setKeyValue(templateContext, 'viewModel', 1);
-//	QUnit.equal( canReflect.getKeyValue(templateContext, 'viewModel'), '1', '1');
-//});
-
-//QUnit.test("scope.arguments should not be observable", function() {
-//	var scope = new Scope();
-//	var templateContext = scope.getTemplateContext()._context;
-//
-//	canReflect.setKeyValue(templateContext, 'arguments', 0);
-//	QUnit.equal( canReflect.getKeyValue(templateContext, 'arguments'), '0', '0');
-//
-//	canReflect.onKeyValue(templateContext, 'arguments', function(newVal) {
-//		QUnit.ok(false, 'onKeyValue should not be fired');
-//	});
-//
-//	canReflect.setKeyValue(templateContext, 'arguments', 1);
-//	QUnit.equal( canReflect.getKeyValue(templateContext, 'arguments'), '1', '1');
-//});
-
-//QUnit.test("scope.lineNumber should not be observable", function() {
-//	var scope = new Scope();
-//	var templateContext = scope.getTemplateContext()._context;
-//
-//	canReflect.setKeyValue(templateContext, 'lineNumber', 0);
-//	QUnit.equal( canReflect.getKeyValue(templateContext, 'lineNumber'), '0', '0');
-//
-//	canReflect.onKeyValue(templateContext, 'lineNumber', function(newVal) {
-//		QUnit.ok(false, 'onKeyValue should not be fired');
-//	});
-//
-//	canReflect.setKeyValue(templateContext, 'lineNumber', 1);
-//	QUnit.equal( canReflect.getKeyValue(templateContext, 'lineNumber'), '1', '1');
-//});
+	scope.set("scope.vars.foo", foo);
+	QUnit.equal(scope.peek("scope.vars.foo.bar"), "baz", "vars.foo.bar === baz");
+});

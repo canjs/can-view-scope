@@ -13,6 +13,15 @@ var canReflect = require("can-reflect");
 var canLog = require('can-log/dev/dev');
 var defineLazyValue = require('can-define-lazy-value');
 
+var specialKeywords = {
+	index: true,
+	key: true,
+	element: true,
+	event: true,
+	viewModel: true,
+	arguments: true
+};
+
 function Scope(context, parent, meta) {
 	// The obj that will be looked on for values.
 	this._context = context;
@@ -102,15 +111,6 @@ assign(Scope.prototype, {
 	 *   @option {*} value the found value
 	 */
 	read: function(attr, options) {
-		// ignore contexts that aren't special if we should only read from special contexts
-		if (options && options.special && !this._meta.special) {
-			if (!this._parent) {
-				return { value: undefined };
-			}
-
-			return this._parent.read(attr, options);
-		}
-
 		// If it's the root, jump right to it.
 		if (attr === "%root") {
 			return {
@@ -166,24 +166,57 @@ assign(Scope.prototype, {
 			return observeReader.read(this._context, [], options);
 		} else if (keyInfo.isScope) {
 			return { value: this };
-		} else if (keyInfo.isInTemplateContext) {
-			if (keyInfo.isInLegacyRefsScope) {
-				return { value: this.vars.get( attr.substr(1) ) };
-			}
-
-			if (keyInfo.isInTemplateContextVars) {
-				return { value: this.vars.get( attr.substr(11) ) };
-			}
-
-			return this.read(attr.substr(6), { special: true });
 		}
 
 		var keyReads = observeReader.reads(attr);
+		if (keyInfo.isInTemplateContext) {
+			if (keyInfo.isInLegacyRefsScope) {
+				keyReads[0].key = keyReads[0].key.substr(1);
+
+				//!steal-remove-start
+				var filename = this.filename;
+				var lineNumber = this.lineNumber;
+
+				if (keyReads[0].key === "self") {
+					canLog.warn(
+						(filename ? filename + ':' : '') +
+						(lineNumber ? lineNumber + ': ' : '') +
+						"{{>*self}} is deprecated. Use {{>scope.view}} instead."
+					);
+				} else {
+					canLog.warn(
+						(filename ? filename + ':' : '') +
+						(lineNumber ? lineNumber + ': ' : '') +
+						"{{*" + keyReads[0].key + "}} is deprecated. Use {{scope.vars." + keyReads[0].key + "}} instead."
+					);
+				}
+				//!steal-remove-end
+
+				keyReads.unshift({ key: 'vars', at: false });
+			} else {
+				keyReads = keyReads.slice(1);
+			}
+			
+			if (specialKeywords[keyReads[0].key]) {
+				return { value: this._read(keyReads, { special: true }).value };
+			} else {
+				return { value: this.getTemplateContext()._read(keyReads).value };
+			}
+		}
+
 		return this._read(keyReads, options, currentScopeOnly);
 	},
 	// ## Scope.prototype._read
 	//
 	_read: function(keyReads, options, currentScopeOnly) {
+		// ignore contexts that aren't special if we should only read from special contexts
+		if (options && options.special && !this._meta.special) {
+			if (!this._parent) {
+				return { value: undefined };
+			}
+
+			return this._parent._read(keyReads, options, currentScopeOnly);
+		}
 
 		// The current scope and context we are trying to find "keyReads" within.
 		var currentScope = this,
