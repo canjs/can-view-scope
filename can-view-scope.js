@@ -11,6 +11,18 @@ var each = require('can-util/js/each/each');
 var namespace = require('can-namespace');
 var canReflect = require("can-reflect");
 var canLog = require('can-log/dev/dev');
+var defineLazyValue = require('can-define-lazy-value');
+
+// these keywords will be read using
+// Scope.prototype._read(..., { special: true })
+var specialKeywords = {
+	index: true,
+	key: true,
+	element: true,
+	event: true,
+	viewModel: true,
+	arguments: true
+};
 
 function Scope(context, parent, meta) {
 	// The obj that will be looked on for values.
@@ -20,8 +32,10 @@ function Scope(context, parent, meta) {
 	// If this is a special context, it can be labeled here.
 	// Options are:
 	// - viewModel - This is a viewModel
-	// - notContext - This can't be looked within using `./` and `../`. It will be skipped.  This is
-	//   for virtual contexts like those used by `%index`.
+	// - notContext - This can't be looked within using `./` and `../`. It will be skipped.
+	//   This is for virtual contexts like those used by `%index`.
+	// - special - This can't be looked within using `./` and `../`. It will be skipped.
+	//   This is for reading properties like {{scope.index}}.
 	this._meta = meta || {};
 
 	// A cache that can be used to store computes used to look up within this scope.
@@ -53,16 +67,22 @@ assign(Scope, {
 		info.isInParentContext = attr.substr(0, 3) === "../";
 		info.isCurrentContext = attr === "." || attr === "this";
 		info.isParentContext = attr === "..";
-		info.isTemplateContext = attr === "scope";
-		info.isInLegacyRefsScope = attr.substr(0, 1) === "*";
-		info.isInTemplateContext = info.isTemplateContext ||
+		info.isScope = attr === "scope";
+		info.isLegacyView = attr === "*self";
+		info.isInLegacyRefsScope =
+			info.isLegacyView ||
+			attr.substr(0, 1) === "*" ||
+			attr.substr(0, 2) === "@*";
+		info.isInTemplateContextVars =
 			info.isInLegacyRefsScope ||
+			attr.substr(0, 11) === "scope.vars.";
+		info.isInTemplateContext =
+			info.isInTemplateContextVars ||
 			attr.substr(0, 6) === "scope.";
 		info.isContextBased = info.isInCurrentContext ||
 			info.isInParentContext ||
 			info.isCurrentContext ||
-			info.isParentContext ||
-			info.isInTemplateContext;
+			info.isParentContext;
 		return info;
 	}
 });
@@ -125,13 +145,12 @@ assign(Scope.prototype, {
 
 		// `notContext` contexts should be skipped if the key is "context based".
 		// For example, the context that holds `%index`.
-		if (keyInfo.isContextBased && this._meta.notContext) {
+		if (keyInfo.isContextBased && (this._meta.notContext || this._meta.special)) {
 			return this._parent.read(attr, options);
 		}
 
 		// If true, lookup stops after the current context.
-		var currentScopeOnly,
-			parent;
+		var currentScopeOnly;
 
 		if (keyInfo.isInCurrentContext) {
 			// Stop lookup from checking parent scopes.
@@ -142,8 +161,8 @@ assign(Scope.prototype, {
 			// walk up until we find a parent that can have context.
 			// the `isContextBased` check above won't catch it when you go from
 			// `../foo` to `foo` because `foo` isn't context based.
-			parent = this._parent;
-			while (parent._meta.notContext) {
+			var parent = this._parent;
+			while (parent._meta.notContext || parent._meta.special) {
 				parent = parent._parent;
 			}
 
@@ -154,25 +173,57 @@ assign(Scope.prototype, {
 			return parent.read(attr.substr(3) || ".", options);
 		} else if (keyInfo.isCurrentContext) {
 			return observeReader.read(this._context, [], options);
-		} else if (keyInfo.isTemplateContext) {
-			return { value: this.getTemplateContext() };
+		} else if (keyInfo.isScope) {
+			return { value: this };
 		}
 
-		// if it's a reference scope, read from there.
 		var keyReads = observeReader.reads(attr);
 		if (keyInfo.isInTemplateContext) {
-			if (keyReads[0].key === "scope") {
+			if (keyInfo.isInLegacyRefsScope) {
+				//!steal-remove-start
+				var filename = this.peek("scope.filename");
+				var lineNumber = this.peek("scope.lineNumber");
+
+				if (keyInfo.isLegacyView) {
+					keyReads[0].key = "view";
+
+					canLog.warn(
+						(filename ? filename + ':' : '') +
+						(lineNumber ? lineNumber + ': ' : '') +
+						"{{>*self}} is deprecated. Use {{>scope.view}} instead."
+					);
+				} else {
+					keyReads[0].key = keyReads[0].key.substr(1);
+
+					canLog.warn(
+						(filename ? filename + ':' : '') +
+						(lineNumber ? lineNumber + ': ' : '') +
+						"{{*" + keyReads[0].key + "}} is deprecated. Use {{scope.vars." + keyReads[0].key + "}} instead."
+					);
+
+					keyReads.unshift({ key: 'vars', at: false });
+				}
+				//!steal-remove-end
+			} else {
 				keyReads = keyReads.slice(1);
 			}
-			return this.getTemplateContext()._read(keyReads, options, true);
-		} else {
-			return this._read(keyReads, options, currentScopeOnly);
+
+			if (specialKeywords[keyReads[0].key]) {
+				return this._read(keyReads, { special: true });
+			}
+
+			if (keyReads.length === 1) {
+				return { value: this.templateContext[ keyReads[0].key ] };
+			}
+
+			return this.getTemplateContext()._read(keyReads);
 		}
+
+		return this._read(keyReads, options, currentScopeOnly);
 	},
 	// ## Scope.prototype._read
 	//
 	_read: function(keyReads, options, currentScopeOnly) {
-
 		// The current scope and context we are trying to find "keyReads" within.
 		var currentScope = this,
 			currentContext,
@@ -190,6 +241,9 @@ assign(Scope.prototype, {
 			setObserveDepth = -1,
 			currentSetReads,
 			currentSetObserve,
+
+			ignoreSpecialContexts,
+			ignoreNonSpecialContexts,
 
 			readOptions = assign({
 				/* Store found observable, incase we want to set it as the rootObserve. */
@@ -215,11 +269,19 @@ assign(Scope.prototype, {
 		while (currentScope) {
 			currentContext = currentScope._context;
 
+			// ignore contexts that aren't special if we should only read from special contexts
+			ignoreNonSpecialContexts =
+				options && options.special && !currentScope._meta.special;
 
+			// ignore contexts that are special if we are not trying to read from special context
+			ignoreSpecialContexts =
+				(!options || options.special !== true) && currentScope._meta.special;
 
 			if (currentContext !== null &&
 				// if its a primitive type, keep looking up the scope, since there won't be any properties
-				(typeof currentContext === "object" || typeof currentContext === "function")
+				(typeof currentContext === "object" || typeof currentContext === "function") &&
+				!ignoreNonSpecialContexts &&
+				!ignoreSpecialContexts
 			) {
 
 				// Prevent computes from temporarily observing the reading of observables.
@@ -378,8 +440,21 @@ assign(Scope.prototype, {
 
 			return parent.set(key.substr(3) || ".", value, options);
 		} else if (keyInfo.isInTemplateContext) {
-			parent = this.getTemplateContext();
-			return canReflect.setKeyValue(parent._context, key, value);
+			if (keyInfo.isInLegacyRefsScope) {
+				return this.vars.set( key.substr(1), value );
+			}
+
+			if (keyInfo.isInTemplateContextVars) {
+				return this.vars.set( key.substr(11), value );
+			}
+
+			key = key.substr(6);
+
+			if (key.indexOf(".") < 0) {
+				return this.templateContext[ key ] = value;
+			}
+
+			return this.getTemplateContext().set(key, value);
 		}
 
 		var dotIndex = key.lastIndexOf('.'),
@@ -487,6 +562,14 @@ assign(Scope.prototype, {
 			return this;
 		}
 	}
+});
+
+defineLazyValue(Scope.prototype, 'templateContext', function() {
+	return this.getTemplateContext()._context;
+});
+
+defineLazyValue(Scope.prototype, 'vars', function() {
+	return this.templateContext.vars;
 });
 
 function Options(data, parent, meta) {
