@@ -395,7 +395,7 @@ test("can read parent context with ../ (#2244)", function(){
 test("trying to read constructor from refs scope is ok", function(){
 	var map = new TemplateContext();
 	var construct = compute(function(){
-		return map.attr("constructor");
+		return map.constructor;
 	});
 	construct.bind("change", function(){});
 	equal(construct(), TemplateContext);
@@ -703,6 +703,15 @@ QUnit.test("scope.key reads from special scopes", function() {
 	QUnit.equal(scope._parent.peek('scope.key'), "two", 'scope.key is only read from special contexts');
 });
 
+QUnit.test("*self should return scope.view", function() {
+	var view = function(){};
+	var scope = new Scope({});
+	scope.set("scope.view", view);
+
+	QUnit.equal(scope.peek("scope.view"), view, "scope.view");
+	QUnit.equal(scope.peek("*self"), view, "*self");
+});
+
 testHelpers.dev.devOnlyTest("using {{>*self}} should show deprecation warning", function() {
 	var teardown = testHelpers.dev.willWarn("filename:10: {{>*self}} is deprecated. Use {{>scope.view}} instead.");
 
@@ -742,4 +751,54 @@ QUnit.test("nested properties can be read from templateContext.vars", function()
 
 	scope.set("scope.vars.foo", foo);
 	QUnit.equal(scope.peek("scope.vars.foo.bar"), "baz", "vars.foo.bar === baz");
+});
+
+QUnit.test("filename and lineNumber can be read from anywhere in scope chain", function() {
+	var parent = new Scope({});
+	var scope = parent.add({});
+
+	parent.set("scope.filename", "my-cool-file.txt");
+	parent.set("scope.lineNumber", "5");
+
+	QUnit.equal(scope.peek("scope.filename"), "my-cool-file.txt", 'scope.peek("scope.filename")');
+	QUnit.equal(scope.peek("scope.lineNumber"), "5", 'scope.peek("scope.lineNumber")');
+});
+
+QUnit.test("nested properties can be read from templateContext.root", function() {
+	var root = new Map({ bar: "baz" });
+
+	var map = new Map();
+	var scope = new Scope(map);
+
+	QUnit.ok(!scope.peek("scope.root.bar"), "root.bar === undefined");
+
+	scope.set("scope.root", root);
+	QUnit.equal(scope.peek("scope.root.bar"), "baz", "root.bar === baz");
+});
+
+QUnit.test("special scopes are skipped if options.special !== true", function() {
+	var map1 = new Map({ foo: "one" });
+	var scope = new Scope(map1)
+		.add({ foo: "two" }, { special: true })
+		.add({});
+
+	QUnit.equal(scope.peek('foo'), "one", "foo is read from first non-special scope with a foo property");
+	QUnit.equal(scope.peek('foo', { special: true }), "two", "foo is read from special scope");
+});
+
+QUnit.test("special scopes are skipped when using ../.", function() {
+	var map = new Map({ foo: "one" });
+	var scope = new Scope(map)
+		.add({ foo: "two" }, { special: true })
+		.add({});
+
+	QUnit.equal(scope.peek('../.'), map);
+});
+
+QUnit.test("special scopes are skipped when using .", function() {
+	var map = new Map({ foo: "one" });
+	var scope = new Scope(map)
+		.add({ foo: "two" }, { special: true });
+
+	QUnit.equal(scope.peek('.'), map);
 });
