@@ -1,5 +1,6 @@
 @module {function} can-view-scope
-@parent can-infrastructure
+@parent can-views
+@collection can-infrastructure
 @inherits can-construct
 @test can/view/scope/test.html
 @group can-view-scope.static static

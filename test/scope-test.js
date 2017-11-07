@@ -1,6 +1,6 @@
 var Scope = require('can-view-scope');
 var observeReader = require('can-stache-key');
-var ReferenceMap = require('../reference-map');
+var TemplateContext = require('../template-context');
 var canSymbol = require("can-symbol");
 
 var QUnit = require('steal-qunit');
@@ -86,7 +86,7 @@ test('nested properties with compute', function () {
 			equal(newVal, 'Curtis');
 		}
 		changes++;
-	}
+	};
 
 	compute.bind('change',handler);
 	equal(compute(), 'Justin', 'read value after bind');
@@ -186,8 +186,6 @@ test('rooted observable is able to update correctly', function () {
 	equal(compute(), 'Brian');
 });
 test('computeData reading an object with a compute', function () {
-	var sourceAge = 21;
-
 	var age = new SimpleObservable(21);
 
 	var scope = new Scope({
@@ -391,6 +389,14 @@ test("can read parent context with ../ (#2244)", function(){
 
 });
 
+test("trying to read constructor from refs scope is ok", function(){
+	var map = new TemplateContext();
+	var construct = new Observation(function(){
+		return map.constructor;
+	});
+	canReflect.onValue(construct, function() {});
+	equal(canReflect.getValue(construct), TemplateContext);
+});
 
 test("reading from a string in a nested scope doesn't throw an error (#22)",function(){
 	var foo = new SimpleObservable('foo');
@@ -482,12 +488,12 @@ QUnit.asyncTest("unbinding clears all event bindings", function(){
 	var handlers = function(newValue){
 		QUnit.equal(newValue,"Ab");
 	};
-	canReflect.onValue(c, handlers)
+	canReflect.onValue(c, handlers);
 
-	canReflect.offValue(c, handlers)
+	canReflect.offValue(c, handlers);
 
 	setTimeout(function () {
-		var handlers = map[canSymbol.for("can.meta")].handlers.get([])
+		var handlers = map[canSymbol.for("can.meta")].handlers.get([]);
 		equal(handlers.length, 0, "there are no bindings");
 		start();
 	}, 30);
@@ -584,7 +590,6 @@ QUnit.test("Rendering a template with a custom scope (#55)", function() {
 
 	try {
 		scopeRefs = scope.getRefs();
-		scopeRefs._read;
 		QUnit.ok(true, "Did not throw");
 	}
 	catch(e) {
@@ -599,7 +604,6 @@ QUnit.test("Rendering a template with a custom scope (#55)", function() {
 
 	try {
 		scopeRefs = scope.getRefs();
-		scopeRefs._read;
 		QUnit.ok(true, "Did not throw");
 	}
 	catch(e) {
@@ -607,16 +611,180 @@ QUnit.test("Rendering a template with a custom scope (#55)", function() {
 	}
 });
 
-
 QUnit.test("generated refs scope is a Scope", function() {
-
 	var scope = new Scope({});
 	QUnit.equal(scope._parent, undefined, "scope initially has no parent");
 	var refScope = scope.getRefs();
 
 	QUnit.ok(refScope instanceof Scope, "refScope is a scope");
 	QUnit.ok(refScope._context instanceof Scope.Refs, "refScope context is a refs object");
-	QUnit.equal(scope._parent, refScope, "refScope is a parent of scope");
+});
+
+QUnit.test("./ scope lookup should read current scope", function () {
+	var parent = new SimpleMap();
+	var map = new SimpleMap();
+	var scope = new Scope(parent).add(map);
+	QUnit.equal(scope.attr("./"), map);
+});
+
+QUnit.test("getTemplateContext() gives a scope with the templateContext", function() {
+	var map = new SimpleMap();
+	var scope = new Scope(map);
+
+	var templateContext = scope.getTemplateContext();
+
+	QUnit.ok(templateContext instanceof Scope, 'templateContext is a Scope');
+	QUnit.ok(templateContext._context instanceof TemplateContext, 'templateContext context is a TemplateContext object');
+});
+
+QUnit.test("scope can be used to read from the templateContext", function() {
+	var map = new SimpleMap();
+	var scope = new Scope(map);
+
+	QUnit.deepEqual(scope.peek("scope"), scope, "scope");
+
+	scope.set("scope.vars.name", "Kevin");
+	QUnit.equal(scope.peek("scope.vars.name"), "Kevin", "scope.vars.name === Kevin");
+	QUnit.equal(scope.peek("*name"), "Kevin", "*name === Kevin");
+
+	scope.set("*name", "Tracy");
+	QUnit.equal(scope.peek("*name"), "Tracy", "*name === Tracy");
+	QUnit.equal(scope.peek("scope.vars.name"), "Tracy", "scope.vars.name === Tracy");
+
+	var ageFn = function() { return "30"; };
+	scope.set("*age", ageFn);
+	QUnit.equal(scope.peek("@*age")(), "30", "@*age returns a function");
+	QUnit.equal(scope.peek("scope.vars.age"), "30", "scope.vars.age === 30");
+});
+
+QUnit.test("scope.index reads from special scopes", function() {
+	var map1 = new SimpleMap({ index: 1 });
+	var map2 = new SimpleMap({ index: 3 });
+	var scope = new Scope(map1);
+
+	QUnit.equal(scope.peek('scope.index'), undefined,
+		'scope.index returns undefined if no special context exists');
+
+	scope = scope.add({ index: 2 }, { special: true })
+		.add(map2)
+		.add({ index: 4 }, { special: true });
+
+	QUnit.equal(scope.peek('scope.index'), 4, 'scope.index is read correctly');
+
+	QUnit.equal(scope._parent.peek('scope.index'), 2, 'scope.index is only read from special contexts');
+});
+
+QUnit.test("scope.key reads from special scopes", function() {
+	var map1 = new SimpleMap({ key: "one" });
+	var map2 = new SimpleMap({ key: 3 });
+	var scope = new Scope(map1)
+		.add({ key: "two" }, { special: true })
+		.add(map2)
+		.add({ key: "four" }, { special: true });
+
+	QUnit.equal(scope.peek('scope.key'), "four", 'scope.key is read correctly');
+
+	QUnit.equal(scope._parent.peek('scope.key'), "two", 'scope.key is only read from special contexts');
+});
+
+QUnit.test("*self should return scope.view", function() {
+	var view = function(){};
+	var scope = new Scope({});
+	scope.set("scope.view", view);
+
+	QUnit.equal(scope.peek("scope.view"), view, "scope.view");
+	QUnit.equal(scope.peek("*self"), view, "*self");
+});
+
+testHelpers.dev.devOnlyTest("using {{>*self}} should show deprecation warning", function() {
+	var teardown = testHelpers.dev.willWarn("filename:10: {{>*self}} is deprecated. Use {{>scope.view}} instead.");
+
+	var scope = new Scope({});
+	scope.set("scope.filename", "filename");
+	scope.set("scope.lineNumber", "10");
+	scope.peek("*self");
+
+	QUnit.equal(teardown(), 1, "deprecation warning displayed");
+});
+
+testHelpers.dev.devOnlyTest("using *foo should show deprecation warning", function() {
+	var teardown = testHelpers.dev.willWarn("filename:5: {{*foo}} is deprecated. Use {{scope.vars.foo}} instead.");
+
+	var scope = new Scope({});
+	scope.set("scope.filename", "filename");
+	scope.set("scope.lineNumber", "5");
+	scope.peek("*foo");
+
+	QUnit.equal(teardown(), 1, "deprecation warning displayed");
+});
+
+QUnit.test("variables starting with 'scope' should not be read from templateContext (#104)", function() {
+	var map = new SimpleMap({ scope1: "this is scope1" });
+	var scope = new Scope(map);
+
+	QUnit.deepEqual(scope.peek("scope1"), "this is scope1", "scope1");
+});
+
+QUnit.test("nested properties can be read from templateContext.vars", function() {
+	var foo = new SimpleMap({ bar: "baz" });
+
+	var map = new SimpleMap();
+	var scope = new Scope(map);
+
+	QUnit.ok(!scope.peek("scope.vars.foo.bar"), "vars.foo.bar === undefined");
+
+	scope.set("scope.vars.foo", foo);
+	QUnit.equal(scope.peek("scope.vars.foo.bar"), "baz", "vars.foo.bar === baz");
+});
+
+QUnit.test("filename and lineNumber can be read from anywhere in scope chain", function() {
+	var parent = new Scope({});
+	var scope = parent.add({});
+
+	parent.set("scope.filename", "my-cool-file.txt");
+	parent.set("scope.lineNumber", "5");
+
+	QUnit.equal(scope.peek("scope.filename"), "my-cool-file.txt", 'scope.peek("scope.filename")');
+	QUnit.equal(scope.peek("scope.lineNumber"), "5", 'scope.peek("scope.lineNumber")');
+});
+
+QUnit.test("nested properties can be read from templateContext.root", function() {
+	var root = new SimpleMap({ bar: "baz" });
+
+	var map = new SimpleMap();
+	var scope = new Scope(map);
+
+	QUnit.ok(!scope.peek("scope.root.bar"), "root.bar === undefined");
+
+	scope.set("scope.root", root);
+	QUnit.equal(scope.peek("scope.root.bar"), "baz", "root.bar === baz");
+});
+
+QUnit.test("special scopes are skipped if options.special !== true", function() {
+	var map1 = new SimpleMap({ foo: "one" });
+	var scope = new Scope(map1)
+		.add({ foo: "two" }, { special: true })
+		.add({});
+
+	QUnit.equal(scope.peek('foo'), "one", "foo is read from first non-special scope with a foo property");
+	QUnit.equal(scope.peek('foo', { special: true }), "two", "foo is read from special scope");
+});
+
+QUnit.test("special scopes are skipped when using ../.", function() {
+	var map = new SimpleMap({ foo: "one" });
+	var scope = new Scope(map)
+		.add({ foo: "two" }, { special: true })
+		.add({});
+
+	QUnit.equal(scope.peek('../.'), map);
+});
+
+QUnit.test("special scopes are skipped when using .", function() {
+	var map = new SimpleMap({ foo: "one" });
+	var scope = new Scope(map)
+		.add({ foo: "two" }, { special: true });
+
+	QUnit.equal(scope.peek('.'), map);
 });
 
 QUnit.test("this works everywhere (#45)", function(){
@@ -721,10 +889,10 @@ QUnit.test("fast path checking does not leak ObservationRecord.adds", function()
 	// make getter behave like can-define
 	Object.defineProperty(map,"age",{
 		get: function(){
-			return this.attr("age")
+			return this.attr("age");
 		},
 		set: function(newVal){
-			this.attr("age",newVal)
+			this.attr("age",newVal);
 		}
 	});
 

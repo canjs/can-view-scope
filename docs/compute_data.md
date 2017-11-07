@@ -1,4 +1,5 @@
 @function can-view-scope.computeData computeData
+@hide
 
 @signature `scope.computeData(key)`
 
