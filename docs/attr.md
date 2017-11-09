@@ -1,4 +1,5 @@
 @function can-view-scope.attr attr
+@hide
 
 @signature `scope.attr(key)`
 
