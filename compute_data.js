@@ -10,7 +10,7 @@ var queues = require('can-queues');
 var ObservationRecorder = require('can-observation-recorder');
 var CIDSet = require("can-cid/set/set");
 var makeComputeLike = require("./make-compute-like");
-
+var mutateDeps = require('can-reflect-mutate-dependencies');
 
 // The goal of this is to create a high-performance compute that represents a key value from can.view.Scope.
 // If the key value is something like {{name}} and the context is a can.Map, a faster
@@ -153,6 +153,14 @@ ScopeKeyData.prototype = {
 			observation = this.observation;
 
 		this.fastPath = true;
+
+		//!steal-remove-start
+		var key = this.reads[0].key;
+		mutateDeps.addMutatedBy(fastPathRoot, key, {
+			valueDependencies: new Set([self])
+		});
+		//!steal-remove-end
+
 		// there won't be an event in the future ...
 		observation.dependencyChange = function(target, newVal){
 			if(isEventObject(newVal)) {
@@ -205,8 +213,23 @@ canReflect.assignSymbols(ScopeKeyData.prototype, {
 	"can.onValue": ScopeKeyData.prototype.on,
 	"can.offValue": ScopeKeyData.prototype.off,
 	"can.valueHasDependencies": ScopeKeyData.prototype.hasDependencies,
-	"can.getValueDependencies": function(){
-		return this.dependencies;
+	"can.getValueDependencies": function() {
+		var result = this.dependencies;
+
+		// in fast path mode skip the internal observation and return the
+		// fastPathRoot / key as a key dependency of the compute data
+		if (this.fastPath) {
+			var key = this.reads[0].key;
+			var fastPathRoot = getFastPathRoot(this);
+
+			result = {
+				keyDependencies: new Map([
+					[fastPathRoot, new Set([key])]
+				])
+			};
+		}
+
+		return result;
 	},
 	"can.getPriority": function(){
 		return canReflect.getPriority( this.observation );

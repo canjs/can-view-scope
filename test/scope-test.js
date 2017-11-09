@@ -10,6 +10,7 @@ var testHelpers = require('can-test-helpers');
 var SimpleMap = require('can-simple-map');
 var SimpleObservable = require('can-simple-observable');
 var ObservationRecorder = require('can-observation-recorder');
+var mutateDeps = require('can-reflect-mutate-dependencies');
 
 QUnit.module('can/view/scope');
 
@@ -542,31 +543,35 @@ QUnit.test("setting a key on a non observable context", function(){
 	QUnit.deepEqual(context.colors.attr(), {prop: "bar"}, "can updateDeep");
 });
 
-QUnit.test("observing scope key data does not observe observation", function(){
+QUnit.test("fast path computeData dependencies", function(assert) {
 	var map = new SimpleMap({value: "a"});
-
 	var scope = new Scope(map);
-
 	var computeData = scope.computeData("value");
-
-	var c = new Observation(function(){
+	var c = new Observation(function() {
 		return computeData.get();
 	});
 
-	canReflect.onValue( c, function(){});
+	canReflect.onValue(c, function(){});
 
 	var dependencies = canReflect.getValueDependencies(c);
-	QUnit.ok(dependencies.valueDependencies.has(computeData), "compute has computeData");
-	QUnit.equal(dependencies.valueDependencies.size,1, "compute only has computeData");
+	assert.ok(dependencies.valueDependencies.has(computeData), "compute has computeData");
+	assert.equal(dependencies.valueDependencies.size, 1, "compute only has computeData");
 
 	var computeDataDependencies = canReflect.getValueDependencies(computeData);
-	QUnit.ok(computeDataDependencies.valueDependencies.has(computeData.observation), "computeData has internal observation");
-	QUnit.equal(computeDataDependencies.valueDependencies.size,1, "computeData only has internal observation");
+	assert.ok(
+		!computeDataDependencies.valueDependencies,
+		"the internal Observation should not be a visible dependency of computeData"
+	);
+	assert.ok(
+		computeDataDependencies.keyDependencies.get(map).has("value"),
+		"the map's 'value' property should be a dependency of computeData"
+	);
 
-	var observationDependencies = canReflect.getValueDependencies(computeData.observation);
-	QUnit.ok(observationDependencies.keyDependencies.has(map), "internal observation");
-	QUnit.equal(observationDependencies.keyDependencies.size,1, "internal observation");
-
+	var mapValueDependencies = mutateDeps.getKeyDependencies(map, "value");
+	assert.ok(
+		mapValueDependencies.mutatedValueDependencies.has(computeData),
+		"the computeData should be a mutation dependency of the map's 'value' property"
+	);
 });
 
 QUnit.test("scopeKeyData offValue resets dependencyChange/start", function() {
@@ -906,6 +911,22 @@ QUnit.test("fast path checking does not leak ObservationRecord.adds", function()
 	QUnit.equal(dependencies.keyDependencies.size, 0, "no key dependencies");
 	QUnit.equal(dependencies.valueDependencies.size, 1, "only sees age");
 	QUnit.ok(dependencies.valueDependencies.has(age), "only sees age");
+});
+
+QUnit.test("fast path computeData dependencies", function(assert) {
+	var map = new SimpleMap({value: "a"});
+	var scope = new Scope(map);
+	var scopeKeyData = scope.computeData("value");
+
+	canReflect.onValue(scopeKeyData, function(){});
+
+	var mapDeps = mutateDeps.getKeyDependencies(map, "value");
+	var scopeDeps = canReflect.getValueDependencies(scopeKeyData);
+
+	assert.expect(3);
+	assert.ok(mapDeps.mutatedValueDependencies.has(scopeKeyData));
+	assert.ok(scopeDeps.keyDependencies, "should have keyDependencies");
+	assert.ok(scopeDeps.keyDependencies.get(map).has("value"));
 });
 
 // this is for can-stache-bindings#189
