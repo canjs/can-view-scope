@@ -193,7 +193,10 @@ assign(Scope.prototype, {
 						"{{>*self}} is deprecated. Use {{>scope.view}} instead."
 					);
 				} else {
-					keyReads[0].key = keyReads[0].key.substr(1);
+					keyReads[0] = {
+						key: keyReads[0].key.substr(1),
+						at: true
+					};
 
 					canLog.warn(
 						(filename ? filename + ':' : '') +
@@ -201,7 +204,7 @@ assign(Scope.prototype, {
 						"{{*" + keyReads[0].key + "}} is deprecated. Use {{scope.vars." + keyReads[0].key + "}} instead."
 					);
 
-					keyReads.unshift({ key: 'vars', at: false });
+					keyReads.unshift({ key: 'vars' });
 				}
 				//!steal-remove-end
 			} else {
