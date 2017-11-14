@@ -913,6 +913,16 @@ QUnit.test("fast path checking does not leak ObservationRecord.adds", function()
 	QUnit.ok(dependencies.valueDependencies.has(age), "only sees age");
 });
 
+QUnit.test("{{scope.set(...)}} works", function() {
+	var map = new SimpleMap({ foo: 'bar' });
+	var scope = new Scope(map);
+
+	var set = scope.peek('scope@set');
+
+	set('foo', 'baz');
+	QUnit.equal(map.get('foo'), 'baz', 'map.foo updated using scope.set');
+});
+
 // this is for can-stache-bindings#189
 // The viewModel is bound to a property that does not exist like:
 // <my-component vm:value:bind="./does-not-exist">

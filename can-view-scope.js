@@ -78,7 +78,8 @@ assign(Scope, {
 			attr.substr(0, 11) === "scope.vars.";
 		info.isInTemplateContext =
 			info.isInTemplateContextVars ||
-			attr.substr(0, 6) === "scope.";
+			attr.substr(0, 6) === "scope." ||
+			attr.substr(0, 6) === "scope@";
 		info.isContextBased = info.isInCurrentContext ||
 			info.isInParentContext ||
 			info.isCurrentContext ||
@@ -213,7 +214,14 @@ assign(Scope.prototype, {
 			}
 
 			if (keyReads.length === 1) {
-				return { value: this.templateContext[ keyReads[0].key ] };
+				var key = keyReads[0].key;
+
+				// default to reading scope.set, scope.find, etc
+				if (key in this) {
+					return { value: this[ key ].bind(this) };
+				} else {
+					return { value: this.templateContext[ key ] };
+				}
 			}
 
 			return this.getTemplateContext()._read(keyReads);
