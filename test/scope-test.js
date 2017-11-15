@@ -672,9 +672,9 @@ QUnit.test("scope.index reads from special scopes", function() {
 
 	scope = scope.add({ index: 2 }, { special: true })
 		.add(map2)
-		.add({ index: 4 }, { special: true });
+		.add({ index: 0 }, { special: true });
 
-	QUnit.equal(scope.peek('scope.index'), 4, 'scope.index is read correctly');
+	QUnit.equal(scope.peek('scope.index'), 0, 'scope.index is read correctly');
 
 	QUnit.equal(scope._parent.peek('scope.index'), 2, 'scope.index is only read from special contexts');
 });
@@ -911,6 +911,42 @@ QUnit.test("fast path checking does not leak ObservationRecord.adds", function()
 	QUnit.equal(dependencies.keyDependencies.size, 0, "no key dependencies");
 	QUnit.equal(dependencies.valueDependencies.size, 1, "only sees age");
 	QUnit.ok(dependencies.valueDependencies.has(age), "only sees age");
+});
+
+QUnit.test("{{scope.set(...)}} works", function() {
+	var map = new SimpleMap({ foo: 'bar' });
+	var scope = new Scope(map);
+
+	var set = scope.peek('scope@set');
+
+	set('foo', 'baz');
+	QUnit.equal(map.get('foo'), 'baz', 'map.foo updated using scope.set');
+});
+
+QUnit.test("can read a method from scope.viewModel", function() {
+	var viewModel = new SimpleMap({
+		method: function() {
+			return 'method return value';
+		}
+	});
+	var scope = new Scope({})
+		.add({ viewModel: viewModel }, { special: true });
+
+	var method = scope.peek('scope.viewModel@method');
+
+	QUnit.equal(method(), 'method return value');
+});
+
+QUnit.test("can read a value from scope.element", function() {
+	var element = {
+		value: 'element value'
+	};
+	var scope = new Scope({})
+		.add({ element: element }, { special: true });
+
+	var value = scope.peek('scope.element.value');
+
+	QUnit.equal(value, 'element value');
 });
 
 // this is for can-stache-bindings#189
