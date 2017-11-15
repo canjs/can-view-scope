@@ -650,15 +650,9 @@ QUnit.test("scope can be used to read from the templateContext", function() {
 
 	scope.set("scope.vars.name", "Kevin");
 	QUnit.equal(scope.peek("scope.vars.name"), "Kevin", "scope.vars.name === Kevin");
-	QUnit.equal(scope.peek("*name"), "Kevin", "*name === Kevin");
-
-	scope.set("*name", "Tracy");
-	QUnit.equal(scope.peek("*name"), "Tracy", "*name === Tracy");
-	QUnit.equal(scope.peek("scope.vars.name"), "Tracy", "scope.vars.name === Tracy");
 
 	var ageFn = function() { return "30"; };
-	scope.set("*age", ageFn);
-	QUnit.equal(scope.peek("@*age")(), "30", "@*age returns a function");
+	scope.set("scope.vars.age", ageFn);
 	QUnit.equal(scope.peek("scope.vars.age"), "30", "scope.vars.age === 30");
 });
 
@@ -690,37 +684,6 @@ QUnit.test("scope.key reads from special scopes", function() {
 	QUnit.equal(scope.peek('scope.key'), "four", 'scope.key is read correctly');
 
 	QUnit.equal(scope._parent.peek('scope.key'), "two", 'scope.key is only read from special contexts');
-});
-
-QUnit.test("*self should return scope.view", function() {
-	var view = function(){};
-	var scope = new Scope({});
-	scope.set("scope.view", view);
-
-	QUnit.equal(scope.peek("scope.view"), view, "scope.view");
-	QUnit.equal(scope.peek("*self"), view, "*self");
-});
-
-testHelpers.dev.devOnlyTest("using {{>*self}} should show deprecation warning", function() {
-	var teardown = testHelpers.dev.willWarn("filename:10: {{>*self}} is deprecated. Use {{>scope.view}} instead.");
-
-	var scope = new Scope({});
-	scope.set("scope.filename", "filename");
-	scope.set("scope.lineNumber", "10");
-	scope.peek("*self");
-
-	QUnit.equal(teardown(), 1, "deprecation warning displayed");
-});
-
-testHelpers.dev.devOnlyTest("using *foo should show deprecation warning", function() {
-	var teardown = testHelpers.dev.willWarn("filename:5: {{*foo}} is deprecated. Use {{scope.vars.foo}} instead.");
-
-	var scope = new Scope({});
-	scope.set("scope.filename", "filename");
-	scope.set("scope.lineNumber", "5");
-	scope.peek("*foo");
-
-	QUnit.equal(teardown(), 1, "deprecation warning displayed");
 });
 
 QUnit.test("variables starting with 'scope' should not be read from templateContext (#104)", function() {
