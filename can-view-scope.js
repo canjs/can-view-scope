@@ -57,13 +57,7 @@ assign(Scope, {
 		info.isCurrentContext = attr === "." || attr === "this";
 		info.isParentContext = attr === "..";
 		info.isScope = attr === "scope";
-		info.isLegacyView = attr === "*self";
-		info.isInLegacyRefsScope =
-			info.isLegacyView ||
-			attr.substr(0, 1) === "*" ||
-			attr.substr(0, 2) === "@*";
 		info.isInTemplateContextVars =
-			info.isInLegacyRefsScope ||
 			attr.substr(0, 11) === "scope.vars.";
 		info.isInTemplateContext =
 			info.isInTemplateContextVars ||
@@ -173,34 +167,8 @@ assign(Scope.prototype, {
 			value;
 
 		if (keyInfo.isInTemplateContext) {
-			if (keyInfo.isInLegacyRefsScope) {
-				//!steal-remove-start
-				var filename = this.peek("scope.filename");
-				var lineNumber = this.peek("scope.lineNumber");
-
-				if (keyInfo.isLegacyView) {
-					keyReads[0].key = "view";
-
-					canLog.warn(
-						(filename ? filename + ':' : '') +
-						(lineNumber ? lineNumber + ': ' : '') +
-						"{{>*self}} is deprecated. Use {{>scope.view}} instead."
-					);
-				} else {
-					keyReads[0].key = keyReads[0].key.substr(1);
-
-					canLog.warn(
-						(filename ? filename + ':' : '') +
-						(lineNumber ? lineNumber + ': ' : '') +
-						"{{*" + keyReads[0].key + "}} is deprecated. Use {{scope.vars." + keyReads[0].key + "}} instead."
-					);
-
-					keyReads.unshift({ key: 'vars', at: false });
-				}
-				//!steal-remove-end
-			} else {
-				keyReads = keyReads.slice(1);
-			}
+			// remove the `{ key: scope }`
+			keyReads = keyReads.slice(1);
 
 			keyRead = keyReads[0];
 			key = keyRead.key;
@@ -458,10 +426,6 @@ assign(Scope.prototype, {
 
 			return parent.set(key.substr(3) || ".", value, options);
 		} else if (keyInfo.isInTemplateContext) {
-			if (keyInfo.isInLegacyRefsScope) {
-				return this.vars.set( key.substr(1), value );
-			}
-
 			if (keyInfo.isInTemplateContextVars) {
 				return this.vars.set( key.substr(11), value );
 			}
