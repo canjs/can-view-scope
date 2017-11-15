@@ -13,17 +13,6 @@ var canReflect = require("can-reflect");
 var canLog = require('can-log/dev/dev');
 var defineLazyValue = require('can-define-lazy-value');
 
-// these keywords will be read using
-// Scope.prototype._read(..., { special: true })
-var specialKeywords = {
-	index: true,
-	key: true,
-	element: true,
-	event: true,
-	viewModel: true,
-	arguments: true
-};
-
 function Scope(context, parent, meta) {
 	// The obj that will be looked on for values.
 	this._context = context;
@@ -178,7 +167,11 @@ assign(Scope.prototype, {
 			return { value: this };
 		}
 
-		var keyReads = observeReader.reads(attr);
+		var keyReads = observeReader.reads(attr),
+			keyRead,
+			key,
+			value;
+
 		if (keyInfo.isInTemplateContext) {
 			if (keyInfo.isInLegacyRefsScope) {
 				//!steal-remove-start
@@ -209,22 +202,28 @@ assign(Scope.prototype, {
 				keyReads = keyReads.slice(1);
 			}
 
-			if (specialKeywords[keyReads[0].key]) {
-				return this._read(keyReads, { special: true });
+			keyRead = keyReads[0];
+			key = keyRead.key;
+
+			// default to reading from Scope.prototype values
+			value = this[ key ];
+
+			// otherwise, read from templateContext
+			value = typeof value !== 'undefined' ?
+				value :
+				this.templateContext[ key ];
+
+			if (keyRead.at) {
+				value = value.bind(this);
 			}
 
 			if (keyReads.length === 1) {
-				var key = keyReads[0].key;
-
-				// default to reading scope.set, scope.find, etc
-				if (key in this) {
-					return { value: this[ key ].bind(this) };
-				} else {
-					return { value: this.templateContext[ key ] };
-				}
+				return { value: value };
+			} else if (value) {
+				return observeReader.read(value, keyReads.slice(1));
+			} else {
+				return this.getTemplateContext()._read(keyReads);
 			}
-
-			return this.getTemplateContext()._read(keyReads);
 		}
 
 		return this._read(keyReads, options, currentScopeOnly);
@@ -275,7 +274,6 @@ assign(Scope.prototype, {
 		// While going through each scope context searching for the key, each observable found is returned and
 		// saved so that either the observable the key is found in can be returned, or in the case the key is not
 		// found in an observable the closest observable can be returned.
-
 		while (currentScope) {
 			currentContext = currentScope._context;
 
@@ -590,6 +588,26 @@ defineLazyValue(Scope.prototype, 'templateContext', function() {
 
 defineLazyValue(Scope.prototype, 'vars', function() {
 	return this.templateContext.vars;
+});
+
+var specialKeywords = [
+	'index', 'key', 'element',
+	'event', 'viewModel','arguments'
+];
+
+var readFromSpecialContexts = function(key) {
+	return function() {
+		return this._read(
+			[{ key: key, at: false }],
+			{ special: true }
+		).value;
+	};
+};
+
+specialKeywords.forEach(function(key) {
+	Object.defineProperty(Scope.prototype, key, {
+		get: readFromSpecialContexts(key)
+	});
 });
 
 function Options(data, parent, meta) {
