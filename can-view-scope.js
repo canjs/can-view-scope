@@ -57,10 +57,10 @@ assign(Scope, {
 		info.isCurrentContext = attr === "." || attr === "this";
 		info.isParentContext = attr === "..";
 		info.isScope = attr === "scope";
-		info.isInTemplateContextVars =
+		info.isInScopeVars =
 			attr.substr(0, 11) === "scope.vars.";
-		info.isInTemplateContext =
-			info.isInTemplateContextVars ||
+		info.isInScope =
+			info.isInScopeVars ||
 			attr.substr(0, 6) === "scope." ||
 			attr.substr(0, 6) === "scope@";
 		info.isContextBased = info.isInCurrentContext ||
@@ -166,7 +166,7 @@ assign(Scope.prototype, {
 			key,
 			value;
 
-		if (keyInfo.isInTemplateContext) {
+		if (keyInfo.isInScope) {
 			// remove the `{ key: scope }`
 			keyReads = keyReads.slice(1);
 
@@ -425,8 +425,8 @@ assign(Scope.prototype, {
 			}
 
 			return parent.set(key.substr(3) || ".", value, options);
-		} else if (keyInfo.isInTemplateContext) {
-			if (keyInfo.isInTemplateContextVars) {
+		} else if (keyInfo.isInScope) {
+			if (keyInfo.isInScopeVars) {
 				return this.vars.set( key.substr(11), value );
 			}
 
