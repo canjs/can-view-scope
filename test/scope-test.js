@@ -658,7 +658,7 @@ QUnit.test("getTemplateContext() gives a scope with the templateContext", functi
 	QUnit.ok(templateContext._context instanceof TemplateContext, 'templateContext context is a TemplateContext object');
 });
 
-QUnit.test("scope can be used to read from the templateContext", function() {
+QUnit.test("scope can be used to read vars from the templateContext", function() {
 	var map = new Map();
 	var scope = new Scope(map);
 
@@ -807,4 +807,19 @@ QUnit.test("special scopes are skipped when using .", function() {
 		.add({ foo: "two" }, { special: true });
 
 	QUnit.equal(scope.peek('.'), map);
+});
+
+QUnit.test("scope can be used to read partails from the templateContext", function() {
+	var map = new Map();
+	var scope = new Scope(map);
+	var frag = document.createDocumentFragment();
+	function getFrag(){
+		return frag;
+	}
+
+	scope.set("scope.partials.frag", frag);
+	QUnit.equal(scope.peek("scope.partials.frag"), frag);
+
+	scope.set("scope.partials.getFrag", getFrag);
+	QUnit.equal(scope.peek("scope.partials.getFrag"), frag);
 });
