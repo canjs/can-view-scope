@@ -89,6 +89,12 @@ assign(Scope.prototype, {
 			return this;
 		}
 	},
+
+	// ## Scope.prototype.find
+	find: function(attr) {
+		return this.read(attr, { currentScopeOnly: false });
+	},
+
 	// ## Scope.prototype.read
 	// Reads from the scope chain and returns the first non-`undefined` value.
 	// `read` deals mostly with setting up "context based" keys to start reading
@@ -104,19 +110,7 @@ assign(Scope.prototype, {
 	 *   @option {*} value the found value
 	 */
 	read: function(attr, options) {
-		// If it's the root, jump right to it.
-		if (attr === "%root") {
-			return {
-				value: this.getRoot()
-			};
-		}
-
-		// return a reference to itself when looking up "%scope"
-		if (attr === "%scope") {
-			return {
-				value: this
-			};
-		}
+		options = options || {};
 
 		// make `{{./}}` an alias for `{{.}}`
 		if (attr === "./") {
@@ -134,7 +128,7 @@ assign(Scope.prototype, {
 		}
 
 		// If true, lookup stops after the current context.
-		var currentScopeOnly;
+		var currentScopeOnly = "currentScopeOnly" in options ? options.currentScopeOnly : true;
 
 		if (keyInfo.isInCurrentContext) {
 			// Stop lookup from checking parent scopes.
@@ -217,9 +211,6 @@ assign(Scope.prototype, {
 			currentSetReads,
 			currentSetObserve,
 
-			ignoreSpecialContexts,
-			ignoreNonSpecialContexts,
-
 			readOptions = assign({
 				/* Store found observable, incase we want to set it as the rootObserve. */
 				foundObservable: function(observe, nameIndex) {
@@ -245,21 +236,22 @@ assign(Scope.prototype, {
 		while (currentScope) {
 			currentContext = currentScope._context;
 
-			// ignore contexts that aren't special if we should only read from special contexts
-			ignoreNonSpecialContexts =
-				options && options.special && !currentScope._meta.special;
+			// skip this if it _is_ a special context and we aren't explicitly reading special contexts
+			if ((!options || options.special !== true) && currentScope._meta.special) {
+				currentScope = currentScope._parent;
+				continue;
+			}
 
-			// ignore contexts that are special if we are not trying to read from special context
-			ignoreSpecialContexts =
-				(!options || options.special !== true) && currentScope._meta.special;
+			// skip this if we _are_ explicitly reading special contexts and this context is _not_ special
+			if (options && options.special && !currentScope._meta.special) {
+				currentScope = currentScope._parent;
+				continue;
+			}
 
 			if (currentContext !== null &&
 				// if its a primitive type, keep looking up the scope, since there won't be any properties
-				(typeof currentContext === "object" || typeof currentContext === "function") &&
-				!ignoreNonSpecialContexts &&
-				!ignoreSpecialContexts
+				(typeof currentContext === "object" || typeof currentContext === "function")
 			) {
-
 				// Prevent computes from temporarily observing the reading of observables.
 				var getObserves = Observation.trap();
 
@@ -294,8 +286,10 @@ assign(Scope.prototype, {
 				}
 			}
 
-			//
-			if (currentScopeOnly) {
+			var parentIsNormalContext = currentScope._parent && currentScope._parent._meta &&
+				!currentScope._parent._meta.notContext && !currentScope._parent._meta.special;
+
+			if (currentScopeOnly && parentIsNormalContext) {
 				currentScope = null;
 			} else {
 				// Move up to the next scope.
