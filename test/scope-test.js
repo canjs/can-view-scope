@@ -25,7 +25,7 @@ test("basics",function(){
 
 	var nameInfo;
 	var c = new Observation(function(){
-		nameInfo = zipScope.read('name');
+		nameInfo = zipScope.read('../name');
 	});
 	canReflect.onValue(c, function(){});
 
@@ -145,7 +145,7 @@ test('binds to the right scope only', function () {
 		})
 	});
 	var scope = base.add(topMap);
-	var compute = scope.computeData('me.name.first')
+	var compute = scope.computeData('../me.name.first')
 		.compute;
 	compute.bind('change', function (ev, newVal, oldVal) {
 		equal(oldVal, 'Justin');
@@ -343,7 +343,7 @@ test("computesData can find update when initially undefined parent scope becomes
 	var scope = new Scope(map);
 	var top = scope.add(new SimpleMap());
 
-	var computeData = top.computeData("value",{});
+	var computeData = top.computeData("../value",{});
 
 	equal( computeData.compute(), undefined, "initially undefined");
 
@@ -354,19 +354,6 @@ test("computesData can find update when initially undefined parent scope becomes
 	map.attr("value","first");
 
 
-});
-
-test("A scope's %root is the last context", function(){
-	var map = new SimpleMap();
-	var refs = Scope.refsScope();
-	// Add a bunch of contexts onto the scope, we want to make sure we make it to
-	// the top.
-	var scope = refs.add(map).add(new Scope.Refs()).add(new SimpleMap());
-
-	var root = scope.peek("%root");
-
-	ok(!(root instanceof Scope.Refs), "root isn't a reference");
-	equal(root, map, "The root is the map passed into the scope");
 });
 
 test("can set scope attributes with ../ (#2132)", function(){
@@ -438,13 +425,6 @@ test("Optimize for compute().observableProperty (#29)", function(){
 	changeNumber++;
 	map.attr("value", "b");
 });
-
-test("read should support passing %scope (#24)", function() {
-	var scope = new Scope(new SimpleMap({ foo: "", bar: "" }));
-
-	equal(scope.read("%scope").value, scope, "looked up %scope correctly");
-});
-
 
 test("a compute can observe the ScopeKeyData", 3, function(){
 	var map = new SimpleMap({value: "a", other: "b"});
@@ -729,12 +709,11 @@ QUnit.test("nested properties can be read from templateContext.root", function()
 });
 
 QUnit.test("special scopes are skipped if options.special !== true", function() {
-	var map1 = new SimpleMap({ foo: "one" });
+	var map1 = new SimpleMap({});
 	var scope = new Scope(map1)
 		.add({ foo: "two" }, { special: true })
 		.add({});
 
-	QUnit.equal(scope.peek('foo'), "one", "foo is read from first non-special scope with a foo property");
 	QUnit.equal(scope.peek('foo', { special: true }), "two", "foo is read from special scope");
 });
 
@@ -804,7 +783,7 @@ test("undefined props should be a scope hit (#20)", function(){
 
 	var scope = new Scope(instance).add(new EmptyType());
 
-	var c1 = scope.computeData("value").compute;
+	var c1 = scope.computeData("../value").compute;
 	c1.on("change", function(){});
 	c1("BAR");
 
@@ -813,7 +792,7 @@ test("undefined props should be a scope hit (#20)", function(){
 	var instance2 = new MyType();
 	var scope2 = new Scope(instance2).add(new SimpleObservable());
 
-	var c2 = scope2.computeData("value").compute;
+	var c2 = scope2.computeData("../value").compute;
 
 	c2.on("change", function(){});
 	c2("BAR");
@@ -910,6 +889,59 @@ QUnit.test("can read a value from scope.element", function() {
 	var value = scope.peek('scope.element.value');
 
 	QUnit.equal(value, 'element value');
+});
+
+QUnit.test("scope.find can be used to find a value in the first scope it exists", function() {
+	var a = new SimpleMap({ a: "a" });
+	var b = new SimpleMap({ b: "b" });
+	var c = new SimpleMap({ c: "c" });
+
+	var scope = new Scope(c)
+		.add(b)
+		.add(a);
+
+	QUnit.equal(scope.find("a").value, "a", "a");
+	QUnit.equal(scope.find("b").value, "b", "b");
+	QUnit.equal(scope.find("c").value, "c", "c");
+});
+
+QUnit.test("scope.read should not walk up normal scopes by default", function() {
+	var a = new SimpleMap({ a: "a" });
+	var b = new SimpleMap({ b: "b" });
+	var c = new SimpleMap({ c: "c" });
+
+	var scope = new Scope(c)
+		.add(b)
+		.add(a);
+
+	QUnit.equal(scope.read("a").value, "a", "a");
+	QUnit.equal(scope.read("b").value, undefined, "b");
+	QUnit.equal(scope.read("c").value, undefined, "c");
+});
+
+QUnit.test("scope.read should walk over special scopes", function() {
+	var map = new SimpleMap({ a: "a", b: "b", c: "c" });
+
+	var scope = new Scope(map)
+		.add({ d: "d" }, { special: true });
+
+	QUnit.equal(scope.read("a").value, "a", "a");
+	QUnit.equal(scope.read("b").value, "b", "b");
+	QUnit.equal(scope.read("c").value, "c", "c");
+});
+
+QUnit.test("scope.read should skip special contexts and read from not-context scope higher in the chain", function(){
+	var scope = new Scope({ a: "a" })
+		.add({ b: "b" }, { notContext: true })
+		.add({ c: "c" }, { special: true })
+		.add({ d: "d" }, { notContext: true })
+		.add({ e: "e" });
+
+	QUnit.equal(scope.read("a").value, undefined, "a not read from normal parent context");
+	QUnit.equal(scope.read("b").value, "b", "b read correctly from notContext parent context");
+	QUnit.equal(scope.read("c").value, undefined, "c not read from special context");
+	QUnit.equal(scope.read("d").value, "d", "d read correctly from notContext parent context");
+	QUnit.equal(scope.read("e").value, "e", "e read correctly");
 });
 
 // this is for can-stache-bindings#189
