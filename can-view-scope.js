@@ -135,7 +135,7 @@ assign(Scope.prototype, {
 			// Set flag to halt lookup from walking up scope.
 			currentScopeOnly = true;
 			attr = keyInfo.isDotSlash ? attr.substr(2) : attr.substr(5);
-		} else if (keyInfo.isInParentContext || keyInfo.isParentContext) {
+		} else if ((keyInfo.isInParentContext || keyInfo.isParentContext) && this._parent) {
 			// walk up until we find a parent that can have context.
 			// the `isContextBased` check above won't catch it when you go from
 			// `../foo` to `foo` because `foo` isn't context based.

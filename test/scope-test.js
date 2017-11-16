@@ -944,6 +944,16 @@ QUnit.test("scope.read should skip special contexts and read from not-context sc
 	QUnit.equal(scope.read("e").value, "e", "e read correctly");
 });
 
+QUnit.test("reading using ../ when there is no parent returns undefined", function() {
+	var scope = new Scope({});
+
+	try {
+		QUnit.equal(scope.read('../foo').value, undefined, 'returns undefined');
+	} catch(e) {
+		QUnit.ok(false, 'error occured: ' + e);
+	}
+});
+
 // this is for can-stache-bindings#189
 // The viewModel is bound to a property that does not exist like:
 // <my-component vm:value:bind="./does-not-exist">
