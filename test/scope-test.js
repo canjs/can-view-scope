@@ -523,7 +523,7 @@ QUnit.test("setting a key on a non observable context", function(){
 	QUnit.deepEqual(context.colors.attr(), {prop: "bar"}, "can updateDeep");
 });
 
-QUnit.test("fast path computeData dependencies", function(assert) {
+testHelpers.dev.devOnlyTest("fast path computeData dependencies", function(assert) {
 	var map = new SimpleMap({value: "a"});
 	var scope = new Scope(map);
 	var computeData = scope.computeData("value");
