@@ -390,21 +390,23 @@ assign(Scope.prototype, {
 		}
 		return cur._context;
 	},
-	set: function(key, value, options) {
-		options = options || {};
 
+	// ## Scope.prototype.getDataForScopeSet
+	// Returns an object with data needed by `.set` to figure out what to set,
+	// and how.
+	getDataForScopeSet: function getDataForScopeSet(key, options) {
 		var keyInfo = Scope.keyInfo(key),
 			parent;
 
-		// Use `.read` to read everything upto, but not including the last property name
-		// to find the object we want to set some property on.
+		// Use `.read` to read everything upto, but not including the last property
+		// name to find the object we want to set some property on.
 		// For example:
 		//  - `foo.bar` -> `foo`
 		//  - `../foo.bar` -> `../foo`
 		//  - `../foo` -> `..`
 		//  - `foo` -> `.`
-		if ( keyInfo.isCurrentContext ) {
-			return canReflect.setValue(this._context, value);
+		if (keyInfo.isCurrentContext) {
+			return { parent: this._context, how: "setValue" };
 		} else if (keyInfo.isInParentContext || keyInfo.isParentContext) {
 			// walk up until we find a parent that can have context.
 			// the `isContextBased` check above won't catch it when you go from
@@ -415,22 +417,24 @@ assign(Scope.prototype, {
 			}
 
 			if (keyInfo.isParentContext) {
-				return canReflect.setValue(parent._context, value);
+				return { parent: parent._context, how: "setValue" };
 			}
-
-			return parent.set(key.substr(3) || ".", value, options);
+			// key starts with "../" or is "."
+			return { how: "set", parent: parent, passOptions: true, key: key.substr(3) || "." };
 		} else if (keyInfo.isInScope) {
 			if (keyInfo.isInScopeVars) {
-				return this.vars.set( key.substr(11), value );
+				// key starts with "scope.vars."
+				return { parent: this.vars, how: "set", key: key.substr(11) };
 			}
 
+			// key starts with "scope."
 			key = key.substr(6);
 
 			if (key.indexOf(".") < 0) {
-				return this.templateContext[ key ] = value;
+				return { parent: this.templateContext, how: "setKeyValue", key: key };
 			}
 
-			return this.getTemplateContext().set(key, value);
+			return { parent: this.getTemplateContext(), how: "set", key: key };
 		}
 
 		var dotIndex = key.lastIndexOf('.'),
@@ -456,25 +460,68 @@ assign(Scope.prototype, {
 
 		var context = this.read(contextPath, options).value;
 		if (context === undefined) {
-			//!steal-remove-start
-			canLog.error('Attempting to set a value at ' + key + ' where ' + contextPath + ' is undefined.');
-			//!steal-remove-end
-
-			return;
+			return {
+				error: "Attempting to set a value at " +
+					key + " where " + contextPath + " is undefined."
+			};
 		}
 
 		if(!canReflect.isObservableLike(context) && canReflect.isObservableLike(context[propName])) {
 			if(canReflect.isMapLike(context[propName])) {
-				canLog.warn("can-view-scope: Merging data into \"" + propName + "\" because its parent is non-observable");
-				canReflect.updateDeep(context[propName], value);
+				return {
+					parent: context,
+					key: propName,
+					how: "updateDeep",
+					warn: "can-view-scope: Merging data into \"" +
+						propName + "\" because its parent is non-observable"
+				};
 			}
 			else if(canReflect.isValueLike(context[propName])){
-				canReflect.setValue(context[propName], value);
+				return { parent: context, key: propName, how: "setValue" };
 			} else {
-				observeReader.write(context, propName, value, options);
+				return { parent: context, how: "write", key: propName, passOptions: true };
 			}
 		} else {
-			observeReader.write(context, propName, value, options);
+			return { parent: context, how: "write", key: propName, passOptions: true };
+		}
+	},
+
+	set: function(key, value, options) {
+		options = options || {};
+
+		var data = this.getDataForScopeSet(key, options);
+		var parent = data.parent;
+
+		//!steal-remove-start
+		if (data.error) {
+			return canLog.error(data.error);
+		}
+		//!steal-remove-end
+
+		if (data.warn) {
+			canLog.warn(data.warn);
+		}
+
+		switch (data.how) {
+			case "set":
+				parent.set(data.key, value, data.passOptions ? options : undefined);
+				break;
+
+			case "write":
+				observeReader.write(parent, data.key, value, options);
+				break;
+
+			case "setValue":
+				canReflect.setValue("key" in data ? parent[data.key] : parent, value);
+				break;
+
+			case "setKeyValue":
+				canReflect.setKeyValue(parent, data.key, value);
+				break;
+
+			case "updateDeep":
+				canReflect.updateDeep(parent[data.key], value);
+				break;
 		}
 	},
 
