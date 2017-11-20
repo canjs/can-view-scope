@@ -696,15 +696,13 @@ QUnit.test("filename and lineNumber can be read from anywhere in scope chain", f
 	QUnit.equal(scope.peek("scope.lineNumber"), "5", 'scope.peek("scope.lineNumber")');
 });
 
-QUnit.test("nested properties can be read from templateContext.root", function() {
+QUnit.test("nested properties can be read from scope.root", function() {
 	var root = new SimpleMap({ bar: "baz" });
+	var map = new SimpleMap({ bar: "abc" });
 
-	var map = new SimpleMap();
-	var scope = new Scope(map);
+	var scope = new Scope(root)
+		.add(map);
 
-	QUnit.ok(!scope.peek("scope.root.bar"), "root.bar === undefined");
-
-	scope.set("scope.root", root);
 	QUnit.equal(scope.peek("scope.root.bar"), "baz", "root.bar === baz");
 });
 
