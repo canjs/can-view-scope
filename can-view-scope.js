@@ -595,6 +595,10 @@ defineLazyValue(Scope.prototype, 'vars', function() {
 	return this.templateContext.vars;
 });
 
+defineLazyValue(Scope.prototype, 'root', function() {
+	return this.getRoot();
+});
+
 var specialKeywords = [
 	'index', 'key', 'element',
 	'event', 'viewModel','arguments'
