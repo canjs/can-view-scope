@@ -42,7 +42,7 @@
     "can-observation": "^4.0.0-pre.8",
     "can-observation-recorder": "<2.0.0",
     "can-reflect": "^1.6.0",
-    "can-reflect-mutate-dependencies": "0.0.2",
+    "can-reflect-dependencies": "<2.0.0",
     "can-simple-map": "^4.0.0-pre.2",
     "can-stache-key": "^1.0.0-pre.5",
     "can-symbol": "^1.0.0",

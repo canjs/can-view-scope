@@ -10,7 +10,7 @@ var queues = require('can-queues');
 var ObservationRecorder = require('can-observation-recorder');
 var CIDSet = require("can-cid/set/set");
 var makeComputeLike = require("./make-compute-like");
-var mutateDeps = require('can-reflect-mutate-dependencies');
+var canReflectDeps = require('can-reflect-dependencies');
 
 // The goal of this is to create a high-performance compute that represents a key value from can.view.Scope.
 // If the key value is something like {{name}} and the context is a can.Map, a faster
@@ -156,7 +156,7 @@ ScopeKeyData.prototype = {
 
 		//!steal-remove-start
 		var key = this.reads[0].key;
-		mutateDeps.addMutatedBy(fastPathRoot, key, {
+		canReflectDeps.addMutatedBy(fastPathRoot, key, {
 			valueDependencies: new Set([self])
 		});
 		//!steal-remove-end

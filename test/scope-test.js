@@ -10,7 +10,7 @@ var testHelpers = require('can-test-helpers');
 var SimpleMap = require('can-simple-map');
 var SimpleObservable = require('can-simple-observable');
 var ObservationRecorder = require('can-observation-recorder');
-var mutateDeps = require('can-reflect-mutate-dependencies');
+var canReflectDeps = require('can-reflect-dependencies');
 
 QUnit.module('can/view/scope');
 
@@ -547,9 +547,13 @@ testHelpers.dev.devOnlyTest("fast path computeData dependencies", function(asser
 		"the map's 'value' property should be a dependency of computeData"
 	);
 
-	var mapValueDependencies = mutateDeps.getKeyDependencies(map, "value");
+	var mapValueDependencies = canReflectDeps
+		.getDependencyDataOf(map, "value")
+		.whatChangesMe
+		.mutate;
+
 	assert.ok(
-		mapValueDependencies.mutatedValueDependencies.has(computeData),
+		mapValueDependencies.valueDependencies.has(computeData),
 		"the computeData should be a mutation dependency of the map's 'value' property"
 	);
 });
