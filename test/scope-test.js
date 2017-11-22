@@ -113,7 +113,7 @@ test('function at the end', function () {
 	})
 		.computeData('me.info')
 		.compute;
-	equal(compute(), 'Justin');
+	equal(compute()(), 'Justin');
 	var fn = function () {
 		return this.name;
 	};
@@ -633,7 +633,7 @@ QUnit.test("scope can be used to read from the templateContext", function() {
 
 	var ageFn = function() { return "30"; };
 	scope.set("scope.vars.age", ageFn);
-	QUnit.equal(scope.peek("scope.vars.age"), "30", "scope.vars.age === 30");
+	QUnit.equal(scope.peek("scope.vars.age")(), "30", "scope.vars.age === 30");
 });
 
 QUnit.test("scope.index reads from special scopes", function() {
