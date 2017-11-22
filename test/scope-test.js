@@ -570,39 +570,13 @@ QUnit.test("scopeKeyData offValue resets dependencyChange/start", function() {
 });
 
 QUnit.test("Rendering a template with a custom scope (#55)", function() {
-	var scope = new Scope({}),
-		scopeRefs;
-
-	try {
-		scopeRefs = scope.getRefs();
-		QUnit.ok(true, "Did not throw");
-	}
-	catch(e) {
-		QUnit.ok(false, e.message);
-	}
+	var scope = new Scope({});
 
 	QUnit.equal(scope.get('name'), undefined, "No name");
 	scope.set('name', 'John');
 	QUnit.equal(scope.get('name'), 'John', "Got the name");
 	scope = scope.add({name: 'Justin'});
 	QUnit.equal(scope.get('name'), 'Justin', "Got the top scope name");
-
-	try {
-		scopeRefs = scope.getRefs();
-		QUnit.ok(true, "Did not throw");
-	}
-	catch(e) {
-		QUnit.ok(false, e.message);
-	}
-});
-
-QUnit.test("generated refs scope is a Scope", function() {
-	var scope = new Scope({});
-	QUnit.equal(scope._parent, undefined, "scope initially has no parent");
-	var refScope = scope.getRefs();
-
-	QUnit.ok(refScope instanceof Scope, "refScope is a scope");
-	QUnit.ok(refScope._context instanceof Scope.Refs, "refScope context is a refs object");
 });
 
 QUnit.test("./ scope lookup should read current scope", function () {

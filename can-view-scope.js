@@ -42,11 +42,6 @@ assign(Scope, {
 	// A Map-like object used for the references scope.
 	Refs: TemplateContext,
 
-	// ## Scope.refsScope
-	// A scope with a references scope in it and no parent.
-	refsScope: function() {
-		return new Scope(new TemplateContext());
-	},
 	keyInfo: function(attr){
 		var info = {};
 		info.isDotSlash = attr.substr(0, 2) === './';
@@ -344,13 +339,6 @@ assign(Scope.prototype, {
 	getContext: function(tester) {
 		var res = this.getScope(tester);
 		return res && res._context;
-	},
-	// ## Scope.prototype.getRefs
-	// Returns the first references scope.
-	// Used by `.read` when looking up `*key` and by the references
-	// view binding.
-	getRefs: function() {
-		return this.getTemplateContext();
 	},
 	// ## Scope.prototype.getTemplateContext
 	// Returns the template context
