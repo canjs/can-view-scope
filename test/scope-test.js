@@ -574,39 +574,13 @@ QUnit.test("scopeKeyData offValue resets dependencyChange/start", function() {
 });
 
 QUnit.test("Rendering a template with a custom scope (#55)", function() {
-	var scope = new Scope({}),
-		scopeRefs;
-
-	try {
-		scopeRefs = scope.getRefs();
-		QUnit.ok(true, "Did not throw");
-	}
-	catch(e) {
-		QUnit.ok(false, e.message);
-	}
+	var scope = new Scope({});
 
 	QUnit.equal(scope.get('name'), undefined, "No name");
 	scope.set('name', 'John');
 	QUnit.equal(scope.get('name'), 'John', "Got the name");
 	scope = scope.add({name: 'Justin'});
 	QUnit.equal(scope.get('name'), 'Justin', "Got the top scope name");
-
-	try {
-		scopeRefs = scope.getRefs();
-		QUnit.ok(true, "Did not throw");
-	}
-	catch(e) {
-		QUnit.ok(false, e.message);
-	}
-});
-
-QUnit.test("generated refs scope is a Scope", function() {
-	var scope = new Scope({});
-	QUnit.equal(scope._parent, undefined, "scope initially has no parent");
-	var refScope = scope.getRefs();
-
-	QUnit.ok(refScope instanceof Scope, "refScope is a scope");
-	QUnit.ok(refScope._context instanceof Scope.Refs, "refScope context is a refs object");
 });
 
 QUnit.test("./ scope lookup should read current scope", function () {
@@ -955,30 +929,3 @@ QUnit.test("reading using ../ when there is no parent returns undefined", functi
 		QUnit.ok(false, 'error occured: ' + e);
 	}
 });
-
-// this is for can-stache-bindings#189
-// The viewModel is bound to a property that does not exist like:
-// <my-component vm:value:bind="./does-not-exist">
-// We need to be able to re-read this value so the `sticky` works
-/*
-The following has been fixed a different way
-QUnit.test("unobservable reads can change", function(){
-	var obj = {age: 1};
-	var base = new Scope(obj);
-	var age = base.computeData('age');
-	canReflect.onValue(age,function(){});
-	QUnit.equal(canReflect.getValue(age), 1);
-	obj.age = 2;
-	QUnit.equal(canReflect.getValue(age), 2);
-});
-
-QUnit.test("unobservable reads get the right value", function(){
-	var obj = {age: 1};
-	var base = new Scope(obj).add(new SimpleMap({}));
-	var age = base.computeData('age');
-	canReflect.onValue(age, function(){});
-	QUnit.equal(canReflect.getValue(age), 1);
-	obj.age = 2;
-	QUnit.equal(canReflect.getValue(age), 2);
-});
-*/
