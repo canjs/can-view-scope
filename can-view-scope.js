@@ -607,18 +607,5 @@ specialKeywords.forEach(function(key) {
 	});
 });
 
-function Options(data, parent, meta) {
-	if (!data.helpers && !data.partials && !data.tags) {
-		data = {
-			helpers: data
-		};
-	}
-	Scope.call(this, data, parent, meta);
-}
-Options.prototype = new Scope();
-Options.prototype.constructor = Options;
-
-Scope.Options = Options;
-
 namespace.view = namespace.view || {};
 module.exports = namespace.view.Scope = Scope;
