@@ -925,30 +925,3 @@ QUnit.test("reading using ../ when there is no parent returns undefined", functi
 		QUnit.ok(false, 'error occured: ' + e);
 	}
 });
-
-// this is for can-stache-bindings#189
-// The viewModel is bound to a property that does not exist like:
-// <my-component vm:value:bind="./does-not-exist">
-// We need to be able to re-read this value so the `sticky` works
-/*
-The following has been fixed a different way
-QUnit.test("unobservable reads can change", function(){
-	var obj = {age: 1};
-	var base = new Scope(obj);
-	var age = base.computeData('age');
-	canReflect.onValue(age,function(){});
-	QUnit.equal(canReflect.getValue(age), 1);
-	obj.age = 2;
-	QUnit.equal(canReflect.getValue(age), 2);
-});
-
-QUnit.test("unobservable reads get the right value", function(){
-	var obj = {age: 1};
-	var base = new Scope(obj).add(new SimpleMap({}));
-	var age = base.computeData('age');
-	canReflect.onValue(age, function(){});
-	QUnit.equal(canReflect.getValue(age), 1);
-	obj.age = 2;
-	QUnit.equal(canReflect.getValue(age), 2);
-});
-*/
