@@ -177,13 +177,13 @@ ScopeKeyData.prototype = {
 
 			return Observation.prototype.dependencyChange.apply(this, arguments);
 		};
-		observation.start = function(){
+		observation.onBound = function(){
 			this.value = this.newVal;
 		};
 	},
 	toSlowPath: function(){
 		this.observation.dependencyChange = Observation.prototype.dependencyChange;
-		this.observation.start = Observation.prototype.start;
+		this.observation.onBound = Observation.prototype.onBound;
 		this.fastPath = false;
 	},
 	read: function(){

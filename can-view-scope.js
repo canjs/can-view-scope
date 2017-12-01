@@ -3,7 +3,7 @@
 // This allows you to define a lookup context and parent contexts that a key's value can be retrieved from.
 // If no parent scope is provided, only the scope's context will be explored for values.
 var observeReader = require('can-stache-key');
-var Observation = require('can-observation');
+var ObservationRecorder = require("can-observation-recorder");
 var TemplateContext = require('./template-context');
 var makeComputeData = require('./compute_data');
 var assign = require('can-util/js/assign/assign');
@@ -221,7 +221,7 @@ assign(Scope.prototype, {
 				}
 			}, options);
 
-		var isRecording = Observation.isRecording();
+		var isRecording = ObservationRecorder.isRecording();
 
 		// Goes through each scope context provided until it finds the key (attr).  Once the key is found
 		// then it's value is returned along with an observe, the current scope and reads.
@@ -248,7 +248,7 @@ assign(Scope.prototype, {
 				(typeof currentContext === "object" || typeof currentContext === "function")
 			) {
 				// Prevent computes from temporarily observing the reading of observables.
-				var getObserves = Observation.trap();
+				var getObserves = ObservationRecorder.trap();
 
 				var data = observeReader.read(currentContext, keyReads, readOptions);
 
@@ -264,7 +264,7 @@ assign(Scope.prototype, {
 						currentObserve = data.parent;
 						currentReads = keyReads.slice(keyReads.length - 1);
 					} else {
-						Observation.addAll(observes);
+						ObservationRecorder.addMany(observes);
 					}
 
 					return {
@@ -295,7 +295,7 @@ assign(Scope.prototype, {
 		// The **value was not found**, return `undefined` for the value.
 		// Make sure we listen to everything we checked for when the value becomes defined.
 		// Once it becomes defined, we won't have to listen to so many things.
-		Observation.addAll(undefinedObserves);
+		ObservationRecorder.addMany(undefinedObserves);
 		return {
 			setRoot: currentSetObserve,
 			reads: currentSetReads,
@@ -314,10 +314,10 @@ assign(Scope.prototype, {
 		var res = this.read(key, options);
 		return res.value;
 	},
-	peek: Observation.ignore(function(key, options) {
+	peek: ObservationRecorder.ignore(function(key, options) {
 		return this.get(key, options);
 	}),
-	peak: Observation.ignore(function(key, options) {
+	peak: ObservationRecorder.ignore(function(key, options) {
 		//!steal-remove-start
 		canLog.warn('peak is deprecated, please use peek instead');
 		//!steal-remove-end
@@ -515,7 +515,7 @@ assign(Scope.prototype, {
 
 	// ## Scope.prototype.attr
 	// Gets or sets a value in the scope without being observable.
-	attr: Observation.ignore(function(key, value, options) {
+	attr: ObservationRecorder.ignore(function(key, value, options) {
 		canLog.warn("can-view-scope::attr is deprecated, please use peek, get or set");
 
 		options = assign({
