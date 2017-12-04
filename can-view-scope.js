@@ -176,11 +176,9 @@ assign(Scope.prototype, {
 
 			if (keyReads.length === 1) {
 				return { value: value };
-			} else if (value) {
-				return observeReader.read(value, keyReads.slice(1));
-			} else {
-				return this.getTemplateContext()._read(keyReads);
 			}
+
+			return observeReader.read(value, keyReads.slice(1));
 		}
 
 		return this._read(keyReads, options, currentScopeOnly);
@@ -418,11 +416,7 @@ assign(Scope.prototype, {
 			// key starts with "scope."
 			key = key.substr(6);
 
-			if (key.indexOf(".") < 0) {
-				return { parent: this.templateContext, how: "setKeyValue", key: key };
-			}
-
-			return { parent: this.getTemplateContext(), how: "set", key: key };
+			return { parent: this.templateContext, how: "setKeyValue", key: key };
 		}
 
 		var dotIndex = key.lastIndexOf('.'),
