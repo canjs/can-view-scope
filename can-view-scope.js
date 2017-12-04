@@ -162,23 +162,24 @@ assign(Scope.prototype, {
 			keyRead = keyReads[0];
 			key = keyRead.key;
 
-			// default to reading from Scope.prototype values
 			value = this[ key ];
 
+			// default to reading from Scope.prototype values
+			if (typeof value !== 'undefined') {
+				if (keyRead.at) {
+					value = value.bind(this);
+				}
+
+				if (keyReads.length === 1) {
+					return { value: value };
+				}
+
+				return observeReader.read(value, keyReads.slice(1));
+			}
 			// otherwise, read from templateContext
-			value = typeof value !== 'undefined' ?
-				value :
-				this.templateContext[ key ];
-
-			if (keyRead.at) {
-				value = value.bind(this);
+			else {
+				return { value: this.getFromTemplateContext(key) };
 			}
-
-			if (keyReads.length === 1) {
-				return { value: value };
-			}
-
-			return observeReader.read(value, keyReads.slice(1));
 		}
 
 		return this._read(keyReads, options, currentScopeOnly);
@@ -191,6 +192,11 @@ assign(Scope.prototype, {
 			{ special: true }
 		);
 		return res.value;
+	},
+
+	// ## Scope.prototype.getFromTemplateContext
+	getFromTemplateContext: function(key) {
+		return this.templateContext[ key ];
 	},
 
 	// ## Scope.prototype._read
