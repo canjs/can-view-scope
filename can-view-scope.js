@@ -183,6 +183,16 @@ assign(Scope.prototype, {
 
 		return this._read(keyReads, options, currentScopeOnly);
 	},
+
+	// ## Scope.prototype.getFromSpecialContext
+	getFromSpecialContext: function(key) {
+		var res = this._read(
+			[{key: key, at: false }],
+			{ special: true }
+		);
+		return res.value;
+	},
+
 	// ## Scope.prototype._read
 	//
 	_read: function(keyReads, options, currentScopeOnly) {
@@ -586,18 +596,13 @@ var specialKeywords = [
 	'event', 'viewModel','arguments'
 ];
 
-var readFromSpecialContexts = function(key) {
-	return function() {
-		return this._read(
-			[{ key: key, at: false }],
-			{ special: true }
-		).value;
-	};
-};
-
+// create getters for "special" keys
+// scope.index -> scope.getFromSpecialContext("index")
 specialKeywords.forEach(function(key) {
 	Object.defineProperty(Scope.prototype, key, {
-		get: readFromSpecialContexts(key)
+		get: function() {
+			return this.getFromSpecialContext(key);
+		}
 	});
 });
 
