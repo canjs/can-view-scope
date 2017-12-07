@@ -11,6 +11,7 @@ var SimpleMap = require('can-simple-map');
 var SimpleObservable = require('can-simple-observable');
 var ObservationRecorder = require('can-observation-recorder');
 var canReflectDeps = require('can-reflect-dependencies');
+var canStacheHelpers = require('can-stache-helpers');
 
 QUnit.module('can/view/scope');
 
@@ -928,4 +929,28 @@ QUnit.test("reading using ../ when there is no parent returns undefined", functi
 	} catch(e) {
 		QUnit.ok(false, 'error occured: ' + e);
 	}
+});
+
+QUnit.test("read checks can-stache-helpers after checking the scope", function() {
+	var map = {
+		scopeFunction: function() {
+			return 'scopeFunction return value';
+		}
+	};
+
+	var helperFunction = function() {
+		return 'helperFunction return value';
+	};
+
+	canStacheHelpers.helperFunction = helperFunction;
+
+	var scope = new Scope(map);
+
+	var readScopeFunction = scope.read("scopeFunction").value;
+	QUnit.deepEqual(readScopeFunction(), "scopeFunction return value", "scopeFunction");
+
+	var readHelperFunction = scope.read("helperFunction").value;
+	QUnit.deepEqual(readHelperFunction(), "helperFunction return value", "helperFunction");
+
+	delete canStacheHelpers.helperFunction;
 });

@@ -12,6 +12,7 @@ var namespace = require('can-namespace');
 var canReflect = require("can-reflect");
 var canLog = require('can-log/dev/dev');
 var defineLazyValue = require('can-define-lazy-value');
+var stacheHelpers = require('can-stache-helpers');
 
 function Scope(context, parent, meta) {
 	// The obj that will be looked on for values.
@@ -303,6 +304,16 @@ assign(Scope.prototype, {
 			} else {
 				// Move up to the next scope.
 				currentScope = currentScope._parent;
+			}
+		}
+
+		// The **value was not found** in the scope
+		// if looking for a single key - check in can-stache-helpers
+		if (keyReads.length === 1) {
+			var helperValue = stacheHelpers[ keyReads[0].key ];
+
+			if (helperValue) {
+				return { value: helperValue };
 			}
 		}
 
