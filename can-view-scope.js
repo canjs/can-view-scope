@@ -310,10 +310,10 @@ assign(Scope.prototype, {
 		// The **value was not found** in the scope
 		// if looking for a single key - check in can-stache-helpers
 		if (keyReads.length === 1) {
-			var helperValue = stacheHelpers[ keyReads[0].key ];
+			var helper = this.getHelper(keyReads[0].key);
 
-			if (helperValue) {
-				return { value: helperValue };
+			if (helper) {
+				return helper;
 			}
 		}
 
@@ -326,6 +326,20 @@ assign(Scope.prototype, {
 			reads: currentSetReads,
 			value: undefined
 		};
+	},
+
+	// ## Scope.prototype.getHelper
+	// read a helper from the templateContext or global helpers list
+	getHelper: function(key) {
+		var helper = canReflect.getKeyValue(this.templateContext.helpers, key);
+
+		if (!helper) {
+			helper = stacheHelpers[ key ];
+		}
+
+		if (helper) {
+			return { value: helper };
+		}
 	},
 
 	// ## Scope.prototype.get

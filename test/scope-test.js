@@ -931,26 +931,47 @@ QUnit.test("reading using ../ when there is no parent returns undefined", functi
 	}
 });
 
-QUnit.test("read checks can-stache-helpers after checking the scope", function() {
+QUnit.test("read checks templateContext helpers then global helpers after checking the scope", function() {
 	var map = {
 		scopeFunction: function() {
-			return 'scopeFunction return value';
+			return 'scopeFunction';
 		}
 	};
 
 	var helperFunction = function() {
-		return 'helperFunction return value';
+		return 'helperFunction';
 	};
 
-	canStacheHelpers.helperFunction = helperFunction;
+	var localHelperFunction = function() {
+		return 'localHelperFunction';
+	};
+
+	var globalHelperCalledLocalHelperFunction = function() {
+		return 'global helper function called "localHelperFunction"';
+	};
 
 	var scope = new Scope(map);
 
-	var readScopeFunction = scope.read("scopeFunction").value;
-	QUnit.deepEqual(readScopeFunction(), "scopeFunction return value", "scopeFunction");
+	// register global helper function
+	canStacheHelpers.helperFunction = helperFunction;
 
-	var readHelperFunction = scope.read("helperFunction").value;
-	QUnit.deepEqual(readHelperFunction(), "helperFunction return value", "helperFunction");
+	// register "local" helper in templateContext
+	canReflect.setKeyValue(scope.templateContext.helpers, "localHelperFunction", localHelperFunction);
 
+	// register global helper function that collides with templateContext function
+	canStacheHelpers.localHelperFunction = globalHelperCalledLocalHelperFunction;
+
+	var readScopeFunction = scope.read('scopeFunction').value;
+	QUnit.deepEqual(readScopeFunction(), 'scopeFunction', 'scopeFunction');
+
+	var readLocalHelperFunction = scope.read('localHelperFunction').value;
+	QUnit.deepEqual(readLocalHelperFunction(), 'localHelperFunction', 'localHelperFunction');
+
+	var readHelperFunction = scope.read('helperFunction').value;
+	QUnit.deepEqual(readHelperFunction(), 'helperFunction', 'helperFunction');
+
+	// clean up
 	delete canStacheHelpers.helperFunction;
+	delete canStacheHelpers.localHelperFunction;
+	canReflect.setKeyValue(scope.templateContext.helpers, "localHelperFunction", undefined);
 });
