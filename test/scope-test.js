@@ -877,9 +877,9 @@ QUnit.test("scope.find can be used to find a value in the first scope it exists"
 		.add(b)
 		.add(a);
 
-	QUnit.equal(scope.find("a").value, "a", "a");
-	QUnit.equal(scope.find("b").value, "b", "b");
-	QUnit.equal(scope.find("c").value, "c", "c");
+	QUnit.equal(scope.find("a"), "a", "a");
+	QUnit.equal(scope.find("b"), "b", "b");
+	QUnit.equal(scope.find("c"), "c", "c");
 });
 
 QUnit.test("scope.read should not walk up normal scopes by default", function() {
