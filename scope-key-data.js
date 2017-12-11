@@ -5,12 +5,13 @@ var assign = require('can-util/js/assign/assign');
 
 var canReflect = require('can-reflect');
 var canSymbol = require('can-symbol');
-var KeyTree = require('can-key-tree');
-var queues = require('can-queues');
 var ObservationRecorder = require('can-observation-recorder');
 var CIDSet = require("can-cid/set/set");
 var makeComputeLike = require("./make-compute-like");
 var canReflectDeps = require('can-reflect-dependencies');
+var valueEventBindings = require("can-event-queue/value/value");
+
+var dispatchSymbol = canSymbol.for("can.dispatch");
 
 // The goal of this is to create a high-performance compute that represents a key value from can.view.Scope.
 // If the key value is something like {{name}} and the context is a can.Map, a faster
@@ -48,9 +49,6 @@ var isEventObject = function(obj){
 	return obj && typeof obj.batchNum === "number" && typeof obj.type === "string";
 };
 
-
-
-
 // could we make this an observation first ... and have a getter for the compute?
 
 // This is a fast-path enabled Observation wrapper use many places in can-stache.
@@ -78,13 +76,7 @@ var ScopeKeyData = function(scope, key, options){
 	});
 	//!steal-remove-end
 
-	this.handlers = new KeyTree([Object, Array], {
-		onFirst: this.setup.bind(this),
-		onEmpty: this.teardown.bind(this)
-	});
-
 	observation = this.observation = new Observation(this.read, this);
-
 
 	// things added later
 	this.fastPath = undefined;
@@ -96,15 +88,18 @@ var ScopeKeyData = function(scope, key, options){
 	valueDependencies.add(observation);
 	this.dependencies = {valueDependencies: valueDependencies};
 };
-ScopeKeyData.prototype = {
+
+valueEventBindings(ScopeKeyData.prototype);
+
+Object.assign(ScopeKeyData.prototype, {
 	constructor: ScopeKeyData,
-	dispatch: function(newVal){
+	dispatch: function dispatch(newVal){
 		var old = this.value;
 		this.value = newVal;
-		// adds callback handlers to be called w/i their respective queue.
-		queues.enqueueByQueue(this.handlers.getNode([]), this, [newVal, old], null, [canReflect.getName(this), "changed to", newVal, "from", old]);
+		// call the base implementation in can-event-queue
+		this[dispatchSymbol].call(this, this.value, old);
 	},
-	setup: function(){
+	onBound: function onBound(){
 		this.bound = true;
 		canReflect.onValue(this.observation, this.dispatch, "notify");
 		// TODO: we should check this sometime in the background.
@@ -115,7 +110,7 @@ ScopeKeyData.prototype = {
 		}
 		this.value = peekValue(this.observation);
 	},
-	teardown: function() {
+	onUnbound: function onUnbound() {
 		this.bound = false;
 		canReflect.offValue(this.observation, this.dispatch, "notify");
 		this.toSlowPath();
@@ -141,12 +136,6 @@ ScopeKeyData.prototype = {
 		} else {
 			return this.observation.get();
 		}
-	},
-	on: function(handler, queue) {
-		this.handlers.add([queue || "mutate", handler]);
-	},
-	off: function(handler, queue) {
-		this.handlers.delete([queue || "mutate", handler]);
 	},
 	toFastPath: function(fastPathRoot){
 		var self = this,
@@ -205,13 +194,11 @@ ScopeKeyData.prototype = {
 	hasDependencies: function(){
 		return canReflect.valueHasDependencies( this.observation );
 	}
-};
+});
 
 canReflect.assignSymbols(ScopeKeyData.prototype, {
 	"can.getValue": ScopeKeyData.prototype.get,
 	"can.setValue": ScopeKeyData.prototype.set,
-	"can.onValue": ScopeKeyData.prototype.on,
-	"can.offValue": ScopeKeyData.prototype.off,
 	"can.valueHasDependencies": ScopeKeyData.prototype.hasDependencies,
 	"can.getValueDependencies": function() {
 		var result = this.dependencies;
@@ -237,7 +224,6 @@ canReflect.assignSymbols(ScopeKeyData.prototype, {
 	"can.setPriority": function(newPriority){
 		canReflect.setPriority( this.observation, newPriority );
 	},
-
 	//!steal-remove-start
 	"can.getName": function() {
 		return canReflect.getName(this.constructor) + "{{" + this.key + "}}";
@@ -246,7 +232,7 @@ canReflect.assignSymbols(ScopeKeyData.prototype, {
 });
 
 // Creates a compute-like for legacy reasons ...
-Object.defineProperty(ScopeKeyData.prototype,"compute",{
+Object.defineProperty(ScopeKeyData.prototype, "compute", {
 	get: function(){
 		var compute = makeComputeLike(this);
 
