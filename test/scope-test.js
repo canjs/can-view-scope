@@ -975,3 +975,25 @@ QUnit.test("read checks templateContext helpers then global helpers after checki
 	delete canStacheHelpers.localHelperFunction;
 	canReflect.setKeyValue(scope.templateContext.helpers, "localHelperFunction", undefined);
 });
+
+QUnit.test("read can handle objects stored on helpers", function() {
+	var scope = new Scope();
+
+	var fakeConsole = {
+		log: function() {
+			return "fakeConsole.log";
+		},
+		warn: function() {
+			return "fakeConsole.warn";
+		}
+	};
+	canStacheHelpers.console = fakeConsole;
+
+	var readConsoleLog = scope.read('console.log').value;
+	QUnit.deepEqual(readConsoleLog(), 'fakeConsole.log', 'fakeConsole.log');
+
+	var readConsoleWarn = scope.read('console.warn').value;
+	QUnit.deepEqual(readConsoleWarn(), 'fakeConsole.warn', 'fakeConsole.warn');
+
+	delete canStacheHelpers.console;
+});
