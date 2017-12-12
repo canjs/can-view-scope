@@ -624,7 +624,8 @@ defineLazyValue(Scope.prototype, 'root', function() {
 
 var specialKeywords = [
 	'index', 'key', 'element',
-	'event', 'viewModel','arguments'
+	'event', 'viewModel','arguments',
+	'helperOptions'
 ];
 
 // create getters for "special" keys
