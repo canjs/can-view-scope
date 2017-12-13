@@ -12,6 +12,7 @@ var namespace = require('can-namespace');
 var canReflect = require("can-reflect");
 var canLog = require('can-log/dev/dev');
 var defineLazyValue = require('can-define-lazy-value');
+var stacheHelpers = require('can-stache-helpers');
 
 function Scope(context, parent, meta) {
 	// The obj that will be looked on for values.
@@ -87,7 +88,7 @@ assign(Scope.prototype, {
 
 	// ## Scope.prototype.find
 	find: function(attr) {
-		return this.read(attr, { currentScopeOnly: false });
+		return this.get(attr, { currentScopeOnly: false });
 	},
 
 	// ## Scope.prototype.read
@@ -162,29 +163,43 @@ assign(Scope.prototype, {
 			keyRead = keyReads[0];
 			key = keyRead.key;
 
-			// default to reading from Scope.prototype values
 			value = this[ key ];
 
-			// otherwise, read from templateContext
-			value = typeof value !== 'undefined' ?
-				value :
-				this.templateContext[ key ];
+			// default to reading from Scope.prototype values
+			if (typeof value !== 'undefined') {
+				if (keyRead.at) {
+					value = value.bind(this);
+				}
 
-			if (keyRead.at) {
-				value = value.bind(this);
-			}
+				if (keyReads.length === 1) {
+					return { value: value };
+				}
 
-			if (keyReads.length === 1) {
-				return { value: value };
-			} else if (value) {
 				return observeReader.read(value, keyReads.slice(1));
-			} else {
-				return this.getTemplateContext()._read(keyReads);
+			}
+			// otherwise, read from templateContext
+			else {
+				return { value: this.getFromTemplateContext(key) };
 			}
 		}
 
 		return this._read(keyReads, options, currentScopeOnly);
 	},
+
+	// ## Scope.prototype.getFromSpecialContext
+	getFromSpecialContext: function(key) {
+		var res = this._read(
+			[{key: key, at: false }],
+			{ special: true }
+		);
+		return res.value;
+	},
+
+	// ## Scope.prototype.getFromTemplateContext
+	getFromTemplateContext: function(key) {
+		return this.templateContext[ key ];
+	},
+
 	// ## Scope.prototype._read
 	//
 	_read: function(keyReads, options, currentScopeOnly) {
@@ -292,6 +307,14 @@ assign(Scope.prototype, {
 			}
 		}
 
+		// The **value was not found** in the scope
+		// if looking for a single key - check in can-stache-helpers
+		var helper = this.getHelper(keyReads);
+
+		if (helper && helper.value) {
+			return helper;
+		}
+
 		// The **value was not found**, return `undefined` for the value.
 		// Make sure we listen to everything we checked for when the value becomes defined.
 		// Once it becomes defined, we won't have to listen to so many things.
@@ -301,6 +324,18 @@ assign(Scope.prototype, {
 			reads: currentSetReads,
 			value: undefined
 		};
+	},
+
+	// ## Scope.prototype.getHelper
+	// read a helper from the templateContext or global helpers list
+	getHelper: function(keyReads) {
+		var helper = observeReader.read(this.templateContext.helpers, keyReads, { proxyMethods: false });
+
+		if (!helper || !helper.value) {
+			helper = observeReader.read(stacheHelpers, keyReads, { proxyMethods: false });
+		}
+
+		return helper;
 	},
 
 	// ## Scope.prototype.get
@@ -418,11 +453,7 @@ assign(Scope.prototype, {
 			// key starts with "scope."
 			key = key.substr(6);
 
-			if (key.indexOf(".") < 0) {
-				return { parent: this.templateContext, how: "setKeyValue", key: key };
-			}
-
-			return { parent: this.getTemplateContext(), how: "set", key: key };
+			return { parent: this.templateContext, how: "setKeyValue", key: key };
 		}
 
 		var dotIndex = key.lastIndexOf('.'),
@@ -589,21 +620,17 @@ defineLazyValue(Scope.prototype, 'root', function() {
 
 var specialKeywords = [
 	'index', 'key', 'element',
-	'event', 'viewModel','arguments'
+	'event', 'viewModel','arguments',
+	'helperOptions'
 ];
 
-var readFromSpecialContexts = function(key) {
-	return function() {
-		return this._read(
-			[{ key: key, at: false }],
-			{ special: true }
-		).value;
-	};
-};
-
+// create getters for "special" keys
+// scope.index -> scope.getFromSpecialContext("index")
 specialKeywords.forEach(function(key) {
 	Object.defineProperty(Scope.prototype, key, {
-		get: readFromSpecialContexts(key)
+		get: function() {
+			return this.getFromSpecialContext(key);
+		}
 	});
 });
 

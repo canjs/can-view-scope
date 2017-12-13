@@ -11,6 +11,7 @@ var SimpleMap = require('can-simple-map');
 var SimpleObservable = require('can-simple-observable');
 var ObservationRecorder = require('can-observation-recorder');
 var canReflectDeps = require('can-reflect-dependencies');
+var canStacheHelpers = require('can-stache-helpers');
 
 QUnit.module('can/view/scope');
 
@@ -876,9 +877,9 @@ QUnit.test("scope.find can be used to find a value in the first scope it exists"
 		.add(b)
 		.add(a);
 
-	QUnit.equal(scope.find("a").value, "a", "a");
-	QUnit.equal(scope.find("b").value, "b", "b");
-	QUnit.equal(scope.find("c").value, "c", "c");
+	QUnit.equal(scope.find("a"), "a", "a");
+	QUnit.equal(scope.find("b"), "b", "b");
+	QUnit.equal(scope.find("c"), "c", "c");
 });
 
 QUnit.test("scope.read should not walk up normal scopes by default", function() {
@@ -928,4 +929,71 @@ QUnit.test("reading using ../ when there is no parent returns undefined", functi
 	} catch(e) {
 		QUnit.ok(false, 'error occured: ' + e);
 	}
+});
+
+QUnit.test("read checks templateContext helpers then global helpers after checking the scope", function() {
+	var map = {
+		scopeFunction: function() {
+			return 'scopeFunction';
+		}
+	};
+
+	var helperFunction = function() {
+		return 'helperFunction';
+	};
+
+	var localHelperFunction = function() {
+		return 'localHelperFunction';
+	};
+
+	var globalHelperCalledLocalHelperFunction = function() {
+		return 'global helper function called "localHelperFunction"';
+	};
+
+	var scope = new Scope(map);
+
+	// register global helper function
+	canStacheHelpers.helperFunction = helperFunction;
+
+	// register "local" helper in templateContext
+	canReflect.setKeyValue(scope.templateContext.helpers, "localHelperFunction", localHelperFunction);
+
+	// register global helper function that collides with templateContext function
+	canStacheHelpers.localHelperFunction = globalHelperCalledLocalHelperFunction;
+
+	var readScopeFunction = scope.read('scopeFunction').value;
+	QUnit.deepEqual(readScopeFunction(), 'scopeFunction', 'scopeFunction');
+
+	var readLocalHelperFunction = scope.read('localHelperFunction').value;
+	QUnit.deepEqual(readLocalHelperFunction(), 'localHelperFunction', 'localHelperFunction');
+
+	var readHelperFunction = scope.read('helperFunction').value;
+	QUnit.deepEqual(readHelperFunction(), 'helperFunction', 'helperFunction');
+
+	// clean up
+	delete canStacheHelpers.helperFunction;
+	delete canStacheHelpers.localHelperFunction;
+	canReflect.setKeyValue(scope.templateContext.helpers, "localHelperFunction", undefined);
+});
+
+QUnit.test("read can handle objects stored on helpers", function() {
+	var scope = new Scope();
+
+	var fakeConsole = {
+		log: function() {
+			return "fakeConsole.log";
+		},
+		warn: function() {
+			return "fakeConsole.warn";
+		}
+	};
+	canStacheHelpers.console = fakeConsole;
+
+	var readConsoleLog = scope.read('console.log').value;
+	QUnit.deepEqual(readConsoleLog(), 'fakeConsole.log', 'fakeConsole.log');
+
+	var readConsoleWarn = scope.read('console.warn').value;
+	QUnit.deepEqual(readConsoleWarn(), 'fakeConsole.warn', 'fakeConsole.warn');
+
+	delete canStacheHelpers.console;
 });
