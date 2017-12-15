@@ -61,11 +61,11 @@ var ScopeKeyData = function(scope, key, options){
 
 	this.startingScope = scope;
 	this.key = key;
-	this.options = assign({ observation: this.observation }, options);
-	var observation;
-
 	this.read = this.read.bind(this);
 	this.dispatch = this.dispatch.bind(this);
+
+	var observation = this.observation = new Observation(this.read, this);
+	this.options = assign({ observation: this.observation }, options);
 
 	//!steal-remove-start
 	Object.defineProperty(this.read, "name", {
@@ -75,8 +75,6 @@ var ScopeKeyData = function(scope, key, options){
 		value: canReflect.getName(this) + ".dispatch",
 	});
 	//!steal-remove-end
-
-	observation = this.observation = new Observation(this.read, this);
 
 	// things added later
 	this.fastPath = undefined;

@@ -40,8 +40,11 @@ test("basics",function(){
 test('Scope.prototype.computeData', function () {
 	var map = new SimpleMap();
 	var base = new Scope(map);
-	var age = base.computeData('age')
-		.compute;
+	var computeData = base.computeData('age');
+
+	equal(computeData.observation, computeData.options.observation, 'ScopeKeyData should have a backing observation stored on its `options`');
+
+	var age = computeData.compute;
 	equal(age(), undefined, 'age is not set');
 	age.bind('change', function (ev, newVal, oldVal) {
 		equal(newVal, 31, 'newVal is provided correctly');
