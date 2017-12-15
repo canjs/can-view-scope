@@ -292,11 +292,13 @@ assign(Scope.prototype, {
 		}
 
 		// The **value was not found** in the scope
-		// if looking for a single key - check in can-stache-helpers
-		var helper = this.getHelper(keyReads);
+		// if not looking for a "special" key, check in can-stache-helpers
+		if (!(options && options.special)) {
+			var helper = this.getHelper(keyReads);
 
-		if (helper && helper.value) {
-			return helper;
+			if (helper && helper.value) {
+				return helper;
+			}
 		}
 
 		// The **value was not found**, return `undefined` for the value.

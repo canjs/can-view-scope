@@ -645,6 +645,21 @@ QUnit.test("scope.index reads from special scopes", function() {
 
 });
 
+QUnit.test("scope.index should not return a global helper", function() {
+	var mockGlobalHelper = function() {
+		QUnit.ok(false, 'global helper should not be called');
+	};
+	var originalIndexHelper = canStacheHelpers.index;
+	canStacheHelpers.index = mockGlobalHelper;
+
+	var scope = new Scope({});
+
+	QUnit.equal(scope.peek('scope.index'), undefined,
+		'scope.index returns undefined if no special context exists');
+
+	canStacheHelpers.index = originalIndexHelper;
+});
+
 QUnit.test("scope.key reads from special scopes", function() {
 	var map1 = new SimpleMap({ key: "one" });
 	var map2 = new SimpleMap({ key: 3 });
