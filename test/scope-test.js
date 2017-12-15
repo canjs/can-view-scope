@@ -619,6 +619,12 @@ QUnit.test("scope can be used to read from the templateContext", function() {
 });
 
 QUnit.test("scope.index reads from special scopes", function() {
+
+	// When this is run in the main CanJS test suite, can-stache adds an index helper,
+	// so delete its helper so it doesn’t conflict with this test
+	var originalIndexHelper = canStacheHelpers.index;
+	delete canStacheHelpers.index;
+
 	var map1 = new SimpleMap({ index: 1 });
 	var map2 = new SimpleMap({ index: 3 });
 	var scope = new Scope(map1);
@@ -633,6 +639,10 @@ QUnit.test("scope.index reads from special scopes", function() {
 	QUnit.equal(scope.peek('scope.index'), 0, 'scope.index is read correctly');
 
 	QUnit.equal(scope._parent.peek('scope.index'), 2, 'scope.index is only read from special contexts');
+
+	// Restore can-stache’s index helper
+	canStacheHelpers.index = originalIndexHelper;
+
 });
 
 QUnit.test("scope.key reads from special scopes", function() {
