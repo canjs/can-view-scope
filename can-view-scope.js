@@ -152,35 +152,18 @@ assign(Scope.prototype, {
 		}
 
 		var keyReads = observeReader.reads(attr),
-			keyRead,
-			key,
-			value;
+			readValue;
 
 		if (keyInfo.isInScope) {
-			// remove the `{ key: scope }`
-			keyReads = keyReads.slice(1);
+			// check for a value on Scope.prototype
+			readValue = observeReader.read(this, keyReads.slice(1), options);
 
-			keyRead = keyReads[0];
-			key = keyRead.key;
-
-			value = this[ key ];
-
-			// default to reading from Scope.prototype values
-			if (typeof value !== 'undefined') {
-				if (keyRead.at) {
-					value = value.bind(this);
-				}
-
-				if (keyReads.length === 1) {
-					return { value: value };
-				}
-
-				return observeReader.read(value, keyReads.slice(1));
+			// otherwise, check the templateContext
+			if (typeof readValue.value === 'undefined') {
+				readValue = this.getFromTemplateContext(attr.slice(6), options);
 			}
-			// otherwise, read from templateContext
-			else {
-				return { value: this.getFromTemplateContext(key) };
-			}
+
+			return readValue;
 		}
 
 		return this._read(keyReads, options, currentScopeOnly);
@@ -196,8 +179,9 @@ assign(Scope.prototype, {
 	},
 
 	// ## Scope.prototype.getFromTemplateContext
-	getFromTemplateContext: function(key) {
-		return this.templateContext[ key ];
+	getFromTemplateContext: function(key, readOptions) {
+		var keyReads = observeReader.reads(key);
+		return observeReader.read(this.templateContext, keyReads, readOptions);
 	},
 
 	// ## Scope.prototype._read
@@ -616,6 +600,10 @@ defineLazyValue(Scope.prototype, 'vars', function() {
 
 defineLazyValue(Scope.prototype, 'root', function() {
 	return this.getRoot();
+});
+
+defineLazyValue(Scope.prototype, 'helpers', function() {
+	return stacheHelpers;
 });
 
 var specialKeywords = [
