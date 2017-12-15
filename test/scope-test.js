@@ -997,3 +997,29 @@ QUnit.test("read can handle objects stored on helpers", function() {
 
 	delete canStacheHelpers.console;
 });
+
+QUnit.test("scope.helpers can be used to read a helper that conflicts with a property in the scope", function() {
+	var map = {
+		myIf: function() {
+			return 'map.myIf';
+		}
+	};
+
+	var myIf = function() {
+		return 'global.myIf';
+	};
+
+	var scope = new Scope(map);
+
+	// register helper function that conflicts with scope function
+	canStacheHelpers.myIf = myIf;
+
+	var localIf = scope.read('myIf').value;
+	QUnit.deepEqual(localIf(), 'map.myIf', 'scope function');
+
+	var globalIf = scope.read('scope.helpers.myIf').value;
+	QUnit.deepEqual(globalIf(), 'global.myIf', 'global function');
+
+	// clean up
+	delete canStacheHelpers.myIf;
+});
