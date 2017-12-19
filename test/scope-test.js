@@ -1051,3 +1051,19 @@ QUnit.test("scope.helpers can be used to read a helper that conflicts with a pro
 	// clean up
 	delete canStacheHelpers.myIf;
 });
+
+QUnit.test("can read and write functions to scope.vars", function() {
+	var scope = new Scope();
+
+	scope.set("scope.vars.func", function() { return 'func value'; });
+
+	var readFunc = scope.read("scope.vars.func");
+	var root = readFunc.rootObserve;
+
+	QUnit.equal(readFunc.value(), 'func value', 'seting function with scope.set works');
+
+	observeReader.write(root, readFunc.reads, function() { return 'new func value'; });
+
+	readFunc = scope.read("scope.vars.func");
+	QUnit.equal(readFunc.value(), 'new func value', 'setting function with can-stache-key works');
+});

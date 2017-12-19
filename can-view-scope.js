@@ -163,7 +163,11 @@ assign(Scope.prototype, {
 				readValue = this.getFromTemplateContext(attr.slice(6), options);
 			}
 
-			return readValue;
+			return {
+				value: readValue.value,
+				reads: keyReads.slice(1),
+				rootObserve: this
+			};
 		}
 
 		return this._read(keyReads, options, currentScopeOnly);
