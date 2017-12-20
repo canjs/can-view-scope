@@ -1052,18 +1052,58 @@ QUnit.test("scope.helpers can be used to read a helper that conflicts with a pro
 	delete canStacheHelpers.myIf;
 });
 
-QUnit.test("can read and write functions to scope.vars", function() {
-	var scope = new Scope();
+QUnit.test("functions have correct `thisArg` so they can be called even with `proxyMethods: false`", function() {
+	var parent = {
+		name: function() {
+			return 'parent';
+		}
+	};
 
-	scope.set("scope.vars.func", function() { return 'func value'; });
+	var child = {
+		name: function() {
+			return 'child';
+		}
+	};
 
-	var readFunc = scope.read("scope.vars.func");
-	var root = readFunc.rootObserve;
+	var func = function() {};
 
-	QUnit.equal(readFunc.value(), 'func value', 'seting function with scope.set works');
+	var childData = { child: child, func: func };
+	var parentData = { parent: parent, func: func };
 
-	observeReader.write(root, readFunc.reads, function() { return 'new func value'; });
+	var scope = new Scope(parentData)
+		.add(childData);
 
-	readFunc = scope.read("scope.vars.func");
-	QUnit.equal(readFunc.value(), 'new func value', 'setting function with can-stache-key works');
+	var childName = scope.read("child.name", { proxyMethods: false });
+
+	QUnit.equal(childName.value, child.name, "childName.value === child.name");
+	QUnit.equal(childName.thisArg, child, "childName.thisArg === child");
+
+	var childNameCompute = scope.computeData('child.name', { proxyMethods: false });
+	Observation.temporarilyBind(childNameCompute);
+
+	QUnit.equal(childNameCompute.initialValue, child.name, "childNameCompute.inititalValue === child.name");
+	QUnit.equal(childNameCompute.thisArg, child, "childNameCompute.thisArg === child");
+
+	var rootFunc = scope.read('func', { proxyMethods: false });
+
+	QUnit.equal(rootFunc.value, func, "rootFunc.value === func");
+	QUnit.equal(rootFunc.thisArg, undefined, "rootFunc.thisArg === undefined");
+
+	var myHelper = function() {};
+	canReflect.setKeyValue(scope.templateContext.helpers, "myHelper", myHelper);
+
+	var helper = scope.read("myHelper", { proxyMethods: false });
+
+	QUnit.equal(helper.value, myHelper, "helper.value === func");
+	QUnit.equal(helper.thisArg, undefined, "helper.thisArg === undefined");
+
+	var parentName = scope.read("../parent.name", { proxyMethods: false });
+
+	QUnit.equal(parentName.value, parent.name, "parentName.value === parent.name");
+	QUnit.equal(parentName.thisArg, parent, "parentName.thisArg === parent");
+
+	var parentFunc = scope.read('../func', { proxyMethods: false });
+
+	QUnit.equal(parentFunc.value, func, "parentFunc.value === func");
+	QUnit.equal(parentFunc.thisArg, parentData, "rootFunc.thisArg === parentData");
 });

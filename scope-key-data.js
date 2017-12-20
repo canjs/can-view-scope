@@ -82,6 +82,7 @@ var ScopeKeyData = function(scope, key, options){
 	this.initialValue = undefined;
 	this.reads = undefined;
 	this.setRoot = undefined;
+	this.thisArg = undefined;
 	var valueDependencies = new CIDSet();
 	valueDependencies.add(observation);
 	this.dependencies = {valueDependencies: valueDependencies};
@@ -187,6 +188,7 @@ Object.assign(ScopeKeyData.prototype, {
 		this.reads = data.reads;
 		this.root = data.rootObserve;
 		this.setRoot = data.setRoot;
+		this.thisArg = data.thisArg;
 		return this.initialValue = data.value;
 	},
 	hasDependencies: function(){

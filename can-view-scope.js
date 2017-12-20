@@ -144,7 +144,11 @@ assign(Scope.prototype, {
 				return observeReader.read(parent._context, [], options);
 			}
 
-			return parent.read(attr.substr(3) || ".", options);
+			var parentValue = parent.read(attr.substr(3) || ".", options);
+
+			return assign( parentValue, {
+				thisArg: parentValue.thisArg || parent._context
+			});
 		} else if (keyInfo.isCurrentContext) {
 			return observeReader.read(this._context, [], options);
 		} else if (keyInfo.isScope) {
@@ -163,11 +167,9 @@ assign(Scope.prototype, {
 				readValue = this.getFromTemplateContext(attr.slice(6), options);
 			}
 
-			return {
-				value: readValue.value,
-				reads: keyReads.slice(1),
-				rootObserve: this
-			};
+			return assign( readValue, {
+				thisArg: keyReads.length > 1 ? readValue.parent : undefined
+			});
 		}
 
 		return this._read(keyReads, options, currentScopeOnly);
@@ -274,7 +276,8 @@ assign(Scope.prototype, {
 						scope: currentScope,
 						rootObserve: currentObserve,
 						value: data.value,
-						reads: currentReads
+						reads: currentReads,
+						thisArg: keyReads.length > 1 ? data.parent : undefined
 					};
 				}
 				// Otherwise, save all observables that were read.  If no value
