@@ -53,10 +53,7 @@ assign(Scope, {
 		info.isCurrentContext = attr === "." || attr === "this";
 		info.isParentContext = attr === "..";
 		info.isScope = attr === "scope";
-		info.isInScopeVars =
-			attr.substr(0, 11) === "scope.vars.";
 		info.isInScope =
-			info.isInScopeVars ||
 			attr.substr(0, 6) === "scope." ||
 			attr.substr(0, 6) === "scope@";
 		info.isContextBased = info.isInCurrentContext ||
@@ -164,10 +161,10 @@ assign(Scope.prototype, {
 
 			// otherwise, check the templateContext
 			if (typeof readValue.value === 'undefined') {
-				readValue = this.getFromTemplateContext(attr.slice(6), options);
+				readValue = this.readFromTemplateContext(attr.slice(6), options);
 			}
 
-			return assign( readValue, {
+			return assign(readValue, {
 				thisArg: keyReads.length > 1 ? readValue.parent : undefined
 			});
 		}
@@ -175,17 +172,16 @@ assign(Scope.prototype, {
 		return this._read(keyReads, options, currentScopeOnly);
 	},
 
-	// ## Scope.prototype.getFromSpecialContext
-	getFromSpecialContext: function(key) {
-		var res = this._read(
+	// ## Scope.prototype.readFromSpecialContext
+	readFromSpecialContext: function(key) {
+		return this._read(
 			[{key: key, at: false }],
 			{ special: true }
 		);
-		return res.value;
 	},
 
-	// ## Scope.prototype.getFromTemplateContext
-	getFromTemplateContext: function(key, readOptions) {
+	// ## Scope.prototype.readFromTemplateContext
+	readFromTemplateContext: function(key, readOptions) {
 		var keyReads = observeReader.reads(key);
 		return observeReader.read(this.templateContext, keyReads, readOptions);
 	},
@@ -437,16 +433,6 @@ assign(Scope.prototype, {
 			}
 			// key starts with "../" or is "."
 			return { how: "set", parent: parent, passOptions: true, key: key.substr(3) || "." };
-		} else if (keyInfo.isInScope) {
-			if (keyInfo.isInScopeVars) {
-				// key starts with "scope.vars."
-				return { parent: this.vars, how: "set", key: key.substr(11) };
-			}
-
-			// key starts with "scope."
-			key = key.substr(6);
-
-			return { parent: this.templateContext, how: "setKeyValue", key: key };
 		}
 
 		var dotIndex = key.lastIndexOf('.'),
@@ -599,12 +585,25 @@ assign(Scope.prototype, {
 	}
 });
 
-defineLazyValue(Scope.prototype, 'templateContext', function() {
-	return this.getTemplateContext()._context;
+var templateContextPrimitives = [
+	"filename", "lineNumber"
+];
+
+// create getters/setters for primitives on the templateContext
+// scope.filename -> scope.readFromTemplateContext("filename")
+templateContextPrimitives.forEach(function(key) {
+	Object.defineProperty(Scope.prototype, key, {
+		get: function() {
+			return this.readFromTemplateContext(key).value;
+		},
+		set: function(val) {
+			this.templateContext[key] = val;
+		}
+	});
 });
 
-defineLazyValue(Scope.prototype, 'vars', function() {
-	return this.templateContext.vars;
+defineLazyValue(Scope.prototype, 'templateContext', function() {
+	return this.getTemplateContext()._context;
 });
 
 defineLazyValue(Scope.prototype, 'root', function() {
@@ -622,11 +621,11 @@ var specialKeywords = [
 ];
 
 // create getters for "special" keys
-// scope.index -> scope.getFromSpecialContext("index")
+// scope.index -> scope.readFromSpecialContext("index")
 specialKeywords.forEach(function(key) {
 	Object.defineProperty(Scope.prototype, key, {
 		get: function() {
-			return this.getFromSpecialContext(key);
+			return this.readFromSpecialContext(key).value;
 		}
 	});
 });

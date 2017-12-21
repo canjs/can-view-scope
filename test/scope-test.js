@@ -690,6 +690,9 @@ QUnit.test("nested properties can be read from templateContext.vars", function()
 
 	scope.set("scope.vars.foo", foo);
 	QUnit.equal(scope.peek("scope.vars.foo.bar"), "baz", "vars.foo.bar === baz");
+
+	scope.set("scope.vars.foo.bar", "quz");
+	QUnit.equal(scope.peek("scope.vars.foo.bar"), "quz", "vars.foo.bar === quz");
 });
 
 QUnit.test("filename and lineNumber can be read from anywhere in scope chain", function() {
