@@ -1,7 +1,7 @@
 "use strict";
 var Observation = require('can-observation');
 var observeReader = require('can-stache-key');
-var assign = require('can-util/js/assign/assign');
+var assign = require('can-assign');
 
 var canReflect = require('can-reflect');
 var canSymbol = require('can-symbol');
