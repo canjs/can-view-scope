@@ -3,7 +3,6 @@
 @collection can-infrastructure
 @inherits can-construct
 @test can/view/scope/test.html
-@group can-view-scope.static static
 @group can-view-scope.prototype prototype
 @group can-view-scope.types types
 @package ../package.json

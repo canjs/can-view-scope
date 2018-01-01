@@ -39,9 +39,6 @@ assign(Scope, {
 	// Scope.read was moved to can.compute.read
 	// can.compute.read reads properties from a parent.  A much more complex version of getObject.
 	read: observeReader.read,
-	// ## Scope.Refs
-	// A Map-like object used for the references scope.
-	Refs: TemplateContext,
 
 	keyInfo: function(attr){
 		var info = {};
@@ -397,7 +394,7 @@ assign(Scope.prototype, {
 			cur = cur._parent;
 		}
 
-		if (cur._context instanceof Scope.Refs) {
+		if (cur._context instanceof TemplateContext) {
 			cur = child;
 		}
 		return cur._context;
@@ -557,7 +554,7 @@ assign(Scope.prototype, {
 	// ## Scope.prototype.cloneFromRef
 	//
 	// This takes a scope and essentially copies its chain from
-	// right before the last Refs.  And it does not include the ref.
+	// right before the last TemplateContext. And it does not include the ref.
 	// this is a helper function to provide lexical semantics for refs.
 	// This will not be needed for leakScope: false.
 	cloneFromRef: function() {
@@ -567,7 +564,7 @@ assign(Scope.prototype, {
 			parent;
 		while (scope) {
 			context = scope._context;
-			if (context instanceof Scope.Refs) {
+			if (context instanceof TemplateContext) {
 				parent = scope._parent;
 				break;
 			}
