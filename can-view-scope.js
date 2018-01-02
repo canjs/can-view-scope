@@ -81,8 +81,8 @@ assign(Scope.prototype, {
 	},
 
 	// ## Scope.prototype.find
-	find: function(attr) {
-		return this.get(attr, { currentScopeOnly: false });
+	find: function(attr, options) {
+		return this.get(attr, assign({ currentScopeOnly: false }, options));
 	},
 
 	// ## Scope.prototype.read
