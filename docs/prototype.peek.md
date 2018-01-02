@@ -5,7 +5,8 @@ Read a value from the scope without being observable.
 
 @signature `scope.peek(key [, options])`
 
-Works just like [can-view-scope.prototype.get], but prevents any calls to [can-observation.add].
+
+Works just like [can-view-scope.prototype.get], but prevents any calls to [can-observation-recorder.add].
 
 
 Walks up the scope to find a value at `key`.  Stops at the first context where `key` has
