@@ -20,33 +20,31 @@ property name that includes a dot.
 ## Use
 
 `scope.get(key)` looks up a value in the current scope's
-context, if a value is not found, parent scope's context
-will be explored.
+context. Values can be looked up in the parent `scope` object by prefixing the key with `"../"`. [can-view-scope::find find] can also be used to search in the parent's context after the initial context is explored. For example:
 
-    var list = [{name: "Justin"},{name: "Brian"}],
-        justin = list[0];
+	var list = [{name: "Justin"},{name: "Brian"}],
+		justin = list[0];
 
-    var curScope = new Scope(list).add(justin);
+	var curScope = new Scope(list).add(justin);
 
-    curScope.get("name"); //-> "Justin"
-    curScope.get("length"); //-> 2
+	// use `get` to find a value in an explicit context
+	curScope.get("name") //-> "Justin"
+	curScope.get("../length") //-> 2
 
-Prefixing a key with `"./"` prevents any parent scope look ups.
-Prefixing a key with one or more `"../"` shifts the lookup path
+	// use `find` to search for a value in any context
+	curScope.find("name") //-> "Justin"
+	curScope.find("length") //-> 2
+
+Prefixing a key with more than one `"../"` shifts the lookup path
 that many levels up.
 
     var list = [{name: "Justin"},{name: "Brian"}];
     list.name = "Programmers";
-    list.surname = "CanJS";
 
     var justin = list[0];
     var brian = list[1];
     var curScope = new Scope(list).add(justin).add(brian);
 
     curScope.get("name"); //-> "Brian"
-    curScope.get("surname"); //-> "CanJS"
-    curScope.get("./surname"); //-> undefined
     curScope.get("../name"); //-> "Justin"
-    curScope.get("../surname"); //-> "CanJS"
-    curScope.get(".././surname"); //-> "undefined"
     curScope.get("../../name"); //-> "Programmers"

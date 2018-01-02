@@ -37,7 +37,7 @@ function Scope(context, parent, meta) {
 assign(Scope, {
 	// ## Scope.read
 	// Scope.read was moved to can.compute.read
-	// can.compute.read reads properties from a parent.  A much more complex version of getObject.
+	// can.compute.read reads properties from a parent. A much more complex version of getObject.
 	read: observeReader.read,
 
 	keyInfo: function(attr){
@@ -88,10 +88,10 @@ assign(Scope.prototype, {
 	// ## Scope.prototype.read
 	// Reads from the scope chain and returns the first non-`undefined` value.
 	// `read` deals mostly with setting up "context based" keys to start reading
-	// from the right scope.  Once the right scope is located, `_read` is called.
+	// from the right scope. Once the right scope is located, `_read` is called.
 	/**
 	 * @hide
-	 * @param {can.stache.key} attr A dot seperated path.  Use `"\."` if you have a property name that includes a dot.
+	 * @param {can.stache.key} attr A dot seperated path. Use `"\."` if you have a property name that includes a dot.
 	 * @param {can.view.Scope.readOptions} options that configure how this gets read.
 	 * @return {{}}
 	 *   @option {Object} parent the value's immediate parent
@@ -107,7 +107,7 @@ assign(Scope.prototype, {
 			attr = ".";
 		}
 
-		// Identify context based keys.  Context based keys try to
+		// Identify context based keys. Context based keys try to
 		// specify a particular context a key should be within.
 		var keyInfo = Scope.keyInfo(attr);
 
@@ -221,7 +221,7 @@ assign(Scope.prototype, {
 
 		var isRecording = ObservationRecorder.isRecording();
 
-		// Goes through each scope context provided until it finds the key (attr).  Once the key is found
+		// Goes through each scope context provided until it finds the key (attr). Once the key is found
 		// then it's value is returned along with an observe, the current scope and reads.
 		// While going through each scope context searching for the key, each observable found is returned and
 		// saved so that either the observable the key is found in can be returned, or in the case the key is not
@@ -273,7 +273,7 @@ assign(Scope.prototype, {
 						thisArg: keyReads.length > 1 ? data.parent : undefined
 					};
 				}
-				// Otherwise, save all observables that were read.  If no value
+				// Otherwise, save all observables that were read. If no value
 				// is found, we will observe on all of them.
 				else {
 					undefinedObserves.push.apply(undefinedObserves, observes);

@@ -43,25 +43,29 @@ explored for values.  For example:
     scope.get("name.first") //-> "Justin"
     scope.get("length")     //-> undefined
 
-However, if a `parent` scope is provided, key values will be
-searched in the parent's context after the initial context is explored.  For example:
+However, if a `parent` scope is provided, key values can be
+found in the parent's context by prefixing the key with `"../"`. [can-view-scope::find find] can also be used to search in the parent's context after the initial context is explored. For example:
 
-    var list = [{name: "Justin"},{name: "Brian"}],
-    	justin = list[0];
+	var list = [{name: "Justin"},{name: "Brian"}],
+		justin = list[0];
 
-    var listScope = new Scope(list),
-    	curScope = new Scope(justin, listScope)
+	var listScope = new Scope(list),
+		curScope = new Scope(justin, listScope)
 
-    curScope.get("name") //-> "Justin"
-    curScope.get("length") //-> 2
+	// use `get` to find a value in an explicit context
+	curScope.get("name") //-> "Justin"
+	curScope.get("../length") //-> 2
+
+	// use `find` to search for a value in any context
+	curScope.find("name") //-> "Justin"
+	curScope.find("../length") //-> 2
 
 Use [can-view-scope::add add] to easily create a new scope from a parent scope like:
 
+	var list = [{name: "Justin"},{name: "Brian"}],
+		justin = list[0];
 
-    var list = [{name: "Justin"},{name: "Brian"}],
-    	justin = list[0];
+	var curScope = new Scope(list).add(justin);
 
-    var curScope = new Scope(list).add(justin);
-
-    curScope.get("name") //-> "Justin"
-    curScope.get("length") //-> 2
+	curScope.find("name") //-> "Justin"
+	curScope.find("length") //-> 2
