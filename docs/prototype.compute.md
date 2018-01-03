@@ -10,7 +10,7 @@ can be optimized beyond wrapping a compute around a call to [can-view-scope::get
 scope.compute("first.name");
 ```
 
-@param {can-stache.key} key A dot seperated path.  Use `"\."` if you have a
+@param {can-stache.key} key A dot-separated path.  Use `"\."` if you have a
 property name that includes a dot.
 
 @return {can-compute.computed} A compute.

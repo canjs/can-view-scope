@@ -24,10 +24,12 @@ scope.get("name") //-> "Brian"
 first looks up values in context and then in the
 parent `scope` object.
 
-    var list = [{name: "Justin"},{name: "Brian"}],
-        justin = list[0];
+```js
+var list = [{name: "Justin"}, {name: "Brian"}];
+var justin = list[0];
 
-    var curScope = new Scope(list).add(justin);
+var curScope = new Scope(list).add(justin);
 
-    curScope.get("name") //-> "Justin"
-    curScope.get("length") //-> 2
+curScope.get("name") //-> "Justin"
+curScope.get("length") //-> 2
+```

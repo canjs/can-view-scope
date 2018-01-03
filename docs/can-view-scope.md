@@ -33,36 +33,41 @@ can specify special behavior of the context.
 ## Use
 
 A [can-view-scope] represents a lookup context and parent contexts
-that can be used to lookup a [can-stache.key key] value.
+that can be used to look up a [can-stache.key key] value.
 
-If no parent scope is provided, only the scope's context will be
+If no parent scope is provided, only the scope’s context will be
 explored for values.  For example:
 
-    var data = {name: {first: "Justin"}},
-    	scope = new Scope(data);
+```js
+var data = {name: {first: "Justin"}};
+var scope = new Scope(data);
 
-    scope.get("name.first") //-> "Justin"
-    scope.get("length")     //-> undefined
+scope.get("name.first") //-> "Justin"
+scope.get("length")     //-> undefined
+```
 
 However, if a `parent` scope is provided, key values will be
-searched in the parent's context after the initial context is explored.  For example:
+searched in the parent’s context after the initial context is explored.  For example:
 
-    var list = [{name: "Justin"},{name: "Brian"}],
-    	justin = list[0];
+```js
+var list = [{name: "Justin"}, {name: "Brian"}];
+var justin = list[0];
 
-    var listScope = new Scope(list),
-    	curScope = new Scope(justin, listScope)
+var listScope = new Scope(list);
+var curScope = new Scope(justin, listScope);
 
-    curScope.get("name") //-> "Justin"
-    curScope.get("length") //-> 2
+curScope.get("name") //-> "Justin"
+curScope.get("length") //-> 2
+```
 
 Use [can-view-scope::add add] to easily create a new scope from a parent scope like:
 
+```js
+var list = [{name: "Justin"}, {name: "Brian"}];
+var justin = list[0];
 
-    var list = [{name: "Justin"},{name: "Brian"}],
-    	justin = list[0];
+var curScope = new Scope(list).add(justin);
 
-    var curScope = new Scope(list).add(justin);
-
-    curScope.get("name") //-> "Justin"
-    curScope.get("length") //-> 2
+curScope.get("name") //-> "Justin"
+curScope.get("length") //-> 2
+```
