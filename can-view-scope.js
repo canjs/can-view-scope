@@ -76,6 +76,8 @@ assign(Scope, {
 		info.isInTemplateContextVars =
 			info.isInLegacyRefsScope ||
 			attr.substr(0, 11) === "scope.vars.";
+		info.isInTemplateContextPartials =
+			attr.substr(0, 15) === "scope.partials.";
 		info.isInTemplateContext =
 			info.isInTemplateContextVars ||
 			attr.substr(0, 6) === "scope.";
@@ -451,6 +453,10 @@ assign(Scope.prototype, {
 				return this.vars.set( key.substr(11), value );
 			}
 
+			if (keyInfo.isInTemplateContextPartials) {
+				return this.partials.set( key.substr(15), value );
+			}
+
 			key = key.substr(6);
 
 			if (key.indexOf(".") < 0) {
@@ -573,6 +579,10 @@ defineLazyValue(Scope.prototype, 'templateContext', function() {
 
 defineLazyValue(Scope.prototype, 'vars', function() {
 	return this.templateContext.vars;
+});
+
+defineLazyValue(Scope.prototype, 'partials', function() {
+	return this.templateContext.partials;
 });
 
 function Options(data, parent, meta) {
