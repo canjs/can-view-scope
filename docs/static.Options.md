@@ -2,4 +2,4 @@
 @parent can-view-scope.static
 
 
-A Scope that can be used to lookup stache helpers.
+A Scope that can be used to look up stache helpers.

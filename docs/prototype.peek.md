@@ -15,7 +15,7 @@ a value.
 scope.peek("first.name");
 ```
 
-@param {can-stache.key} key A dot seperated path.  Use `"\."` if you have a
+@param {can-stache.key} key A dot-separated path.  Use `"\."` if you have a
 property name that includes a dot.
 
 @return {*} The found value or undefined if no value is found.
@@ -24,14 +24,16 @@ property name that includes a dot.
 
 ## Use
 
-`scope.peek(key)` looks up a value in the current scope's
-context, if a value is not found, parent scope's context
+`scope.peek(key)` looks up a value in the current scope’s
+context, if a value is not found, parent scope’s context
 will be explored.
 
-    var list = [{name: "Justin"},{name: "Brian"}],
-        justin = list[0];
+```js
+var list = [{name: "Justin"}, {name: "Brian"}];
+var justin = list[0];
 
-    var curScope = new Scope(list).add(justin);
+var curScope = new Scope(list).add(justin);
 
-    curScope.peek("name"); //-> "Justin"
-    curScope.peek("length"); //-> 2
+curScope.peek("name"); //-> "Justin"
+curScope.peek("length"); //-> 2
+```

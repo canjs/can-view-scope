@@ -11,7 +11,7 @@ context where `person.first` is some type of Object whose `name` property can be
 scope.set("person.first.name", "Justin");
 ```
 
-@param {can-stache.key} key A dot seperated path.  Use `"\."` if you have a
+@param {can-stache.key} key A dot-separated path.  Use `"\."` if you have a
 property name that includes a dot.
 
 @param {*} value The value to be set.
