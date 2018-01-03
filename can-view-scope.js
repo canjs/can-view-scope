@@ -6,7 +6,7 @@ var observeReader = require('can-stache-key');
 var ObservationRecorder = require("can-observation-recorder");
 var TemplateContext = require('./template-context');
 var makeComputeData = require('./compute_data');
-var assign = require('can-util/js/assign/assign');
+var assign = require('can-assign');
 var each = require('can-util/js/each/each');
 var namespace = require('can-namespace');
 var canReflect = require("can-reflect");
@@ -37,11 +37,8 @@ function Scope(context, parent, meta) {
 assign(Scope, {
 	// ## Scope.read
 	// Scope.read was moved to can.compute.read
-	// can.compute.read reads properties from a parent.  A much more complex version of getObject.
+	// can.compute.read reads properties from a parent. A much more complex version of getObject.
 	read: observeReader.read,
-	// ## Scope.Refs
-	// A Map-like object used for the references scope.
-	Refs: TemplateContext,
 
 	keyInfo: function(attr){
 		var info = {};
@@ -84,17 +81,17 @@ assign(Scope.prototype, {
 	},
 
 	// ## Scope.prototype.find
-	find: function(attr) {
-		return this.get(attr, { currentScopeOnly: false });
+	find: function(attr, options) {
+		return this.get(attr, assign({ currentScopeOnly: false }, options));
 	},
 
 	// ## Scope.prototype.read
 	// Reads from the scope chain and returns the first non-`undefined` value.
 	// `read` deals mostly with setting up "context based" keys to start reading
-	// from the right scope.  Once the right scope is located, `_read` is called.
+	// from the right scope. Once the right scope is located, `_read` is called.
 	/**
 	 * @hide
-	 * @param {can.stache.key} attr A dot-separated path.  Use `"\."` if you have a property name that includes a dot.
+	 * @param {can.stache.key} attr A dot-separated path. Use `"\."` if you have a property name that includes a dot.
 	 * @param {can.view.Scope.readOptions} options that configure how this gets read.
 	 * @return {{}}
 	 *   @option {Object} parent the value's immediate parent
@@ -110,7 +107,7 @@ assign(Scope.prototype, {
 			attr = ".";
 		}
 
-		// Identify context based keys.  Context based keys try to
+		// Identify context based keys. Context based keys try to
 		// specify a particular context a key should be within.
 		var keyInfo = Scope.keyInfo(attr);
 
@@ -224,7 +221,7 @@ assign(Scope.prototype, {
 
 		var isRecording = ObservationRecorder.isRecording();
 
-		// Goes through each scope context provided until it finds the key (attr).  Once the key is found
+		// Goes through each scope context provided until it finds the key (attr). Once the key is found
 		// then it's value is returned along with an observe, the current scope and reads.
 		// While going through each scope context searching for the key, each observable found is returned and
 		// saved so that either the observable the key is found in can be returned, or in the case the key is not
@@ -276,7 +273,7 @@ assign(Scope.prototype, {
 						thisArg: keyReads.length > 1 ? data.parent : undefined
 					};
 				}
-				// Otherwise, save all observables that were read.  If no value
+				// Otherwise, save all observables that were read. If no value
 				// is found, we will observe on all of them.
 				else {
 					undefinedObserves.push.apply(undefinedObserves, observes);
@@ -397,7 +394,7 @@ assign(Scope.prototype, {
 			cur = cur._parent;
 		}
 
-		if (cur._context instanceof Scope.Refs) {
+		if (cur._context instanceof TemplateContext) {
 			cur = child;
 		}
 		return cur._context;
@@ -557,7 +554,7 @@ assign(Scope.prototype, {
 	// ## Scope.prototype.cloneFromRef
 	//
 	// This takes a scope and essentially copies its chain from
-	// right before the last Refs.  And it does not include the ref.
+	// right before the last TemplateContext. And it does not include the ref.
 	// this is a helper function to provide lexical semantics for refs.
 	// This will not be needed for leakScope: false.
 	cloneFromRef: function() {
@@ -567,7 +564,7 @@ assign(Scope.prototype, {
 			parent;
 		while (scope) {
 			context = scope._context;
-			if (context instanceof Scope.Refs) {
+			if (context instanceof TemplateContext) {
 				parent = scope._parent;
 				break;
 			}

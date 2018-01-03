@@ -20,9 +20,7 @@ scope.get("name") //-> "Brian"
 
 ## Use
 
-`scope.add(context)` creates a new scope object that
-first looks up values in context and then in the
-parent `scope` object.
+`scope.add(context)` creates a new scope object. Values can be looked up in the parent `scope` object by prefixing the key with `"../"`. [can-view-scope::find find] can also be used to search in the parent's context after the initial context is explored. For example:
 
 ```js
 var list = [{name: "Justin"}, {name: "Brian"}];
@@ -30,6 +28,11 @@ var justin = list[0];
 
 var curScope = new Scope(list).add(justin);
 
+// use `get` to find a value in an explicit context
 curScope.get("name") //-> "Justin"
-curScope.get("length") //-> 2
+curScope.get("../length") //-> 2
+
+// use `find` to search for a value in any context
+curScope.find("name") //-> "Justin"
+curScope.find("length") //-> 2
 ```

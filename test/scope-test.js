@@ -913,6 +913,28 @@ QUnit.test("scope.find can be used to find a value in the first scope it exists"
 	QUnit.equal(scope.find("c"), "c", "c");
 });
 
+QUnit.test("scope.find accepts readOptions", function() {
+	var a = new SimpleMap({ a: "a" });
+	a.func = function() {
+		return this;
+	};
+
+	var b = new SimpleMap({ b: "b" });
+	var c = new SimpleMap({ c: "c" });
+
+	var scope = new Scope(c)
+		.add(b)
+		.add(a);
+
+	var aDotFunc = scope.find("func");
+
+	QUnit.equal(aDotFunc(), a, "a.func() got correct context");
+
+	aDotFunc = scope.find("func", { proxyMethods: false });
+
+	QUnit.notEqual(aDotFunc(), a, "non-proxied a.func() got correct context");
+});
+
 QUnit.test("scope.read should not walk up normal scopes by default", function() {
 	var a = new SimpleMap({ a: "a" });
 	var b = new SimpleMap({ b: "b" });
