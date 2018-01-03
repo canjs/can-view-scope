@@ -19,9 +19,9 @@ property name that includes a dot.
 
 ## Use
 
-`scope.get(key)` looks up a value in the current scope's
+`scope.get(key)` looks up a value in the current scope’s
 context. Values can be looked up in the parent `scope` object by prefixing the key with `"../"`.
-[can-view-scope::find find] can also be used to search in the parent's context after the initial context is explored. For example:
+[can-view-scope::find find] can also be used to search in the parent’s context after the initial context is explored. For example:
 
 ```js
 var list = [{name: "Justin"}, {name: "Brian"}];

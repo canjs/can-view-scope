@@ -46,14 +46,16 @@ scope.get("length")     //-> undefined
 ```
 
 However, if a `parent` scope is provided, key values can be
-found in the parent's context by prefixing the key with `"../"`. [can-view-scope::find find] can also be used to search in the parent's context after the initial context is explored. For example:
+found in the parent’s context by prefixing the key with `"../"`.
+[can-view-scope::find find] can also be used to search in the parent’s context
+after the initial context is explored. For example:
 
 ```
 var list = [{name: "Justin"}, {name: "Brian"}];
 var justin = list[0];
 
-var listScope = new Scope(list),
-	curScope = new Scope(justin, listScope)
+var listScope = new Scope(list);
+var curScope = new Scope(justin, listScope);
 
 // use `get` to find a value in an explicit context
 curScope.get("name") //-> "Justin"

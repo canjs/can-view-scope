@@ -19,8 +19,8 @@ property name that includes a dot.
 
 ## Use
 
-`scope.find(key)` looks up a value in the current scope's
-context, if a value is not found, parent scope's context
+`scope.find(key)` looks up a value in the current scope’s
+context, if a value is not found, parent scope’s context
 will be explored.
 
 ```js
