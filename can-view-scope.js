@@ -301,6 +301,15 @@ assign(Scope.prototype, {
 			}
 		}
 
+		// The **value was not found** in the scope or helpers
+		// if not looking for a "special" key, check letVariables
+		if (!(options && options.special)) {
+			var letVariable = observeReader.read(this.templateContext.letVariables, keyReads, { proxyMethods: false });
+
+			if (letVariable && letVariable.value) {
+				return letVariable;
+			}
+		}
 		// The **value was not found**, return `undefined` for the value.
 		// Make sure we listen to everything we checked for when the value becomes defined.
 		// Once it becomes defined, we won't have to listen to so many things.

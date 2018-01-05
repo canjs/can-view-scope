@@ -5,6 +5,7 @@ var TemplateContext = function() {
 	this.helpers = new SimpleMap({});
 	this.partials = new SimpleMap({});
 	this.tags = new SimpleMap({});
+	this.letVariables = new SimpleMap({});
 };
 
 module.exports = TemplateContext;
