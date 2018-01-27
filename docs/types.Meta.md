@@ -5,5 +5,4 @@
 
   Specify special behavior of a scope.
 
-
-  @option {Boolean} notContext The context should not be reference-able with `./` or `../`.
+  @option {Boolean} notContext The context should not be referenceable with `./` or `../`.
