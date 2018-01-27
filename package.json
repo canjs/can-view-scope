@@ -1,6 +1,10 @@
 {
   "name": "can-view-scope",
+<<<<<<< HEAD
   "version": "4.0.0-pre.49",
+=======
+  "version": "3.5.6",
+>>>>>>> master
   "description": "Observable scopes",
   "homepage": "https://canjs.com/doc/can-view-scope.html",
   "repository": {
