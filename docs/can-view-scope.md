@@ -37,9 +37,9 @@ that can be used to look up a [can-stache.key key] value.
 If no parent scope is provided, only the scope’s context will be
 explored for values.  For example:
 
-```js
-var data = {name: {first: "Justin"}};
-var scope = new Scope(data);
+```javascript
+const data = {name: {first: "Justin"}};
+const scope = new Scope(data);
 
 scope.get("name.first") //-> "Justin"
 scope.get("length")     //-> undefined
@@ -68,11 +68,11 @@ curScope.find("../length") //-> 2
 
 Use [can-view-scope::add add] to easily create a new scope from a parent scope like:
 
-```js
-var list = [{name: "Justin"}, {name: "Brian"}];
-var justin = list[0];
+```javascript
+const list = [{name: "Justin"}, {name: "Brian"}];
+const justin = list[0];
 
-var curScope = new Scope(list).add(justin);
+const curScope = new Scope(list).add(justin);
 
 curScope.find("name") //-> "Justin"
 curScope.find("length") //-> 2

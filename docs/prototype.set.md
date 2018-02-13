@@ -5,7 +5,7 @@
 
 Tries to set `key` in the scope to `value`.
 
-```js
+```javascript
 scope.set("person.first.name", "Justin");
 ```
 

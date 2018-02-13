@@ -6,7 +6,7 @@
 Get a compute that is two-way bound to the `key` value in the scope. These computes
 can be optimized beyond wrapping a compute around a call to [can-view-scope::get].
 
-```js
+```javascript
 scope.compute("first.name");
 ```
 

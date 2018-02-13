@@ -28,12 +28,12 @@ been found in a parent scope.
 a [can-mustache.key key] value in a template. Configure how it reads values in the
 scope and what values it returns with the [can-view-scope.readOptions options] argument.
 
-```js
-var context = new Map({
+```javascript
+const context = new Map({
   name: {first: "Curtis"}
 });
-var scope = new Scope(context);
-var computeData = scope.computeData("name.first");
+const scope = new Scope(context);
+const computeData = scope.computeData("name.first");
 
 computeData.scope === scope //-> true
 computeData.initialValue    //-> "Curtis"
@@ -42,7 +42,7 @@ computeData.compute()       //-> "Curtis"
 
 The `compute` value is writable.  For example:
 
-```js
+```javascript
 computeData.compute("Andy");
 context.attr("name.first") //-> "Andy"
 ```

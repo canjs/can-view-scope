@@ -5,8 +5,8 @@
 
 Creates a new scope and sets the current scope to be the parent.
 
-```js
-var scope = new Scope([
+```javascript
+const scope = new Scope([
    {name:"Chris"},
    {name: "Justin"}
 ]).add({name: "Brian"});
@@ -22,11 +22,11 @@ scope.get("name") //-> "Brian"
 
 `scope.add(context)` creates a new scope object. Values can be looked up in the parent `scope` object by prefixing the key with `"../"`. [can-view-scope::find find] can also be used to search in the parent’s context after the initial context is explored. For example:
 
-```js
-var list = [{name: "Justin"}, {name: "Brian"}];
-var justin = list[0];
+```javascript
+const list = [{name: "Justin"}, {name: "Brian"}];
+const justin = list[0];
 
-var curScope = new Scope(list).add(justin);
+const curScope = new Scope(list).add(justin);
 
 // use `get` to find a value in an explicit context
 curScope.get("name") //-> "Justin"

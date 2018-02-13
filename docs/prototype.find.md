@@ -6,7 +6,7 @@
 Walks up the scope to find a value at `key`.  Stops at the first context where `key` has
 a value.
 
-```js
+```javascript
 scope.find("first.name");
 ```
 
@@ -23,11 +23,11 @@ property name that includes a dot.
 context, if a value is not found, parent scope’s context
 will be explored.
 
-```js
-var list = [{name: "Justin"}, {name: "Brian"}];
-var justin = list[0];
+```javascript
+const list = [{name: "Justin"}, {name: "Brian"}];
+const justin = list[0];
 
-var curScope = new Scope(list).add(justin);
+const curScope = new Scope(list).add(justin);
 
 curScope.find("name"); //-> "Justin"
 curScope.find("length"); //-> 2
@@ -37,14 +37,14 @@ Prefixing a key with `"./"` prevents any parent scope look ups.
 Prefixing a key with one or more `"../"` shifts the lookup path
 that many levels up.
 
-```js
-var list = [{name: "Justin"}, {name: "Brian"}];
+```javascript
+const list = [{name: "Justin"}, {name: "Brian"}];
 list.name = "Programmers";
 list.surname = "CanJS";
 
-var justin = list[0];
-var brian = list[1];
-var curScope = new Scope(list).add(justin).add(brian);
+const justin = list[0];
+const brian = list[1];
+const curScope = new Scope(list).add(justin).add(brian);
 
 curScope.find("name"); //-> "Brian"
 curScope.find("surname"); //-> "CanJS"

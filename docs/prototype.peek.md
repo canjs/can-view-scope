@@ -12,7 +12,7 @@ Works just like [can-view-scope.prototype.get], but prevents any calls to [can-o
 Walks up the scope to find a value at `key`.  Stops at the first context where `key` has
 a value.
 
-```js
+```javascript
 scope.peek("first.name");
 ```
 
@@ -29,11 +29,11 @@ property name that includes a dot.
 context, if a value is not found, parent scope’s context
 will be explored.
 
-```js
-var list = [{name: "Justin"}, {name: "Brian"}];
-var justin = list[0];
+```javascript
+const list = [{name: "Justin"}, {name: "Brian"}];
+const justin = list[0];
 
-var curScope = new Scope(list).add(justin);
+const curScope = new Scope(list).add(justin);
 
 curScope.peek("name"); //-> "Justin"
 curScope.peek("length"); //-> 2
