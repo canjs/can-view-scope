@@ -6,7 +6,7 @@
 Walks up the scope to find a value at `key`.  Stops at the first context where `key` has
 a value.
 
-```javascript
+```js
 scope.get("first.name");
 ```
 
@@ -23,7 +23,7 @@ property name that includes a dot.
 context. Values can be looked up in the parent `scope` object by prefixing the key with `"../"`.
 [can-view-scope::find find] can also be used to search in the parent’s context after the initial context is explored. For example:
 
-```javascript
+```js
 const list = [{name: "Justin"}, {name: "Brian"}];
 const justin = list[0];
 
@@ -41,7 +41,7 @@ curScope.find("length") //-> 2
 Prefixing a key with more than one `"../"` shifts the lookup path
 that many levels up.
 
-```javascript
+```js
 const list = [{name: "Justin"}, {name: "Brian"}];
 list.name = "Programmers";
 

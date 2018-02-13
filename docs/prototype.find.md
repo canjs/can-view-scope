@@ -6,7 +6,7 @@
 Walks up the scope to find a value at `key`.  Stops at the first context where `key` has
 a value.
 
-```javascript
+```js
 scope.find("first.name");
 ```
 
@@ -23,7 +23,7 @@ property name that includes a dot.
 context, if a value is not found, parent scope’s context
 will be explored.
 
-```javascript
+```js
 const list = [{name: "Justin"}, {name: "Brian"}];
 const justin = list[0];
 
@@ -37,7 +37,7 @@ Prefixing a key with `"./"` prevents any parent scope look ups.
 Prefixing a key with one or more `"../"` shifts the lookup path
 that many levels up.
 
-```javascript
+```js
 const list = [{name: "Justin"}, {name: "Brian"}];
 list.name = "Programmers";
 list.surname = "CanJS";

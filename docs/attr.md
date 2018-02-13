@@ -16,7 +16,7 @@ property name that includes a dot.
 context, if a value is not found, parent scope’s context
 will be explored.
 
-```javascript
+```js
 const list = [{name: "Justin"}, {name: "Brian"}];
 const justin = list[0];
 
@@ -30,7 +30,7 @@ Prefixing a key with `"./"` prevents any parent scope look ups.
 Prefixing a key with one or more `"../"` shifts the lookup path
 that many levels up.
 
-```javascript
+```js
 const list = [{name: "Justin"}, {name: "Brian"}];
 list.name = "Programmers";
 list.surname = "CanJS";

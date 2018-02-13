@@ -28,9 +28,9 @@ been found in a parent scope.
 a [can-mustache.key key] value in a template. Configure how it reads values in the
 scope and what values it returns with the [can-view-scope.readOptions options] argument.
 
-```javascript
+```js
 const context = new Map({
-  name: {first: "Curtis"}
+	name: {first: "Curtis"}
 });
 const scope = new Scope(context);
 const computeData = scope.computeData("name.first");
@@ -42,7 +42,7 @@ computeData.compute()       //-> "Curtis"
 
 The `compute` value is writable.  For example:
 
-```javascript
+```js
 computeData.compute("Andy");
 context.attr("name.first") //-> "Andy"
 ```
