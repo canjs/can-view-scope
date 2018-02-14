@@ -29,20 +29,20 @@ a [can-mustache.key key] value in a template. Configure how it reads values in t
 scope and what values it returns with the [can-view-scope.readOptions options] argument.
 
 ```js
-const context = new Map({
-	name: {first: "Curtis"}
-});
-const scope = new Scope(context);
-const computeData = scope.computeData("name.first");
+const context = new Map( {
+	name: { first: "Curtis" }
+} );
+const scope = new Scope( context );
+const computeData = scope.computeData( "name.first" );
 
-computeData.scope === scope //-> true
-computeData.initialValue    //-> "Curtis"
-computeData.compute()       //-> "Curtis"
+computeData.scope === scope; //-> true
+computeData.initialValue;    //-> "Curtis"
+computeData.compute();       //-> "Curtis"
 ```
 
 The `compute` value is writable.  For example:
 
 ```js
-computeData.compute("Andy");
-context.attr("name.first") //-> "Andy"
+computeData.compute( "Andy" );
+context.attr( "name.first" ); //-> "Andy"
 ```
