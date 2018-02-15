@@ -6,7 +6,7 @@
 Tries to set `key` in the scope to `value`.
 
 ```js
-scope.set("person.first.name", "Justin");
+scope.set( "person.first.name", "Justin" );
 ```
 
 @param {can-stache.key} key A dot-separated path.  Use `"\."` if you have a

@@ -13,7 +13,7 @@ Walks up the scope to find a value at `key`.  Stops at the first context where `
 a value.
 
 ```js
-scope.peek("first.name");
+scope.peek( "first.name" );
 ```
 
 @param {can-stache.key} key A dot-separated path.  Use `"\."` if you have a
@@ -30,11 +30,11 @@ context, if a value is not found, parent scope’s context
 will be explored.
 
 ```js
-var list = [{name: "Justin"}, {name: "Brian"}];
-var justin = list[0];
+const list = [ { name: "Justin" }, { name: "Brian" } ];
+const justin = list[ 0 ];
 
-var curScope = new Scope(list).add(justin);
+const curScope = new Scope( list ).add( justin );
 
-curScope.peek("name"); //-> "Justin"
-curScope.peek("length"); //-> 2
+curScope.peek( "name" ); //-> "Justin"
+curScope.peek( "length" ); //-> 2
 ```

@@ -7,7 +7,7 @@ Walks up the scope to find a value at `key`.  Stops at the first context where `
 a value.
 
 ```js
-scope.get("first.name");
+scope.get( "first.name" );
 ```
 
 @param {can-stache.key} key A dot-separated path.  Use `"\."` if you have a
@@ -24,32 +24,32 @@ context. Values can be looked up in the parent `scope` object by prefixing the k
 [can-view-scope::find find] can also be used to search in the parent’s context after the initial context is explored. For example:
 
 ```js
-var list = [{name: "Justin"}, {name: "Brian"}];
-var justin = list[0];
+const list = [ { name: "Justin" }, { name: "Brian" } ];
+const justin = list[ 0 ];
 
-var curScope = new Scope(list).add(justin);
+const curScope = new Scope( list ).add( justin );
 
 // use `get` to find a value in an explicit context
-curScope.get("name") //-> "Justin"
-curScope.get("../length") //-> 2
+curScope.get( "name" ); //-> "Justin"
+curScope.get( "../length" ); //-> 2
 
 // use `find` to search for a value in any context
-curScope.find("name") //-> "Justin"
-curScope.find("length") //-> 2
+curScope.find( "name" ); //-> "Justin"
+curScope.find( "length" ); //-> 2
 ```
 
 Prefixing a key with more than one `"../"` shifts the lookup path
 that many levels up.
 
 ```js
-var list = [{name: "Justin"}, {name: "Brian"}];
+const list = [ { name: "Justin" }, { name: "Brian" } ];
 list.name = "Programmers";
 
-var justin = list[0];
-var brian = list[1];
-var curScope = new Scope(list).add(justin).add(brian);
+const justin = list[ 0 ];
+const brian = list[ 1 ];
+const curScope = new Scope( list ).add( justin ).add( brian );
 
-curScope.get("name"); //-> "Brian"
-curScope.get("../name"); //-> "Justin"
-curScope.get("../../name"); //-> "Programmers"
+curScope.get( "name" ); //-> "Brian"
+curScope.get( "../name" ); //-> "Justin"
+curScope.get( "../../name" ); //-> "Programmers"
 ```
