@@ -183,30 +183,34 @@ assign(Scope.prototype, {
 				//!steal-remove-start
 				var filename = this.peek("scope.filename");
 				var lineNumber = this.peek("scope.lineNumber");
+				//!steal-remove-end
 
 				if (keyInfo.isLegacyView) {
 					keyReads[0].key = "view";
 
+					//!steal-remove-start
 					canLog.warn(
 						(filename ? filename + ':' : '') +
 						(lineNumber ? lineNumber + ': ' : '') +
 						"{{>*self}} is deprecated. Use {{>scope.view}} instead."
 					);
+					//!steal-remove-end
 				} else {
 					keyReads[0] = {
 						key: keyReads[0].key.substr(1),
 						at: true
 					};
 
+					//!steal-remove-start
 					canLog.warn(
 						(filename ? filename + ':' : '') +
 						(lineNumber ? lineNumber + ': ' : '') +
 						"{{*" + keyReads[0].key + "}} is deprecated. Use {{scope.vars." + keyReads[0].key + "}} instead."
 					);
+					//!steal-remove-end
 
 					keyReads.unshift({ key: 'vars' });
 				}
-				//!steal-remove-end
 			} else {
 				keyReads = keyReads.slice(1);
 			}
