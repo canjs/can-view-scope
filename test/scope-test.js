@@ -1132,3 +1132,17 @@ QUnit.test("functions have correct `thisArg` so they can be called even with `pr
 	QUnit.equal(parentFunc.value, func, "parentFunc.value === func");
 	QUnit.equal(parentFunc.thisArg, parentData, "rootFunc.thisArg === parentData");
 });
+
+QUnit.test("debugger is a reserved scope key for calling debugger helper", function() {
+	var scope = new Scope({ name: "Kevin" });
+
+	var debuggerHelper = function(options) {
+		return options.scope.read("name").value;
+	};
+	canStacheHelpers["debugger"] = debuggerHelper;
+
+	var debuggerScopeKey = scope.compute("debugger");
+	QUnit.equal(canReflect.getValue(debuggerScopeKey), "Kevin", "debugger called with correct helper options");
+
+	delete canStacheHelpers["debugger"];
+});
