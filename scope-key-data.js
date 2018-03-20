@@ -10,6 +10,7 @@ var CIDSet = require("can-cid/set/set");
 var makeComputeLike = require("./make-compute-like");
 var canReflectDeps = require('can-reflect-dependencies');
 var valueEventBindings = require("can-event-queue/value/value");
+var stacheHelpers = require('can-stache-helpers');
 
 var dispatchSymbol = canSymbol.for("can.dispatch");
 
@@ -63,6 +64,19 @@ var ScopeKeyData = function(scope, key, options){
 	this.key = key;
 	this.read = this.read.bind(this);
 	this.dispatch = this.dispatch.bind(this);
+
+	// special case debugger helper so that it is called with helperOtions
+	// when you do {{debugger}} as it already is with {{debugger()}}
+	if (key === "debugger") {
+		// prevent "Unable to find key" warning
+		this.startingScope = { _context: stacheHelpers };
+
+		this.read = function() {
+			var helperOptions = { scope: scope };
+			var debuggerHelper = stacheHelpers["debugger"];
+			return debuggerHelper(helperOptions);
+		};
+	}
 
 	//!steal-remove-start
 	Object.defineProperty(this.read, "name", {
