@@ -80,7 +80,7 @@ var ScopeKeyData = function(scope, key, options){
 
 	//!steal-remove-start
 	Object.defineProperty(this.read, "name", {
-		value: "{{" + this.key + "}}::ScopeKeyData.read",
+		value: canReflect.getName(this) + ".read",
 	});
 	Object.defineProperty(this.dispatch, "name", {
 		value: canReflect.getName(this) + ".dispatch",
