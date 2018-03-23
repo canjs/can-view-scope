@@ -527,7 +527,7 @@ QUnit.test("setting a key on a non observable context", function(){
 	QUnit.deepEqual(context.colors.attr(), {prop: "bar"}, "can updateDeep");
 });
 
-testHelpers.dev.devOnlyTest("fast path computeData dependencies", function(assert) {
+testHelpers.dev.devOnlyTest("computeData dependencies", function(assert) {
 	var map = new SimpleMap({value: "a"});
 	var scope = new Scope(map);
 	var computeData = scope.computeData("value");
@@ -541,24 +541,40 @@ testHelpers.dev.devOnlyTest("fast path computeData dependencies", function(asser
 	assert.ok(dependencies.valueDependencies.has(computeData), "compute has computeData");
 	assert.equal(dependencies.valueDependencies.size, 1, "compute only has computeData");
 
+	//  map.value
+	//   ^    |
+	//   |    v
+	//   |  computeData internal observation
+	//   |    |
+	//   |    v
+	//  computeData
+	var mapValueDependencies = canReflectDeps.getDependencyDataOf(map, "value");
+
+	assert.ok(
+		mapValueDependencies
+			.whatIChange
+			.derive
+			.valueDependencies
+			.has(computeData.observation),
+		"map.value -> computeData internal observation"
+	);
+
+	assert.ok(
+		mapValueDependencies
+			.whatChangesMe
+			.mutate
+			.valueDependencies
+			.has(computeData),
+		"computeData -> map.value"
+	);
+
 	var computeDataDependencies = canReflect.getValueDependencies(computeData);
-	assert.ok(
-		!computeDataDependencies.valueDependencies,
-		"the internal Observation should not be a visible dependency of computeData"
-	);
-	assert.ok(
-		computeDataDependencies.keyDependencies.get(map).has("value"),
-		"the map's 'value' property should be a dependency of computeData"
-	);
-
-	var mapValueDependencies = canReflectDeps
-		.getDependencyDataOf(map, "value")
-		.whatChangesMe
-		.mutate;
 
 	assert.ok(
-		mapValueDependencies.valueDependencies.has(computeData),
-		"the computeData should be a mutation dependency of the map's 'value' property"
+		computeDataDependencies
+			.valueDependencies
+			.has(computeData.observation),
+		"computeData internal observation -> computeData"
 	);
 });
 

@@ -156,13 +156,6 @@ Object.assign(ScopeKeyData.prototype, {
 
 		this.fastPath = true;
 
-		//!steal-remove-start
-		var key = this.reads[0].key;
-		canReflectDeps.addMutatedBy(fastPathRoot, key, {
-			valueDependencies: new Set([self])
-		});
-		//!steal-remove-end
-
 		// there won't be an event in the future ...
 		observation.dependencyChange = function(target, newVal){
 			if(isEventObject(newVal)) {
@@ -198,6 +191,15 @@ Object.assign(ScopeKeyData.prototype, {
 		// then we need to store the observable so the next time this compute is called it can grab the value
 		// directly from the observable.
 		var data = this.startingScope.read(this.key, this.options);
+
+		//!steal-remove-start
+		if (data.rootObserve) {
+			canReflectDeps.addMutatedBy(data.rootObserve, this.key, {
+				valueDependencies: new Set([ this ])
+			});
+		}
+		//!steal-remove-end
+
 		this.scope = data.scope;
 		this.reads = data.reads;
 		this.root = data.rootObserve;
@@ -215,22 +217,7 @@ canReflect.assignSymbols(ScopeKeyData.prototype, {
 	"can.setValue": ScopeKeyData.prototype.set,
 	"can.valueHasDependencies": ScopeKeyData.prototype.hasDependencies,
 	"can.getValueDependencies": function() {
-		var result = this.dependencies;
-
-		// in fast path mode skip the internal observation and return the
-		// fastPathRoot / key as a key dependency of the compute data
-		if (this.fastPath) {
-			var key = this.reads[0].key;
-			var fastPathRoot = getFastPathRoot(this);
-
-			result = {
-				keyDependencies: new Map([
-					[fastPathRoot, new Set([key])]
-				])
-			};
-		}
-
-		return result;
+		return this.dependencies;
 	},
 	"can.getPriority": function(){
 		return canReflect.getPriority( this.observation );
