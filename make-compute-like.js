@@ -11,6 +11,13 @@ var Compute = function(newVal){
 
 module.exports = function(observable) {
     var compute = Compute.bind(observable);
+
+	//!steal-remove-start
+	Object.defineProperty(compute, "name", {
+		value: "Compute<"+canReflect.getName(observable) + ">",
+	});
+	//!steal-remove-end
+
     compute.on = compute.bind = compute.addEventListener = function(event, handler) {
         var translationHandler = function(newVal, oldVal) {
             handler.call(compute, {type:'change'}, newVal, oldVal);
