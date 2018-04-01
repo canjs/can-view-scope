@@ -182,21 +182,52 @@ Object.assign(ScopeKeyData.prototype, {
 		this.fastPath = false;
 	},
 	read: function(){
+		var data;
+
 		if (this.root) {
 			// if we've figured out a root observable, start reading from there
-			return observeReader.read(this.root, this.reads, this.options).value;
+			data = observeReader.read(this.root, this.reads, this.options);
+
+			//!steal-remove-start
+			// remove old dependency
+			canReflectDeps.deleteMutatedBy(
+				// for properties like foo.bar add the dependency to foo
+				this.thisArg || this.root,
+				this.reads[ this.reads.length - 1 ].key,
+				this
+			);
+
+			// update thisArg and add new dependency
+			this.thisArg = data.parent;
+
+			canReflectDeps.addMutatedBy(
+				// for properties like foo.bar add the dependency to foo
+				this.thisArg || this.root,
+				this.reads[ this.reads.length - 1 ].key,
+				{
+					valueDependencies: new Set([ this ])
+				}
+			);
+			//!steal-remove-end
+
+			return data.value;
 		}
 		// If the key has not already been located in a observable then we need to search the scope for the
 		// key.  Once we find the key then we need to return it's value and if it is found in an observable
 		// then we need to store the observable so the next time this compute is called it can grab the value
 		// directly from the observable.
-		var data = this.startingScope.read(this.key, this.options);
+		data = this.startingScope.read(this.key, this.options);
 
 		//!steal-remove-start
 		if (data.rootObserve) {
-			canReflectDeps.addMutatedBy(data.rootObserve, this.key, {
-				valueDependencies: new Set([ this ])
-			});
+			canReflectDeps.addMutatedBy(
+				// for properties like foo.bar add the dependency to foo
+				data.thisArg || data.rootObserve,
+				data.reads[ data.reads.length - 1 ].key,
+				{
+					valueDependencies: new Set([ this ])
+				}
+			);
 		}
 		//!steal-remove-end
 

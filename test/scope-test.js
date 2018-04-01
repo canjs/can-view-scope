@@ -578,6 +578,104 @@ testHelpers.dev.devOnlyTest("computeData dependencies", function(assert) {
 	);
 });
 
+testHelpers.dev.devOnlyTest("computeData dependencies for nested properties", function(assert) {
+	var justin = new SimpleMap({ name: "justin" });
+	var matthew = new SimpleMap({ name: "matthew" });
+	var map = new SimpleMap({
+		person: justin
+	});
+	var scope = new Scope(map);
+	var computeData = scope.computeData("person.name");
+	var obs = new Observation(function() {
+		return computeData.get();
+	});
+
+	canReflect.onValue(obs, function(){});
+
+	var observationDependencies = canReflect.getValueDependencies(obs);
+	assert.ok(observationDependencies.valueDependencies.has(computeData), "compute has computeData");
+	assert.equal(observationDependencies.valueDependencies.size, 1, "compute only has computeData");
+
+	//     map.person -------
+	//                      |
+	//                      |
+	//     person.name      |
+	//      ^    |          |
+	//      |    v          v
+	//      |  computeData internal observation
+	//      |    |
+	//      |    v
+	//     computeData
+	var mapPersonDependencies = canReflectDeps.getDependencyDataOf(map, "person");
+
+	assert.ok(
+		mapPersonDependencies
+			.whatIChange
+			.derive
+			.valueDependencies
+			.has(computeData.observation),
+		"map.person -> computeData internal observation"
+	);
+
+	var justinNameDependencies = canReflectDeps.getDependencyDataOf(justin, "name");
+
+	assert.ok(
+		justinNameDependencies
+			.whatIChange
+			.derive
+			.valueDependencies
+			.has(computeData.observation),
+		"person.name -> computeData internal observation"
+	);
+
+	assert.ok(
+		justinNameDependencies
+			.whatChangesMe
+			.mutate
+			.valueDependencies
+			.has(computeData),
+		"computeData -> person.name"
+	);
+
+	var computeDataDependencies = canReflect.getValueDependencies(computeData);
+
+	assert.ok(
+		computeDataDependencies
+			.valueDependencies
+			.has(computeData.observation),
+		"computeData internal observation -> computeData"
+	);
+
+	// change map.person and make sure dependencies update
+	map.set("person", matthew);
+
+	justinNameDependencies = canReflectDeps.getDependencyDataOf(justin, "name");
+	var matthewNameDependencies = canReflectDeps.getDependencyDataOf(matthew, "name");
+
+	assert.notOk(
+		justinNameDependencies,
+		"old person.name dependencies are removed"
+	);
+
+	assert.ok(
+		matthewNameDependencies
+			.whatIChange
+			.derive
+			.valueDependencies
+			.has(computeData.observation),
+		"person.name -> computeData internal observation changed"
+	);
+
+	assert.ok(
+		matthewNameDependencies
+			.whatChangesMe
+			.mutate
+			.valueDependencies
+			.has(computeData),
+		"computeData -> person.name changed"
+	);
+});
+
 QUnit.test("scopeKeyData offValue resets dependencyChange/start", function() {
 	var map = new SimpleMap({value: "a", other: "b"});
 	var wrap = new SimpleObservable(map);
