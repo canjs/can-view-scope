@@ -400,6 +400,31 @@ assign(Scope.prototype, {
 		return cur._context;
 	},
 
+	// first viewModel scope
+	getViewModel: function() {
+		var vmScope = this.getScope(function(scope) {
+			return scope._meta.viewModel;
+		});
+
+		return vmScope && vmScope._context;
+	},
+
+	// _top_ viewModel scope
+	getTop: function() {
+		var top;
+
+		this.getScope(function(scope) {
+			if (scope._meta.viewModel) {
+				top = scope;
+			}
+
+			// walk entire scope tree
+			return false;
+		});
+
+		return top && top._context;
+	},
+
 	// ## Scope.prototype.getDataForScopeSet
 	// Returns an object with data needed by `.set` to figure out what to set,
 	// and how.
@@ -605,6 +630,14 @@ defineLazyValue(Scope.prototype, 'templateContext', function() {
 
 defineLazyValue(Scope.prototype, 'root', function() {
 	return this.getRoot();
+});
+
+defineLazyValue(Scope.prototype, 'vm', function() {
+	return this.getViewModel();
+});
+
+defineLazyValue(Scope.prototype, 'top', function() {
+	return this.getTop();
 });
 
 defineLazyValue(Scope.prototype, 'helpers', function() {
