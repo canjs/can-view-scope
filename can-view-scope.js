@@ -629,6 +629,7 @@ defineLazyValue(Scope.prototype, 'templateContext', function() {
 });
 
 defineLazyValue(Scope.prototype, 'root', function() {
+	canLog.warn('`scope.root` is deprecated. Use either `scope.top` or `scope.vm` instead.');
 	return this.getRoot();
 });
 

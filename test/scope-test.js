@@ -1271,3 +1271,12 @@ QUnit.test("scope.vm and scope.top", function() {
 	QUnit.equal(scope.read("scope.vm.name").value, "Ryan", "scope.first can be used to read from the _first_ context with viewModel: true");
 	QUnit.equal(scope.read("scope.top.name").value, "Kevin", "scope.top can be used to read from the _top_ context with viewModel: true");
 });
+
+testHelpers.dev.devOnlyTest("scope.root deprecation warning", function() {
+	var teardown = testHelpers.dev.willWarn(/`scope.root` is deprecated/);
+
+	var scope = new Scope({ foo: "bar" });
+	scope.read("scope.root");
+
+	QUnit.equal(teardown(), 1, "deprecation warning displayed");
+});
