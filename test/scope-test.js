@@ -1280,3 +1280,31 @@ testHelpers.dev.devOnlyTest("scope.root deprecation warning", function() {
 
 	QUnit.equal(teardown(), 1, "deprecation warning displayed");
 });
+
+QUnit.test("scope.getPathsForKey", function() {
+	var top = {};
+	top[canSymbol.for("can.hasKey")] = function(key) {
+		return key === "name";
+	};
+
+	var vm = { name: "Ryan" };
+	var nonVm = { name: "Bianca" };
+	var notContext = { index: 0 };
+	var special = { myIndex: 0 };
+
+	var scope = new Scope(top, null, { viewModel: true })
+		.add(notContext, { notContext: true })
+		.add(vm, { viewModel: true })
+		.add(special, { special: true })
+		.add(nonVm);
+
+	var paths = scope.getPathsForKey("name");
+
+	QUnit.deepEqual(paths, {
+		"scope.vm.name": vm,
+		"scope.top.name": top,
+		"name": nonVm,
+		"../../name": vm,
+		"../../../../name": top
+	});
+});

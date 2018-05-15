@@ -425,6 +425,55 @@ assign(Scope.prototype, {
 		return top && top._context;
 	},
 
+	// ## Scope.prototype.getPathsForKey
+	// Finds all paths that will return a value for a specific key
+	getPathsForKey: function getPathsForKey(key) {
+		var paths = {};
+
+		// scope.foo@bar -> bar
+		var keyParts = key.split(/\.|@/);
+		var scopeIndex = keyParts.indexOf("scope");
+
+		if (scopeIndex > -1) {
+			keyParts.splice(scopeIndex, 2);
+		}
+
+		var normalizedKey = keyParts.join(".");
+
+		// find specific paths (like ../key)
+		var cur = "";
+
+		this.getScope(function(scope) {
+			// `notContext` and `special` contexts can't be read using `../`
+			var canBeRead = !scope._meta.special &&  !scope._meta.notContext;
+
+			if (canBeRead && canReflect.hasKey(scope._context, normalizedKey)) {
+				paths[cur + normalizedKey] = scope._context;
+			}
+
+			cur += "../";
+
+			// walk entire scope tree
+			return false;
+		});
+
+		// check scope.vm.<key>
+		var vm = this.getViewModel();
+
+		if (vm && canReflect.hasKey(vm, normalizedKey)) {
+			paths["scope.vm." + normalizedKey] = vm;
+		}
+
+		// check scope.top.<key>
+		var top = this.getTop();
+
+		if (top && canReflect.hasKey(top, normalizedKey)) {
+			paths["scope.top." + normalizedKey] = top;
+		}
+
+		return paths;
+	},
+
 	// ## Scope.prototype.getDataForScopeSet
 	// Returns an object with data needed by `.set` to figure out what to set,
 	// and how.
