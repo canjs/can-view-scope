@@ -1296,6 +1296,7 @@ QUnit.test("scope.getPathsForKey", function() {
 		.add(notContext, { notContext: true })
 		.add(vm, { viewModel: true })
 		.add(special, { special: true })
+		.add(true)
 		.add(nonVm);
 
 	var paths = scope.getPathsForKey("name");
@@ -1304,7 +1305,7 @@ QUnit.test("scope.getPathsForKey", function() {
 		"scope.vm.name": vm,
 		"scope.top.name": top,
 		"name": nonVm,
-		"../../name": vm,
-		"../../../../name": top
+		"../../../name": vm,
+		"../../../../../name": top
 	});
 });
