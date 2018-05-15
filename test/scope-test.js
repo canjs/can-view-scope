@@ -1309,3 +1309,26 @@ QUnit.test("scope.getPathsForKey", function() {
 		"../../../../../name": top
 	});
 });
+
+QUnit.test("scope.hasKey", function() {
+	var top = { foo: "bar" };
+	var vm = { bar: "baz" };
+	var nonVm = {};
+
+	nonVm[canSymbol.for("can.hasKey")] = function(key) {
+		return key === "baz";
+	};
+
+	var scope = new Scope(top, null, { viewModel: true })
+		.add(vm, { viewModel: true })
+		.add(nonVm);
+
+	QUnit.equal(canReflect.hasKey(scope, "scope.top.foo"), true, "hasKey scope.top.foo === true");
+	QUnit.equal(canReflect.hasKey(scope, "scope.top.bar"), false, "hasKey scope.top.bar === false");
+
+	QUnit.equal(canReflect.hasKey(scope, "scope.vm.bar"), true, "hasKey scope.vm.bar === true");
+	QUnit.equal(canReflect.hasKey(scope, "scope.vm.baz"), false, "hasKey scope.vm.baz === false");
+
+	QUnit.equal(canReflect.hasKey(scope, "baz"), true, "hasKey baz === true");
+	QUnit.equal(canReflect.hasKey(scope, "foo"), false, "hasKey foo === false");
+});
