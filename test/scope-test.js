@@ -1260,3 +1260,51 @@ QUnit.test("debugger is a reserved scope key for calling debugger helper", funct
 
 	delete canStacheHelpers["debugger"];
 });
+
+QUnit.test("scope.vm and scope.top", function() {
+	var scope = new Scope({ name: "foo" })
+		.add({ name: "Kevin" }, { viewModel: true }) // top
+		.add({ name: "bar" }) // intermediate
+		.add({ name: "Ryan" }, { viewModel: true }) // vm
+		.add({ name: "baz" });
+
+	QUnit.equal(scope.read("scope.vm.name").value, "Ryan", "scope.first can be used to read from the _first_ context with viewModel: true");
+	QUnit.equal(scope.read("scope.top.name").value, "Kevin", "scope.top can be used to read from the _top_ context with viewModel: true");
+});
+
+testHelpers.dev.devOnlyTest("scope.root deprecation warning", function() {
+	var teardown = testHelpers.dev.willWarn(/`scope.root` is deprecated/);
+
+	var scope = new Scope({ foo: "bar" });
+	scope.read("scope.root");
+
+	QUnit.equal(teardown(), 1, "deprecation warning displayed");
+});
+
+QUnit.test("scope.getPathsForKey", function() {
+	var top = {};
+	top[canSymbol.for("can.hasKey")] = function(key) {
+		return key === "name";
+	};
+
+	var vm = { name: "Ryan" };
+	var nonVm = { name: "Bianca" };
+	var notContext = { index: 0 };
+	var special = { myIndex: 0 };
+
+	var scope = new Scope(top, null, { viewModel: true })
+		.add(notContext, { notContext: true })
+		.add(vm, { viewModel: true })
+		.add(special, { special: true })
+		.add(nonVm);
+
+	var paths = scope.getPathsForKey("name");
+
+	QUnit.deepEqual(paths, {
+		"scope.vm.name": vm,
+		"scope.top.name": top,
+		"name": nonVm,
+		"../../name": vm,
+		"../../../../name": top
+	});
+});
