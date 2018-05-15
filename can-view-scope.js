@@ -447,7 +447,7 @@ assign(Scope.prototype, {
 			// `notContext` and `special` contexts can't be read using `../`
 			var canBeRead = !scope._meta.special &&  !scope._meta.notContext;
 
-			if (canBeRead && canReflect.hasKey(scope._context, normalizedKey)) {
+			if (canBeRead && typeof scope._context === "object" && canReflect.hasKey(scope._context, normalizedKey)) {
 				paths[cur + normalizedKey] = scope._context;
 			}
 
