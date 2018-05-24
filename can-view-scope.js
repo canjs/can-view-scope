@@ -7,7 +7,6 @@ var ObservationRecorder = require("can-observation-recorder");
 var TemplateContext = require('./template-context');
 var makeComputeData = require('./compute_data');
 var assign = require('can-assign');
-var each = require('can-util/js/each/each');
 var namespace = require('can-namespace');
 var canReflect = require("can-reflect");
 var canLog = require('can-log/dev/dev');
@@ -693,7 +692,7 @@ assign(Scope.prototype, {
 			scope = scope._parent;
 		}
 		if (parent) {
-			each(contexts, function(context) {
+			contexts.forEach(function(context) {
 				parent = parent.add(context);
 			});
 			return parent;
