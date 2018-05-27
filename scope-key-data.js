@@ -6,7 +6,6 @@ var assign = require('can-assign');
 var canReflect = require('can-reflect');
 var canSymbol = require('can-symbol');
 var ObservationRecorder = require('can-observation-recorder');
-var CIDSet = require("can-cid/set/set");
 var makeComputeLike = require("./make-compute-like");
 var canReflectDeps = require('can-reflect-dependencies');
 var valueEventBindings = require("can-event-queue/value/value");
@@ -97,7 +96,7 @@ var ScopeKeyData = function(scope, key, options){
 	this.reads = undefined;
 	this.setRoot = undefined;
 	this.thisArg = undefined;
-	var valueDependencies = new CIDSet();
+	var valueDependencies = new Set();
 	valueDependencies.add(observation);
 	this.dependencies = {valueDependencies: valueDependencies};
 };
