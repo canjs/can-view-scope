@@ -1305,8 +1305,8 @@ QUnit.test("scope.getPathsForKey", function() {
 		"scope.vm.name": vm,
 		"scope.top.name": top,
 		"name": nonVm,
-		"../../../name": vm,
-		"../../../../../name": top
+		"../../name": vm,
+		"../../../name": top
 	});
 });
 
