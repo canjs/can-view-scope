@@ -96,6 +96,7 @@ var ScopeKeyData = function(scope, key, options){
 	this.reads = undefined;
 	this.setRoot = undefined;
 	this.thisArg = undefined;
+	this.parentHasKey = undefined;
 	var valueDependencies = new Set();
 	valueDependencies.add(observation);
 	this.dependencies = {valueDependencies: valueDependencies};
@@ -235,6 +236,7 @@ Object.assign(ScopeKeyData.prototype, {
 		this.root = data.rootObserve;
 		this.setRoot = data.setRoot;
 		this.thisArg = data.thisArg;
+		this.parentHasKey = data.parentHasKey;
 		return this.initialValue = data.value;
 	},
 	hasDependencies: function(){

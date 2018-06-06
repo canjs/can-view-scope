@@ -156,7 +156,7 @@ assign(Scope.prototype, {
 			readValue = observeReader.read(this, keyReads.slice(1), options);
 
 			// otherwise, check the templateContext
-			if (typeof readValue.value === 'undefined') {
+			if (typeof readValue.value === 'undefined' && !readValue.parentHasKey) {
 				readValue = this.readFromTemplateContext(attr.slice(6), options);
 			}
 
@@ -252,7 +252,7 @@ assign(Scope.prototype, {
 				// Retrieve the observes that were read.
 				var observes = getObserves();
 				// If a **value was was found**, return value and location data.
-				if (data.value !== undefined) {
+				if (data.value !== undefined || data.parentHasKey) {
 
 					if(!observes.length && isRecording) {
 						// if we didn't actually observe anything
@@ -269,7 +269,8 @@ assign(Scope.prototype, {
 						rootObserve: currentObserve,
 						value: data.value,
 						reads: currentReads,
-						thisArg: keyReads.length > 1 ? data.parent : undefined
+						thisArg: keyReads.length > 1 ? data.parent : undefined,
+						parentHasKey: data.parentHasKey
 					};
 				}
 				// Otherwise, save all observables that were read. If no value
@@ -426,18 +427,52 @@ assign(Scope.prototype, {
 
 	// ## Scope.prototype.getPathsForKey
 	// Finds all paths that will return a value for a specific key
+	// NOTE: this is for development purposes only and is removed in production
 	getPathsForKey: function getPathsForKey(key) {
+		//!steal-remove-start
 		var paths = {};
 
+		var getKeyDefinition = function(obj, key) {
+			if (!obj || typeof obj !== "object") {
+				return {};
+			}
+
+			var keyExistsOnObj = key in obj;
+			var objHasKey = canReflect.hasKey(obj, key);
+
+			return {
+				isDefined: keyExistsOnObj || objHasKey,
+				isFunction: keyExistsOnObj && typeof obj[key] === "function"
+			};
+		};
+
 		// scope.foo@bar -> bar
-		var keyParts = key.split(/\.|@/);
+		var reads = observeReader.reads(key);
+		var keyParts = reads.map(function(read) {
+			return read.key;
+		});
 		var scopeIndex = keyParts.indexOf("scope");
 
 		if (scopeIndex > -1) {
 			keyParts.splice(scopeIndex, 2);
 		}
-
 		var normalizedKey = keyParts.join(".");
+
+		// check scope.vm.<key>
+		var vm = this.getViewModel();
+		var vmKeyDefinition = getKeyDefinition(vm, normalizedKey);
+
+		if (vmKeyDefinition.isDefined) {
+			paths["scope.vm." + normalizedKey + (vmKeyDefinition.isFunction ? "()" : "")] = vm;
+		}
+
+		// check scope.top.<key>
+		var top = this.getTop();
+		var topKeyDefinition = getKeyDefinition(top, normalizedKey);
+
+		if (topKeyDefinition.isDefined) {
+			paths["scope.top." + normalizedKey + (topKeyDefinition.isFunction ? "()" : "")] = top;
+		}
 
 		// find specific paths (like ../key)
 		var cur = "";
@@ -447,8 +482,9 @@ assign(Scope.prototype, {
 			var canBeRead = !scope._meta.special &&  !scope._meta.notContext;
 
 			if (canBeRead) {
-				if (typeof scope._context === "object" && canReflect.hasKey(scope._context, normalizedKey)) {
-					paths[cur + normalizedKey] = scope._context;
+				var contextKeyDefinition = getKeyDefinition(scope._context, normalizedKey);
+				if (contextKeyDefinition.isDefined) {
+					paths[cur + normalizedKey + (contextKeyDefinition.isFunction ? "()" : "")] = scope._context;
 				}
 
 				cur += "../";
@@ -458,21 +494,8 @@ assign(Scope.prototype, {
 			return false;
 		});
 
-		// check scope.vm.<key>
-		var vm = this.getViewModel();
-
-		if (vm && canReflect.hasKey(vm, normalizedKey)) {
-			paths["scope.vm." + normalizedKey] = vm;
-		}
-
-		// check scope.top.<key>
-		var top = this.getTop();
-
-		if (top && canReflect.hasKey(top, normalizedKey)) {
-			paths["scope.top." + normalizedKey] = top;
-		}
-
 		return paths;
+		//!steal-remove-end
 	},
 
 	// ## Scope.prototype.hasKey

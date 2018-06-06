@@ -423,7 +423,6 @@ test("Optimize for compute().observableProperty (#29)", function(){
 
 	});
 
-
 	QUnit.ok(scopeKeyData.fastPath, "fast path");
 
 	changeNumber++;
@@ -1310,6 +1309,31 @@ QUnit.test("scope.getPathsForKey", function() {
 	});
 });
 
+QUnit.test("scope.getPathsForKey works for functions", function() {
+	var top = { name: function() { return "Christopher"; } };
+	var vm = { name: function() { return "Ryan"; } };
+	var nonVm = { name: function() { return "Bianca"; } };
+	var notContext = { index: 0 };
+	var special = { myIndex: 0 };
+
+	var scope = new Scope(top, null, { viewModel: true })
+		.add(notContext, { notContext: true })
+		.add(vm, { viewModel: true })
+		.add(special, { special: true })
+		.add(true)
+		.add(nonVm);
+
+	var paths = scope.getPathsForKey("name");
+
+	QUnit.deepEqual(paths, {
+		"scope.vm.name()": vm,
+		"scope.top.name()": top,
+		"name()": nonVm,
+		"../../name()": vm,
+		"../../../name()": top
+	});
+});
+
 QUnit.test("scope.hasKey", function() {
 	var top = { foo: "bar" };
 	var vm = { bar: "baz" };
@@ -1331,4 +1355,39 @@ QUnit.test("scope.hasKey", function() {
 
 	QUnit.equal(canReflect.hasKey(scope, "baz"), true, "hasKey baz === true");
 	QUnit.equal(canReflect.hasKey(scope, "foo"), false, "hasKey foo === false");
+});
+
+QUnit.test("read returns correct `parentHasKey` value", function() {
+	var vm = {};
+	canReflect.assignSymbols(vm, {
+		"can.hasKey": function(key) {
+			return key === "foo";
+		}
+	});
+
+	var scope = new Scope(vm);
+
+	QUnit.ok(scope.read("foo").parentHasKey, "parent has key 'foo'");
+	QUnit.notOk(scope.read("bar").parentHasKey, "parent does not have key 'bar'");
+});
+
+QUnit.test("computeData returns correct `parentHasKey` value", function() {
+	var vm = {};
+	canReflect.assignSymbols(vm, {
+		"can.hasKey": function(key) {
+			return key === "foo";
+		}
+	});
+
+	var scope = new Scope(vm);
+
+	var fooCompute = scope.computeData("foo");
+	var barCompute = scope.computeData("bar");
+
+	// force a read
+	fooCompute.read();
+	barCompute.read();
+
+	QUnit.ok(fooCompute.parentHasKey, "parent has key 'foo'");
+	QUnit.notOk(barCompute.parentHasKey, "parent does not have key 'bar'");
 });
