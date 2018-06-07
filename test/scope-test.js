@@ -808,3 +808,14 @@ QUnit.test("special scopes are skipped when using .", function() {
 
 	QUnit.equal(scope.peek('.'), map);
 });
+
+QUnit.test("scope.vm and scope.top", function() {
+	var scope = new Scope({ name: "foo" })
+		.add({ name: "Kevin" }, { viewModel: true }) // top
+		.add({ name: "bar" }) // intermediate
+		.add({ name: "Ryan" }, { viewModel: true }) // vm
+		.add({ name: "baz" });
+
+	QUnit.equal(scope.read("scope.vm.name").value, "Ryan", "scope.first can be used to read from the _first_ context with viewModel: true");
+	QUnit.equal(scope.read("scope.top.name").value, "Kevin", "scope.top can be used to read from the _top_ context with viewModel: true");
+});

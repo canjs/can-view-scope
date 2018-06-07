@@ -76,7 +76,11 @@ assign(Scope, {
 		info.isInTemplateContextVars =
 			info.isInLegacyRefsScope ||
 			attr.substr(0, 11) === "scope.vars.";
+		info.isInScopeTop = attr.substr(0, 10) === "scope.top.";
+		info.isInScopeVm = attr.substr(0, 9) === "scope.vm.";
 		info.isInTemplateContext =
+			info.isInScopeTop ||
+			info.isInScopeVm ||
 			info.isInTemplateContextVars ||
 			attr.substr(0, 6) === "scope.";
 		info.isContextBased = info.isInCurrentContext ||
@@ -211,6 +215,10 @@ assign(Scope.prototype, {
 
 					keyReads.unshift({ key: 'vars' });
 				}
+			} else if (keyInfo.isInScopeVm) {
+				return observeReader.read(this.getViewModel(), keyReads.slice(2), options);
+			} else if (keyInfo.isInScopeTop) {
+				return observeReader.read(this.getTop(), keyReads.slice(2), options);
 			} else {
 				keyReads = keyReads.slice(1);
 			}
@@ -417,6 +425,32 @@ assign(Scope.prototype, {
 		}
 		return cur._context;
 	},
+
+	// first viewModel scope
+	getViewModel: function() {
+		var vmScope = this.getScope(function(scope) {
+			return scope._meta.viewModel;
+		});
+
+		return vmScope && vmScope._context;
+	},
+
+	// _top_ viewModel scope
+	getTop: function() {
+		var top;
+
+		this.getScope(function(scope) {
+			if (scope._meta.viewModel) {
+				top = scope;
+			}
+
+			// walk entire scope tree
+			return false;
+		});
+
+		return top && top._context;
+	},
+
 	set: function(key, value, options) {
 		options = options || {};
 
