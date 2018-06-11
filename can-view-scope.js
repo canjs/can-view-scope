@@ -501,48 +501,18 @@ assign(Scope.prototype, {
 	// ## Scope.prototype.hasKey
 	// returns whether or not this scope has the key
 	hasKey: function hasKey(key) {
-		// jshint maxdepth:5
-		var context = this._context;
-		var keyReads = observeReader.reads(key);
-		var propDefined = false;
+		var reads = observeReader.reads(key);
+		var readValue;
 
-		if(typeof context === "object") {
-			if(!keyReads) {
-				propDefined = canReflect.hasKey(context, key);
-			} else {
-				var reads = keyReads, i = 0, readsLength = reads.length;
-				var read;
-				do {
-					read = reads[i];
-					if(canReflect.hasKey(context, read.key)) {
-						propDefined = true;
-
-						// Get the next context and continue to see if the key is defined.
-						context = canReflect.getKeyValue(context, read.key);
-
-						if(context) {
-							propDefined = false;
-							i++;
-							continue;
-						} else {
-							break;
-						}
-					}
-					break;
-				} while(i < readsLength);
-			}
+		if (reads[0].key === "scope") {
+			// read properties like `scope.vm.foo` directly from the scope
+			readValue = observeReader.read(this, reads.slice(1), key);
+		} else {
+			// read normal properties from the scope's context
+			readValue = observeReader.read(this._context, reads, key);
 		}
 
-		// if the prop isn't defined on the context, check if it is a supported "special" key
-		// like scope.top.<key> or scope.vm.<key>
-		if (!propDefined) {
-			var paths = this.getPathsForKey(key);
-			if (paths[key]) {
-				propDefined = true;
-			}
-		}
-
-		return propDefined;
+		return readValue.foundLastParent && readValue.parentHasKey;
 	},
 
 	// ## Scope.prototype.getDataForScopeSet
