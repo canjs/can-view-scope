@@ -1280,7 +1280,7 @@ testHelpers.dev.devOnlyTest("scope.root deprecation warning", function() {
 	QUnit.equal(teardown(), 1, "deprecation warning displayed");
 });
 
-QUnit.test("scope.getPathsForKey", function() {
+testHelpers.dev.devOnlyTest("scope.getPathsForKey", function() {
 	var top = {};
 	top[canSymbol.for("can.hasKey")] = function(key) {
 		return key === "name";
@@ -1309,7 +1309,7 @@ QUnit.test("scope.getPathsForKey", function() {
 	});
 });
 
-QUnit.test("scope.getPathsForKey works for functions", function() {
+testHelpers.dev.devOnlyTest("scope.getPathsForKey works for functions", function() {
 	var top = { name: function() { return "Christopher"; } };
 	var vm = { name: function() { return "Ryan"; } };
 	var nonVm = { name: function() { return "Bianca"; } };

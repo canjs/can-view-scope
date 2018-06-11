@@ -15,7 +15,7 @@
   "scripts": {
     "preversion": "npm test",
     "postpublish": "git push --tags && git push",
-    "testee": "testee test/test.html --browsers firefox",
+    "testee": "testee test/test.html test/test-production.html --browsers firefox",
     "test": "npm run detect-cycle && npm run jshint && npm run testee",
     "jshint": "jshint ./*.js test/*.js --config",
     "release:pre": "npm version prerelease && npm publish --tag pre",
@@ -56,7 +56,7 @@
     "can-test-helpers": "^1.0.1",
     "detect-cyclic-packages": "^1.1.0",
     "jshint": "^2.9.1",
-    "steal": "^1.0.1",
+    "steal": "^1.12.0",
     "steal-qunit": "^1.0.0",
     "testee": "^0.7.0"
   }

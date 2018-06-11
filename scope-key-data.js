@@ -196,10 +196,12 @@ Object.assign(ScopeKeyData.prototype, {
 				this.reads[ this.reads.length - 1 ].key,
 				this
 			);
+			//!steal-remove-end
 
 			// update thisArg and add new dependency
 			this.thisArg = data.parent;
 
+			//!steal-remove-start
 			canReflectDeps.addMutatedBy(
 				// for properties like foo.bar add the dependency to foo
 				this.thisArg || this.root,
