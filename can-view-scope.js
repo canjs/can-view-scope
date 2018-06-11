@@ -427,7 +427,9 @@ assign(Scope.prototype, {
 
 	// ## Scope.prototype.getPathsForKey
 	// Finds all paths that will return a value for a specific key
+	// NOTE: this is for development purposes only and is removed in production
 	getPathsForKey: function getPathsForKey(key) {
+		//!steal-remove-start
 		var paths = {};
 
 		var getKeyDefinition = function(obj, key) {
@@ -493,6 +495,7 @@ assign(Scope.prototype, {
 		});
 
 		return paths;
+		//!steal-remove-end
 	},
 
 	// ## Scope.prototype.hasKey
