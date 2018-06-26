@@ -340,7 +340,9 @@ assign(Scope.prototype, {
 	}),
 	peak: ObservationRecorder.ignore(function(key, options) {
 		//!steal-remove-start
-		canLog.warn('peak is deprecated, please use peek instead');
+		if (process.env.NODE_ENV !== 'production') {
+			canLog.warn('peak is deprecated, please use peek instead');
+		}
 		//!steal-remove-end
 		return this.peek(key, options);
 	}),
@@ -430,71 +432,73 @@ assign(Scope.prototype, {
 	// NOTE: this is for development purposes only and is removed in production
 	getPathsForKey: function getPathsForKey(key) {
 		//!steal-remove-start
-		var paths = {};
+			if (process.env.NODE_ENV !== 'production') {
+			var paths = {};
 
-		var getKeyDefinition = function(obj, key) {
-			if (!obj || typeof obj !== "object") {
-				return {};
-			}
-
-			var keyExistsOnObj = key in obj;
-			var objHasKey = canReflect.hasKey(obj, key);
-
-			return {
-				isDefined: keyExistsOnObj || objHasKey,
-				isFunction: keyExistsOnObj && typeof obj[key] === "function"
-			};
-		};
-
-		// scope.foo@bar -> bar
-		var reads = observeReader.reads(key);
-		var keyParts = reads.map(function(read) {
-			return read.key;
-		});
-		var scopeIndex = keyParts.indexOf("scope");
-
-		if (scopeIndex > -1) {
-			keyParts.splice(scopeIndex, 2);
-		}
-		var normalizedKey = keyParts.join(".");
-
-		// check scope.vm.<key>
-		var vm = this.getViewModel();
-		var vmKeyDefinition = getKeyDefinition(vm, normalizedKey);
-
-		if (vmKeyDefinition.isDefined) {
-			paths["scope.vm." + normalizedKey + (vmKeyDefinition.isFunction ? "()" : "")] = vm;
-		}
-
-		// check scope.top.<key>
-		var top = this.getTop();
-		var topKeyDefinition = getKeyDefinition(top, normalizedKey);
-
-		if (topKeyDefinition.isDefined) {
-			paths["scope.top." + normalizedKey + (topKeyDefinition.isFunction ? "()" : "")] = top;
-		}
-
-		// find specific paths (like ../key)
-		var cur = "";
-
-		this.getScope(function(scope) {
-			// `notContext` and `special` contexts can't be read using `../`
-			var canBeRead = !scope._meta.special &&  !scope._meta.notContext;
-
-			if (canBeRead) {
-				var contextKeyDefinition = getKeyDefinition(scope._context, normalizedKey);
-				if (contextKeyDefinition.isDefined) {
-					paths[cur + normalizedKey + (contextKeyDefinition.isFunction ? "()" : "")] = scope._context;
+			var getKeyDefinition = function(obj, key) {
+				if (!obj || typeof obj !== "object") {
+					return {};
 				}
 
-				cur += "../";
+				var keyExistsOnObj = key in obj;
+				var objHasKey = canReflect.hasKey(obj, key);
+
+				return {
+					isDefined: keyExistsOnObj || objHasKey,
+					isFunction: keyExistsOnObj && typeof obj[key] === "function"
+				};
+			};
+
+			// scope.foo@bar -> bar
+			var reads = observeReader.reads(key);
+			var keyParts = reads.map(function(read) {
+				return read.key;
+			});
+			var scopeIndex = keyParts.indexOf("scope");
+
+			if (scopeIndex > -1) {
+				keyParts.splice(scopeIndex, 2);
+			}
+			var normalizedKey = keyParts.join(".");
+
+			// check scope.vm.<key>
+			var vm = this.getViewModel();
+			var vmKeyDefinition = getKeyDefinition(vm, normalizedKey);
+
+			if (vmKeyDefinition.isDefined) {
+				paths["scope.vm." + normalizedKey + (vmKeyDefinition.isFunction ? "()" : "")] = vm;
 			}
 
-			// walk entire scope tree
-			return false;
-		});
+			// check scope.top.<key>
+			var top = this.getTop();
+			var topKeyDefinition = getKeyDefinition(top, normalizedKey);
 
-		return paths;
+			if (topKeyDefinition.isDefined) {
+				paths["scope.top." + normalizedKey + (topKeyDefinition.isFunction ? "()" : "")] = top;
+			}
+
+			// find specific paths (like ../key)
+			var cur = "";
+
+			this.getScope(function(scope) {
+				// `notContext` and `special` contexts can't be read using `../`
+				var canBeRead = !scope._meta.special &&  !scope._meta.notContext;
+
+				if (canBeRead) {
+					var contextKeyDefinition = getKeyDefinition(scope._context, normalizedKey);
+					if (contextKeyDefinition.isDefined) {
+						paths[cur + normalizedKey + (contextKeyDefinition.isFunction ? "()" : "")] = scope._context;
+					}
+
+					cur += "../";
+				}
+
+				// walk entire scope tree
+				return false;
+			});
+
+			return paths;
+		}
 		//!steal-remove-end
 	},
 
@@ -603,8 +607,10 @@ assign(Scope.prototype, {
 		var parent = data.parent;
 
 		//!steal-remove-start
-		if (data.error) {
-			return canLog.error(data.error);
+		if (process.env.NODE_ENV !== 'production') {
+			if (data.error) {
+				return canLog.error(data.error);
+			}
 		}
 		//!steal-remove-end
 

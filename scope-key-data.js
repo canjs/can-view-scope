@@ -78,12 +78,14 @@ var ScopeKeyData = function(scope, key, options){
 	}
 
 	//!steal-remove-start
-	Object.defineProperty(this.read, "name", {
-		value: canReflect.getName(this) + ".read",
-	});
-	Object.defineProperty(this.dispatch, "name", {
-		value: canReflect.getName(this) + ".dispatch",
-	});
+	if (process.env.NODE_ENV !== 'production') {
+		Object.defineProperty(this.read, "name", {
+			value: canReflect.getName(this) + ".read",
+		});
+		Object.defineProperty(this.dispatch, "name", {
+			value: canReflect.getName(this) + ".dispatch",
+		});
+	}
 	//!steal-remove-end
 
 	var observation = this.observation = new Observation(this.read, this);
@@ -189,27 +191,31 @@ Object.assign(ScopeKeyData.prototype, {
 			data = observeReader.read(this.root, this.reads, this.options);
 
 			//!steal-remove-start
+			if (process.env.NODE_ENV !== 'production') {
 			// remove old dependency
-			canReflectDeps.deleteMutatedBy(
-				// for properties like foo.bar add the dependency to foo
-				this.thisArg || this.root,
-				this.reads[ this.reads.length - 1 ].key,
-				this
-			);
+				canReflectDeps.deleteMutatedBy(
+					// for properties like foo.bar add the dependency to foo
+					this.thisArg || this.root,
+					this.reads[ this.reads.length - 1 ].key,
+					this
+				);
+			}
 			//!steal-remove-end
 
 			// update thisArg and add new dependency
 			this.thisArg = data.parent;
 
 			//!steal-remove-start
-			canReflectDeps.addMutatedBy(
-				// for properties like foo.bar add the dependency to foo
-				this.thisArg || this.root,
-				this.reads[ this.reads.length - 1 ].key,
-				{
-					valueDependencies: new Set([ this ])
-				}
-			);
+			if (process.env.NODE_ENV !== 'production') {
+				canReflectDeps.addMutatedBy(
+					// for properties like foo.bar add the dependency to foo
+					this.thisArg || this.root,
+					this.reads[ this.reads.length - 1 ].key,
+					{
+						valueDependencies: new Set([ this ])
+					}
+				);
+			}
 			//!steal-remove-end
 
 			return data.value;
@@ -221,15 +227,17 @@ Object.assign(ScopeKeyData.prototype, {
 		data = this.startingScope.read(this.key, this.options);
 
 		//!steal-remove-start
-		if (data.rootObserve) {
-			canReflectDeps.addMutatedBy(
-				// for properties like foo.bar add the dependency to foo
-				data.thisArg || data.rootObserve,
-				data.reads[ data.reads.length - 1 ].key,
-				{
-					valueDependencies: new Set([ this ])
-				}
-			);
+		if (process.env.NODE_ENV !== 'production') {
+			if (data.rootObserve) {
+				canReflectDeps.addMutatedBy(
+					// for properties like foo.bar add the dependency to foo
+					data.thisArg || data.rootObserve,
+					data.reads[ data.reads.length - 1 ].key,
+					{
+						valueDependencies: new Set([ this ])
+					}
+				);
+			}
 		}
 		//!steal-remove-end
 
@@ -246,7 +254,7 @@ Object.assign(ScopeKeyData.prototype, {
 	}
 });
 
-canReflect.assignSymbols(ScopeKeyData.prototype, {
+var scopeKeyDataPrototype = {
 	"can.getValue": ScopeKeyData.prototype.get,
 	"can.setValue": ScopeKeyData.prototype.set,
 	"can.valueHasDependencies": ScopeKeyData.prototype.hasDependencies,
@@ -258,13 +266,17 @@ canReflect.assignSymbols(ScopeKeyData.prototype, {
 	},
 	"can.setPriority": function(newPriority){
 		canReflect.setPriority( this.observation, newPriority );
-	},
-	//!steal-remove-start
-	"can.getName": function() {
+	}
+};
+
+//!steal-remove-start
+if (process.env.NODE_ENV !== 'production') {
+	scopeKeyDataPrototype[canSymbol.for("can.getName")] = function() {
 		return canReflect.getName(this.constructor) + "{{" + this.key + "}}";
-	},
-	//!steal-remove-end
-});
+	};
+}
+//!steal-remove-end
+canReflect.assignSymbols(ScopeKeyData.prototype, scopeKeyDataPrototype);
 
 // Creates a compute-like for legacy reasons ...
 Object.defineProperty(ScopeKeyData.prototype, "compute", {
