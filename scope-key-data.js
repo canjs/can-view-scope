@@ -271,7 +271,7 @@ var scopeKeyDataPrototype = {
 
 //!steal-remove-start
 if (process.env.NODE_ENV !== 'production') {
-	scopeKeyDataPrototype[canSymbol.for("can.getName")] = function() {
+	scopeKeyDataPrototype["can.getName"] = function() {
 		return canReflect.getName(this.constructor) + "{{" + this.key + "}}";
 	};
 }
