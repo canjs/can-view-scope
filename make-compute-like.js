@@ -13,9 +13,11 @@ module.exports = function(observable) {
     var compute = Compute.bind(observable);
 
 	//!steal-remove-start
-	Object.defineProperty(compute, "name", {
-		value: "Compute<"+canReflect.getName(observable) + ">",
-	});
+	if (process.env.NODE_ENV !== 'production') {
+		Object.defineProperty(compute, "name", {
+			value: "Compute<"+canReflect.getName(observable) + ">",
+		});
+	}
 	//!steal-remove-end
 
     compute.on = compute.bind = compute.addEventListener = function(event, handler) {
