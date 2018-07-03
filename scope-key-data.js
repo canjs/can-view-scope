@@ -106,6 +106,14 @@ var ScopeKeyData = function(scope, key, options){
 
 valueEventBindings(ScopeKeyData.prototype);
 
+function fastOnBoundSet_Value() {
+	this._value = this.newVal;
+}
+
+function fastOnBoundSetValue() {
+	this.value = this.newVal;
+}
+
 Object.assign(ScopeKeyData.prototype, {
 	constructor: ScopeKeyData,
 	dispatch: function dispatch(newVal){
@@ -174,9 +182,12 @@ Object.assign(ScopeKeyData.prototype, {
 
 			return Observation.prototype.dependencyChange.apply(this, arguments);
 		};
-		observation.onBound = function(){
-			this.value = this.newVal;
-		};
+
+		if (observation.hasOwnProperty("_value")) {// can-observation 4.1+
+			observation.onBound = fastOnBoundSet_Value;
+		} else {// can-observation < 4.1
+			observation.onBound = fastOnBoundSetValue;
+		}
 	},
 	toSlowPath: function(){
 		this.observation.dependencyChange = Observation.prototype.dependencyChange;
