@@ -1,3 +1,4 @@
+"use strict";
 var SimpleMap = require("can-simple-map");
 
 var TemplateContext = function() {

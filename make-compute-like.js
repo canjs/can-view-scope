@@ -1,3 +1,4 @@
+"use strict";
 var singleReference = require("can-single-reference");
 var canReflect = require('can-reflect');
 

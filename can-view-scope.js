@@ -1,3 +1,4 @@
+"use strict";
 // # can/view/scope/scope.js
 //
 // This allows you to define a lookup context and parent contexts that a key's value can be retrieved from.
