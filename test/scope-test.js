@@ -1391,3 +1391,12 @@ QUnit.test("computeData returns correct `parentHasKey` value", function() {
 	QUnit.ok(fooCompute.parentHasKey, "parent has key 'foo'");
 	QUnit.notOk(barCompute.parentHasKey, "parent does not have key 'bar'");
 });
+
+QUnit.test("can get helpers from parent TemplateContext", function(){
+	var scope = new Scope(
+		new Scope.TemplateContext({helpers: {foo: function(){}}})
+	).add(
+		new Scope.TemplateContext()
+	).add( {});
+	QUnit.ok( scope.get("foo"), "got helper");
+});

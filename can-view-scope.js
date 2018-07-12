@@ -39,7 +39,7 @@ assign(Scope, {
 	// Scope.read was moved to can.compute.read
 	// can.compute.read reads properties from a parent. A much more complex version of getObject.
 	read: observeReader.read,
-
+	TemplateContext: TemplateContext,
 	keyInfo: function(attr){
 		var info = {};
 		info.isDotSlash = attr.substr(0, 2) === './';
@@ -116,6 +116,14 @@ assign(Scope.prototype, {
 		if (keyInfo.isContextBased && (this._meta.notContext || this._meta.special)) {
 			return this._parent.read(attr, options);
 		}
+		if(this._context instanceof TemplateContext) {
+			// TODO: this should eventually be fixed to be able to try this helper if what's next is unable to be found.
+			if(this._parent) {
+				return this._parent.read(attr, options);
+			} else {
+				return {};
+			}
+		}
 
 		// If true, lookup stops after the current context.
 		var currentScopeOnly = "currentScopeOnly" in options ? options.currentScopeOnly : true;
@@ -130,7 +138,7 @@ assign(Scope.prototype, {
 			// the `isContextBased` check above won't catch it when you go from
 			// `../foo` to `foo` because `foo` isn't context based.
 			var parent = this._parent;
-			while (parent._meta.notContext || parent._meta.special) {
+			while (parent.isSpecial()) {
 				parent = parent._parent;
 			}
 
@@ -219,7 +227,8 @@ assign(Scope.prototype, {
 				}
 			}, options);
 
-		var isRecording = ObservationRecorder.isRecording();
+		var isRecording = ObservationRecorder.isRecording(),
+			readSpecial = options && options.special === true;
 
 		// Goes through each scope context provided until it finds the key (attr). Once the key is found
 		// then it's value is returned along with an observe, the current scope and reads.
@@ -230,13 +239,18 @@ assign(Scope.prototype, {
 			currentContext = currentScope._context;
 
 			// skip this if it _is_ a special context and we aren't explicitly reading special contexts
-			if ((!options || options.special !== true) && currentScope._meta.special) {
+			if (!readSpecial && currentScope._meta.special) {
 				currentScope = currentScope._parent;
 				continue;
 			}
 
 			// skip this if we _are_ explicitly reading special contexts and this context is _not_ special
-			if (options && options.special && !currentScope._meta.special) {
+			if (readSpecial && !currentScope._meta.special) {
+				currentScope = currentScope._parent;
+				continue;
+			}
+
+			if (currentScope._context instanceof TemplateContext) {
 				currentScope = currentScope._parent;
 				continue;
 			}
@@ -281,8 +295,7 @@ assign(Scope.prototype, {
 				}
 			}
 
-			var parentIsNormalContext = currentScope._parent && currentScope._parent._meta &&
-				!currentScope._parent._meta.notContext && !currentScope._parent._meta.special;
+			var parentIsNormalContext = currentScope._parent && !currentScope._parent.isSpecial();
 
 			if (currentScopeOnly && parentIsNormalContext) {
 				currentScope = null;
@@ -316,13 +329,20 @@ assign(Scope.prototype, {
 	// ## Scope.prototype.getHelper
 	// read a helper from the templateContext or global helpers list
 	getHelper: function(keyReads) {
-		var helper = observeReader.read(this.templateContext.helpers, keyReads, { proxyMethods: false });
-
-		if (!helper || !helper.value) {
-			helper = observeReader.read(stacheHelpers, keyReads, { proxyMethods: false });
+		// try every template context
+		var scope = this, context, helper;
+		while (scope) {
+			context = scope._context;
+			if (context instanceof TemplateContext) {
+				helper = observeReader.read(context.helpers, keyReads, { proxyMethods: false });
+				if(helper.value !== undefined) {
+					return helper;
+				}
+			}
+			scope = scope._parent;
 		}
 
-		return helper;
+		return observeReader.read(stacheHelpers, keyReads, { proxyMethods: false });
 	},
 
 	// ## Scope.prototype.get
@@ -384,6 +404,9 @@ assign(Scope.prototype, {
 			lastScope._parent = templateContext;
 		}
 		return templateContext;
+	},
+	addTemplateContext: function(){
+		return this.add(new TemplateContext());
 	},
 	// ## Scope.prototype.getRoot
 	// Returns the top most context that is not a references scope.
@@ -483,7 +506,7 @@ assign(Scope.prototype, {
 
 			this.getScope(function(scope) {
 				// `notContext` and `special` contexts can't be read using `../`
-				var canBeRead = !scope._meta.special &&  !scope._meta.notContext;
+				var canBeRead = !scope.isSpecial();
 
 				if (canBeRead) {
 					var contextKeyDefinition = getKeyDefinition(scope._context, normalizedKey);
@@ -701,6 +724,9 @@ assign(Scope.prototype, {
 		} else {
 			return this;
 		}
+	},
+	isSpecial: function(){
+		return this._meta.notContext || this._meta.special || (this._context instanceof TemplateContext);
 	}
 });
 
@@ -761,6 +787,22 @@ specialKeywords.forEach(function(key) {
 		}
 	});
 });
+
+
+//!steal-remove-start
+if (process.env.NODE_ENV !== 'production') {
+	Scope.prototype.log = function() {
+		var scope = this;
+	    var indent = "";
+	    while(scope) {
+	        console.log(indent, canReflect.getName(scope._context), scope._context );
+	        scope = scope._parent;
+	        indent += " ";
+	    }
+	};
+}
+//!steal-remove-end
+
 
 namespace.view = namespace.view || {};
 module.exports = namespace.view.Scope = Scope;
