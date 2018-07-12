@@ -112,19 +112,19 @@ assign(Scope.prototype, {
 
 		// `notContext` contexts should be skipped if the key is "context based".
 		// For example, the context that holds `%index`.
-		if (keyInfo.isContextBased && (this._meta.notContext || this._meta.special)) {
+		if (keyInfo.isContextBased === true && (this._meta.notContext === true || this._meta.special === true)) {
 			return this._parent.read(attr, options);
 		}
 
 		// If true, lookup stops after the current context.
 		var currentScopeOnly = "currentScopeOnly" in options ? options.currentScopeOnly : true;
 
-		if (keyInfo.isInCurrentContext) {
+		if (keyInfo.isInCurrentContext === true) {
 			// Stop lookup from checking parent scopes.
 			// Set flag to halt lookup from walking up scope.
 			currentScopeOnly = true;
 			attr = keyInfo.isDotSlash ? attr.substr(2) : attr.substr(5);
-		} else if ((keyInfo.isInParentContext || keyInfo.isParentContext) && this._parent) {
+		} else if ((keyInfo.isInParentContext === true|| keyInfo.isParentContext === true) && this._parent != null) {
 			// walk up until we find a parent that can have context.
 			// the `isContextBased` check above won't catch it when you go from
 			// `../foo` to `foo` because `foo` isn't context based.
@@ -142,9 +142,9 @@ assign(Scope.prototype, {
 			return assign( parentValue, {
 				thisArg: parentValue.thisArg || parent._context
 			});
-		} else if (keyInfo.isCurrentContext) {
+		} else if (keyInfo.isCurrentContext === true) {
 			return observeReader.read(this._context, [], options);
-		} else if (keyInfo.isScope) {
+		} else if (keyInfo.isScope === true) {
 			return { value: this };
 		}
 
