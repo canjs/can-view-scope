@@ -56,7 +56,7 @@
     "can-test-helpers": "^1.0.1",
     "detect-cyclic-packages": "^1.1.0",
     "jshint": "^2.9.1",
-    "steal": "^1.12.0",
+    "steal": "^2.0.0",
     "steal-qunit": "^1.0.0",
     "testee": "^0.8.0"
   }
