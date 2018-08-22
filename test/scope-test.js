@@ -839,12 +839,12 @@ QUnit.test("special scopes are skipped if options.special !== true", function() 
 });
 
 QUnit.test("special scopes are skipped when using ../.", function() {
-	var map = new SimpleMap({ foo: "one" });
-	var scope = new Scope(map)
+	var obj = { foo: "one" };
+	var scope = new Scope(obj)
 		.add({ foo: "two" }, { special: true })
 		.add({});
 
-	QUnit.equal(scope.peek('../.'), map);
+	QUnit.equal(scope.peek('../.'), obj);
 });
 
 QUnit.test("special scopes are skipped when using .", function() {
@@ -1399,4 +1399,43 @@ QUnit.test("can get helpers from parent TemplateContext", function(){
 		new Scope.TemplateContext()
 	).add( {});
 	QUnit.ok( scope.get("foo"), "got helper");
+});
+
+QUnit.test("variable scopes", function(){
+	var root = {
+		rootProp: "ROOT",
+		conflictProp: "ROOT"
+	};
+	var scope = new Scope(root).add({
+		variableProp: "VARIABLE",
+		conflictProp: "VARIABLE"
+	},{variable: true});
+
+	QUnit.equal( scope.get("variableProp"), "VARIABLE", "can read a variable");
+	QUnit.equal( scope.get("this.rootProp"), "ROOT", "can pass variables for the root");
+
+	QUnit.equal( scope.get("this.conflictProp"), "ROOT", "this.conflictProp");
+	QUnit.equal( scope.get("./conflictProp"), "ROOT", "./conflictProp");
+	QUnit.equal( scope.get("conflictProp"), "VARIABLE", "conflictProp");
+
+	QUnit.equal( scope.get("this"), root, "this is right");
+
+
+	var root2 = {
+		root2Prop: "ROOT2",
+		conflictProp: "ROOT2"
+	};
+	var scope2 = new Scope(root).add(root2).add({
+		variableProp: "VARIABLE",
+		conflictProp: "VARIABLE"
+	},{variable: true});
+
+	QUnit.equal( scope2.get("variableProp"), "VARIABLE", "can read a variable");
+	QUnit.equal( scope2.get("this.root2Prop"), "ROOT2", "can pass variables for the root 2");
+
+	QUnit.equal( scope2.get("this.conflictProp"), "ROOT2", "this.conflictProp");
+	QUnit.equal( scope2.get("./conflictProp"), "ROOT2", "./conflictProp");
+	QUnit.equal( scope2.get("conflictProp"), "VARIABLE", "conflictProp");
+
+	QUnit.equal( scope2.get("../conflictProp"), "ROOT", "../conflictProp");
 });

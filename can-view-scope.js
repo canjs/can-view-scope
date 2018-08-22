@@ -58,6 +58,20 @@ assign(Scope, {
 			info.isCurrentContext ||
 			info.isParentContext;
 		return info;
+	},
+	// converts
+	// 	../foo -> ./foo
+	//  ../. -> .
+	//  .. -> .
+	removeLeadingParentWalk: function(key, keyInfo){
+		if(keyInfo.isParentContext) {
+			return ".";
+		}
+		var remaining = key.substr(3);
+		if(remaining === "" || remaining === ".") {
+			return ".";
+		}
+		return "./"+remaining;
 	}
 });
 
@@ -113,7 +127,7 @@ assign(Scope.prototype, {
 
 		// `notContext` contexts should be skipped if the key is "context based".
 		// For example, the context that holds `%index`.
-		if (keyInfo.isContextBased && (this._meta.notContext || this._meta.special)) {
+		if (keyInfo.isContextBased && (this._meta.notContext || this._meta.special || this._meta.variable)) {
 			return this._parent.read(attr, options);
 		}
 		if(this._context instanceof TemplateContext) {
@@ -145,8 +159,8 @@ assign(Scope.prototype, {
 			if (keyInfo.isParentContext) {
 				return observeReader.read(parent._context, [], options);
 			}
-
-			var parentValue = parent.read(attr.substr(3) || ".", options);
+			// convert from ../value to ./value or ../../foo  to ../foo
+			var parentValue = parent.read( Scope.removeLeadingParentWalk(attr, keyInfo), options);
 
 			return assign( parentValue, {
 				thisArg: parentValue.thisArg || parent._context
@@ -192,8 +206,8 @@ assign(Scope.prototype, {
 	},
 
 	// ## Scope.prototype._read
-	//
-	_read: function(keyReads, options, currentScopeOnly) {
+	// This is used to walk up the scope chain.
+	_read: function(keyReads, options, currentScopeOnly, howToRead) {
 		// The current scope and context we are trying to find "keyReads" within.
 		var currentScope = this,
 			currentContext,
@@ -294,7 +308,6 @@ assign(Scope.prototype, {
 					undefinedObserves.push.apply(undefinedObserves, observes);
 				}
 			}
-
 			var parentIsNormalContext = currentScope._parent && !currentScope._parent.isSpecial();
 
 			if (currentScopeOnly && parentIsNormalContext) {
@@ -307,7 +320,7 @@ assign(Scope.prototype, {
 
 		// The **value was not found** in the scope
 		// if not looking for a "special" key, check in can-stache-helpers
-		if (!(options && options.special)) {
+		if (!readSpecial) {
 			var helper = this.getHelper(keyReads);
 
 			if (helper && helper.value) {
@@ -726,7 +739,7 @@ assign(Scope.prototype, {
 		}
 	},
 	isSpecial: function(){
-		return this._meta.notContext || this._meta.special || (this._context instanceof TemplateContext);
+		return this._meta.notContext || this._meta.special || (this._context instanceof TemplateContext) || this._meta.variable;
 	}
 });
 
