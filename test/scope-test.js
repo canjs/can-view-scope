@@ -845,6 +845,7 @@ QUnit.test("special scopes are skipped when using ../.", function() {
 		.add({});
 
 	QUnit.equal(scope.peek('../.'), obj);
+	QUnit.equal(scope.peek('.././foo'), "one");
 });
 
 QUnit.test("special scopes are skipped when using .", function() {
@@ -1438,4 +1439,15 @@ QUnit.test("variable scopes", function(){
 	QUnit.equal( scope2.get("conflictProp"), "VARIABLE", "conflictProp");
 
 	QUnit.equal( scope2.get("../conflictProp"), "ROOT", "../conflictProp");
+
+	var root3 = {
+		root3Prop: "ROOT3",
+		conflictProp: "ROOT3"
+	};
+	var scope3 = new Scope(root).add(root2).add(root3).add({
+		variableProp: "VARIABLE",
+		conflictProp: "VARIABLE"
+	},{variable: true});
+
+	QUnit.equal( scope3.get("../../conflictProp"), "ROOT", "../../conflictProp");
 });

@@ -63,6 +63,8 @@ assign(Scope, {
 	// 	../foo -> ./foo
 	//  ../. -> .
 	//  .. -> .
+	//  .././foo -> ./foo
+	// ../../foo -> ../foo
 	removeLeadingParentWalk: function(key, keyInfo){
 		if(keyInfo.isParentContext) {
 			return ".";
@@ -71,7 +73,16 @@ assign(Scope, {
 		if(remaining === "" || remaining === ".") {
 			return ".";
 		}
-		return "./"+remaining;
+		var after = remaining.substr(0,2);
+		if(after === "..") {
+			return remaining;
+		}
+		else if(after !== "./") {
+			return "./"+remaining;
+		} else {
+			return remaining;
+		}
+
 	}
 });
 
