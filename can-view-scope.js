@@ -138,9 +138,20 @@ assign(Scope.prototype, {
 			// the `isContextBased` check above won't catch it when you go from
 			// `../foo` to `foo` because `foo` isn't context based.
 			var parent = this._parent;
+			if(parent === undefined) {
+				return {
+					noContextAvailable: true
+				};
+			}
 			while (parent.isSpecial()) {
 				parent = parent._parent;
+				if(parent === undefined) {
+					return {
+						noContextAvailable: true
+					};
+				}
 			}
+
 
 			if (keyInfo.isParentContext) {
 				return observeReader.read(parent._context, [], options);

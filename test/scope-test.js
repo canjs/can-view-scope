@@ -1400,3 +1400,13 @@ QUnit.test("can get helpers from parent TemplateContext", function(){
 	).add( {});
 	QUnit.ok( scope.get("foo"), "got helper");
 });
+
+QUnit.test("do not error when reading a missing parent context (#183)", function(){
+	var scope = new Scope(
+		new Scope.TemplateContext({})
+	).add({}, {});
+
+	var results = scope.read("../key",{});
+
+	QUnit.ok(results.noContextAvailable, "no error");
+});
