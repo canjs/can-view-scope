@@ -441,7 +441,7 @@ assign(Scope.prototype, {
 		return this.add(new TemplateContext());
 	},
 	addLetContext: function(values){
-		return this.add(new SimpleMap(values || {}), {variable: true})
+		return this.add(new SimpleMap(values || {}), {variable: true});
 	},
 	// ## Scope.prototype.getRoot
 	// Returns the top most context that is not a references scope.
