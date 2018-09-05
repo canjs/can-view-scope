@@ -13,6 +13,7 @@ var canReflect = require("can-reflect");
 var canLog = require('can-log/dev/dev');
 var defineLazyValue = require('can-define-lazy-value');
 var stacheHelpers = require('can-stache-helpers');
+var SimpleMap = require('can-simple-map');
 
 function Scope(context, parent, meta) {
 	// The obj that will be looked on for values.
@@ -253,7 +254,8 @@ assign(Scope.prototype, {
 			}, options);
 
 		var isRecording = ObservationRecorder.isRecording(),
-			readSpecial = options && options.special === true;
+			readSpecial = options && options.special === true,
+			foundNormalContext = false;
 
 		// Goes through each scope context provided until it finds the key (attr). Once the key is found
 		// then it's value is returned along with an observe, the current scope and reads.
@@ -261,16 +263,27 @@ assign(Scope.prototype, {
 		// saved so that either the observable the key is found in can be returned, or in the case the key is not
 		// found in an observable the closest observable can be returned.
 		while (currentScope) {
+
+			var isSpecialContext = currentScope._meta.special === true;
+			var isNormalContext = !currentScope.isSpecial();
+
+			if(isNormalContext && foundNormalContext && currentScopeOnly) {
+				break;
+			}
+			if(isNormalContext) {
+				foundNormalContext = true;
+			}
+
 			currentContext = currentScope._context;
 
 			// skip this if it _is_ a special context and we aren't explicitly reading special contexts
-			if (!readSpecial && currentScope._meta.special) {
+			if (!readSpecial && isSpecialContext === true) {
 				currentScope = currentScope._parent;
 				continue;
 			}
 
 			// skip this if we _are_ explicitly reading special contexts and this context is _not_ special
-			if (readSpecial && !currentScope._meta.special) {
+			if (readSpecial && isSpecialContext === false) {
 				currentScope = currentScope._parent;
 				continue;
 			}
@@ -319,14 +332,8 @@ assign(Scope.prototype, {
 					undefinedObserves.push.apply(undefinedObserves, observes);
 				}
 			}
-			var parentIsNormalContext = currentScope._parent && !currentScope._parent.isSpecial();
 
-			if (currentScopeOnly && parentIsNormalContext) {
-				currentScope = null;
-			} else {
-				// Move up to the next scope.
-				currentScope = currentScope._parent;
-			}
+			currentScope = currentScope._parent;
 		}
 
 		// The **value was not found** in the scope
@@ -383,6 +390,7 @@ assign(Scope.prototype, {
 	peek: ObservationRecorder.ignore(function(key, options) {
 		return this.get(key, options);
 	}),
+	// TODO: Remove in 6.0
 	peak: ObservationRecorder.ignore(function(key, options) {
 		//!steal-remove-start
 		if (process.env.NODE_ENV !== 'production') {
@@ -431,6 +439,9 @@ assign(Scope.prototype, {
 	},
 	addTemplateContext: function(){
 		return this.add(new TemplateContext());
+	},
+	addLetContext: function(values){
+		return this.add(new SimpleMap(values || {}), {variable: true})
 	},
 	// ## Scope.prototype.getRoot
 	// Returns the top most context that is not a references scope.
