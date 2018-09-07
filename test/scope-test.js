@@ -1323,3 +1323,4 @@ QUnit.test("can get helpers from parent TemplateContext", function(){
 
 require("./variable-scope-test");
 require("./scope-set-test");
+require("./scope-key-data-test");
