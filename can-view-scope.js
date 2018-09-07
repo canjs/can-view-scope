@@ -1,5 +1,5 @@
 "use strict";
-// # can/view/scope/scope.js
+// # can-view-scope/scope.js
 //
 // This allows you to define a lookup context and parent contexts that a key's value can be retrieved from.
 // If no parent scope is provided, only the scope's context will be explored for values.
@@ -468,32 +468,43 @@ assign(Scope.prototype, {
 	//   key: try setting a key value
 	//   how: "setValue" | "set" | "updateDeep" | "write" | "setKeyValue"
 	// }
+	// This works by changing how `readKeyInfo` will read individual scopes.
+	// Specifically, with something like `{{foo.bar}}` it will read `{{foo}}` and
+	// only check if a `bar` property exists.
 	getDataForScopeSet: function getDataForScopeSet(key, options) {
 		var keyInfo = Scope.keyInfo(key);
 		var firstSearchedContext;
 
+		// Overwrite the options to use this read.
 		var opts = assign({
+			// This read is used by `._walk` to read from the scope.
+			// This will use `hasKey` on the last property instead of reading it.
 			read: function(context, keys){
+
+				// If nothing can be found with the keys we are looking for, save the
+				// first possible match.  This is where we will write to.
 				if(firstSearchedContext === undefined && !(context instanceof LetContext)) {
 					firstSearchedContext = context;
 				}
-				var parentKeys = keys.slice(0, keys.length-1);
-				if(parentKeys.length) {
+				// If we have multiple keys ...
+				if(keys.length > 1) {
+					// see if we can find the parent ...
+					var parentKeys = keys.slice(0, keys.length-1);
 					var parent = stacheKey.read(context, parentKeys, options).value;
-					if(parent) {
-						if( canReflect.hasKey(parent, keys[keys.length-1].key ) ) {
-							return {
-								parent: parent,
-								parentHasKey: true,
-								value: undefined
-							};
-						} else {
-							return {};
-						}
+
+					// If there is a parent, see if it has the last key
+					if( parent != null && canReflect.hasKey(parent, keys[keys.length-1].key ) ) {
+						return {
+							parent: parent,
+							parentHasKey: true,
+							value: undefined
+						};
 					} else {
 						return {};
 					}
-				} else if(keys.length === 1) {
+				}
+				// If we have only one key, try to find a context with this key
+				else if(keys.length === 1) {
 					if( canReflect.hasKey(context, keys[0].key ) ) {
 						return {
 							parent: context,
@@ -503,8 +514,9 @@ assign(Scope.prototype, {
 					} else {
 						return {};
 					}
-				} else {
-					// probably reading this
+				}
+				// If we have no keys, we are reading `this`.
+				else {
 					return {
 						value: context
 					};
@@ -513,19 +525,27 @@ assign(Scope.prototype, {
 		},options);
 
 
-
+		// Use the read above to figure out what we are probably writing to.
 		var readData = this.readKeyInfo(keyInfo, opts);
-		var parent;
+
 		if(keyInfo.remainingKey === "this") {
+			// If we are setting a context, then return that context
 			return { parent: readData.value, how: "setValue" };
 		}
+		// Now we are trying to set a property on something.  Parent will
+		// be the something we are setting a property on.
+		var parent;
 
 		var props = keyInfo.remainingKey.split(".");
 		var propName = props.pop();
 
+		// If we got a `thisArg`, that's the parent.
 		if(readData.thisArg) {
 			parent = readData.thisArg;
 		}
+		// Otherwise, we didn't find anything, use the first searched context.
+		// TODO: there is likely a bug here when trying to set foo.bar where nothing in the scope
+		// has a foo.
 		else if(firstSearchedContext) {
 			parent = firstSearchedContext;
 		}
@@ -536,7 +556,7 @@ assign(Scope.prototype, {
 					key + " where the context is undefined."
 			};
 		}
-
+		// Now we need to figure out how we would update this value.  The following does that.
 		if(!canReflect.isObservableLike(parent) && canReflect.isObservableLike(parent[propName])) {
 			if(canReflect.isMapLike(parent[propName])) {
 				return {
