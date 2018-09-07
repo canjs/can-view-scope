@@ -3,7 +3,7 @@
 //
 // This allows you to define a lookup context and parent contexts that a key's value can be retrieved from.
 // If no parent scope is provided, only the scope's context will be explored for values.
-var observeReader = require('can-stache-key');
+var stacheKey = require('can-stache-key');
 var ObservationRecorder = require("can-observation-recorder");
 var TemplateContext = require('./template-context');
 var makeComputeData = require('./compute_data');
@@ -14,6 +14,18 @@ var canLog = require('can-log/dev/dev');
 var defineLazyValue = require('can-define-lazy-value');
 var stacheHelpers = require('can-stache-helpers');
 var SimpleMap = require('can-simple-map');
+
+var LetContext = SimpleMap.extend("LetContext",{});
+
+function canHaveProperties(obj){
+	return obj != null;
+}
+function returnFalse(){
+	return false;
+}
+function returnTrue(){
+	return true;
+}
 
 function Scope(context, parent, meta) {
 	// The obj that will be looked on for values.
@@ -35,29 +47,57 @@ function Scope(context, parent, meta) {
 	this.__cache = {};
 }
 
+var parentContextSearch = /(\.\.\/)|(\.\/)|(this[\.@])/g;
+
 assign(Scope, {
 	// ## Scope.read
 	// Scope.read was moved to can.compute.read
 	// can.compute.read reads properties from a parent. A much more complex version of getObject.
-	read: observeReader.read,
+	read: stacheKey.read,
 	TemplateContext: TemplateContext,
 	keyInfo: function(attr){
-		var info = {};
-		info.isDotSlash = attr.substr(0, 2) === './';
-		info.isThisDot = attr.substr(0,5) === "this.";
-		info.isThisAt = attr.substr(0,5) === "this@";
-		info.isInCurrentContext = info.isDotSlash || info.isThisDot || info.isThisAt;
-		info.isInParentContext = attr.substr(0, 3) === "../";
-		info.isCurrentContext = attr === "." || attr === "this";
-		info.isParentContext = attr === "..";
+
+		// make `{{./}}` an alias for `{{this}}`
+		if (attr === "./") {
+			attr = "this";
+		}
+
+		var info = {remainingKey: attr};
+
+		// handle scope stuff first
 		info.isScope = attr === "scope";
+		if(info.isScope) {
+			return info;
+		}
 		info.isInScope =
 			attr.substr(0, 6) === "scope." ||
 			attr.substr(0, 6) === "scope@";
-		info.isContextBased = info.isInCurrentContext ||
-			info.isInParentContext ||
-			info.isCurrentContext ||
-			info.isParentContext;
+		if(info.isInScope) {
+			info.remainingKey = attr.substr(6);
+			return info;
+		}
+
+		info.parentContextWalkCount = 0;
+		// figure out how many parent walks
+		info.remainingKey = attr.replace(parentContextSearch, function(token, parentContext, dotSlash, thisContext, index){
+			info.isContextBased = true;
+			if(parentContext !== undefined) {
+				info.parentContextWalkCount++;
+			}
+			return "";
+		})
+		// ../..
+		if(info.remainingKey === "..") {
+			info.parentContextWalkCount++;
+			info.remainingKey = "this";
+		}
+		else if(info.remainingKey === "." || info.remainingKey === "") {
+			info.remainingKey = "this";
+		}
+
+		if(info.remainingKey === "this") {
+			info.isContextBased = true;
+		}
 		return info;
 	},
 	// converts
@@ -84,6 +124,78 @@ assign(Scope, {
 			return remaining;
 		}
 
+	},
+	isTemplateContextOrCanNotHaveProperties: function(currentScope){
+		var currentContext = currentScope._context;
+		if(currentContext instanceof TemplateContext) {
+			return true;
+		} else if( !canHaveProperties(currentContext) ) {
+			return true;
+		}
+		return false;
+	},
+	shouldSkipIfSpecial: function(currentScope){
+		var isSpecialContext = currentScope._meta.special === true;
+		if (isSpecialContext === true) {
+			return true;
+		}
+		if( Scope.isTemplateContextOrCanNotHaveProperties(currentScope) ) {
+			return true;
+		}
+		return false;
+	},
+	shouldSkipEverythingButSpecial: function(currentScope){
+		var isSpecialContext = currentScope._meta.special === true;
+		if (isSpecialContext === false) {
+			return true;
+		}
+		if( Scope.isTemplateContextOrCanNotHaveProperties(currentScope) ) {
+			return true;
+		}
+		return false;
+	},
+	// TODO: Remove?
+	// This will keep checking until we hit the next normal context
+	makeShouldExitOnSecondNormalContext: function(){
+		var foundNormalContext = false;
+		return function shouldExitOnSecondNormalContext(currentScope){
+			var isNormalContext = !currentScope.isSpecial();
+			var shouldExit = isNormalContext && foundNormalContext;
+			// leaks some state
+			if(isNormalContext) {
+				foundNormalContext = true;
+			}
+			return shouldExit;
+		};
+	},
+	// This will not check anything after the first normal context
+	makeShouldExitAfterFirstNormalContext: function(){
+		var foundNormalContext = false;
+		return function shouldExitAfterFirstNormalContext(currentScope){
+			if(foundNormalContext) {
+				return true;
+			}
+			var isNormalContext = !currentScope.isSpecial();
+			// leaks some state
+			if(isNormalContext) {
+				foundNormalContext = true;
+			}
+			return false;
+		};
+	},
+	makeShouldSkipSpecialContexts: function(parentContextWalkCount){
+		var walkCount = parentContextWalkCount || 0;
+		return function(currentScope){
+			if(currentScope.isSpecial()) {
+				return true;
+			}
+			walkCount--;
+
+			if(walkCount < 0) {
+				return false;
+			}
+			return true;
+		};
 	}
 });
 
@@ -108,13 +220,42 @@ assign(Scope.prototype, {
 
 	// ## Scope.prototype.find
 	find: function(attr, options) {
-		return this.get(attr, assign({ currentScopeOnly: false }, options));
+		var keyReads = stacheKey.reads(attr);
+		var howToRead = {
+			shouldExit: returnFalse,
+			shouldSkip: Scope.shouldSkipIfSpecial,
+			shouldLookForHelper: true,
+			read: stacheKey.read
+		};
+		var result = this._walk(keyReads, options, howToRead);
+
+		return result.value;
+
+	},
+	// ## Scope.prototype.readFromSpecialContext
+	readFromSpecialContext: function(key) {
+		return this._walk(
+			[{key: key, at: false }],
+			{ special: true },
+			{
+				shouldExit: returnFalse,
+				shouldSkip: Scope.shouldSkipEverythingButSpecial,
+				shouldLookForHelper: false,
+				read: stacheKey.read
+			}
+		);
+	},
+
+	// ## Scope.prototype.readFromTemplateContext
+	readFromTemplateContext: function(key, readOptions) {
+		var keyReads = stacheKey.reads(key);
+		return stacheKey.read(this.templateContext, keyReads, readOptions);
 	},
 
 	// ## Scope.prototype.read
 	// Reads from the scope chain and returns the first non-`undefined` value.
 	// `read` deals mostly with setting up "context based" keys to start reading
-	// from the right scope. Once the right scope is located, `_read` is called.
+	// from the right scope. Once the right scope is located, `_walk` is called.
 	/**
 	 * @hide
 	 * @param {can.stache.key} attr A dot-separated path. Use `"\."` if you have a property name that includes a dot.
@@ -127,99 +268,75 @@ assign(Scope.prototype, {
 	 */
 	read: function(attr, options) {
 		options = options || {};
-
-		// make `{{./}}` an alias for `{{.}}`
-		if (attr === "./") {
-			attr = ".";
-		}
+		return this.readKeyInfo(Scope.keyInfo(attr), options || {});
+	},
+	readKeyInfo: function(keyInfo, options){
 
 		// Identify context based keys. Context based keys try to
 		// specify a particular context a key should be within.
-		var keyInfo = Scope.keyInfo(attr);
+		var readValue,
+			keyReads,
+			howToRead = {
+				read: options.read || stacheKey.read
+			};
 
-		// `notContext` contexts should be skipped if the key is "context based".
-		// For example, the context that holds `%index`.
-		if (keyInfo.isContextBased && (this._meta.notContext || this._meta.special || this._meta.variable)) {
-			return this._parent.read(attr, options);
-		}
-		if(this._context instanceof TemplateContext) {
-			// TODO: this should eventually be fixed to be able to try this helper if what's next is unable to be found.
-			if(this._parent) {
-				return this._parent.read(attr, options);
-			} else {
-				return {};
-			}
-		}
-
-		// If true, lookup stops after the current context.
-		var currentScopeOnly = "currentScopeOnly" in options ? options.currentScopeOnly : true;
-
-		if (keyInfo.isInCurrentContext) {
-			// Stop lookup from checking parent scopes.
-			// Set flag to halt lookup from walking up scope.
-			currentScopeOnly = true;
-			attr = keyInfo.isDotSlash ? attr.substr(2) : attr.substr(5);
-		} else if ((keyInfo.isInParentContext || keyInfo.isParentContext) && this._parent) {
-			// walk up until we find a parent that can have context.
-			// the `isContextBased` check above won't catch it when you go from
-			// `../foo` to `foo` because `foo` isn't context based.
-			var parent = this._parent;
-			while (parent.isSpecial()) {
-				parent = parent._parent;
-			}
-
-			if (keyInfo.isParentContext) {
-				return observeReader.read(parent._context, [], options);
-			}
-			// convert from ../value to ./value or ../../foo  to ../foo
-			var parentValue = parent.read( Scope.removeLeadingParentWalk(attr, keyInfo), options);
-
-			return assign( parentValue, {
-				thisArg: parentValue.thisArg || parent._context
-			});
-		} else if (keyInfo.isCurrentContext) {
-			return observeReader.read(this._context, [], options);
-		} else if (keyInfo.isScope) {
+		// 1.A. Handle reading the scope itself
+		if (keyInfo.isScope) {
 			return { value: this };
 		}
-
-		var keyReads = observeReader.reads(attr);
-		var readValue;
-
-		if (keyInfo.isInScope) {
+		// 1.B. Handle reading something on the scope
+		else if (keyInfo.isInScope) {
+			keyReads = stacheKey.reads(keyInfo.remainingKey);
 			// check for a value on Scope.prototype
-			readValue = observeReader.read(this, keyReads.slice(1), options);
+			readValue = stacheKey.read(this, keyReads, options);
 
 			// otherwise, check the templateContext
 			if (typeof readValue.value === 'undefined' && !readValue.parentHasKey) {
-				readValue = this.readFromTemplateContext(attr.slice(6), options);
+				readValue = this.readFromTemplateContext(keyInfo.remainingKey, options);
 			}
 
 			return assign(readValue, {
-				thisArg: keyReads.length > 1 ? readValue.parent : undefined
+				thisArg: keyReads.length > 0 ? readValue.parent : undefined
 			});
 		}
+		// 1.C. Handle context-based reads. They should skip over special stuff.
+		// this.key, ../.., .././foo
+		else if (keyInfo.isContextBased) {
 
-		return this._read(keyReads, options, currentScopeOnly);
+			options && options.special === true && console.warn("SPECIAL!!!!");
+
+			if(keyInfo.remainingKey !== "this") {
+				keyReads = stacheKey.reads(keyInfo.remainingKey);
+			} else {
+				keyReads = [];
+			}
+			howToRead.shouldExit = Scope.makeShouldExitAfterFirstNormalContext();
+			howToRead.shouldSkip = Scope.makeShouldSkipSpecialContexts(keyInfo.parentContextWalkCount);
+			howToRead.shouldLookForHelper = false;
+
+			return this._walk(keyReads, options, howToRead);
+		}
+		// 1.D. Handle reading without context clues
+		// {{foo}}
+		else {
+			keyReads = stacheKey.reads(keyInfo.remainingKey);
+
+			var isSpecialRead = options && options.special === true;
+
+			options && options.special === true && console.warn("SPECIAL!!!!");
+
+			howToRead.shouldExit = Scope.makeShouldExitOnSecondNormalContext();
+			howToRead.shouldSkip = isSpecialRead ? Scope.shouldSkipEverythingButSpecial : Scope.shouldSkipIfSpecial;
+			howToRead.shouldLookForHelper = isSpecialRead ? false : true;
+
+			return this._walk(keyReads, options, howToRead);
+		}
 	},
 
-	// ## Scope.prototype.readFromSpecialContext
-	readFromSpecialContext: function(key) {
-		return this._read(
-			[{key: key, at: false }],
-			{ special: true }
-		);
-	},
 
-	// ## Scope.prototype.readFromTemplateContext
-	readFromTemplateContext: function(key, readOptions) {
-		var keyReads = observeReader.reads(key);
-		return observeReader.read(this.templateContext, keyReads, readOptions);
-	},
-
-	// ## Scope.prototype._read
+	// ## Scope.prototype._walk
 	// This is used to walk up the scope chain.
-	_read: function(keyReads, options, currentScopeOnly, howToRead) {
+	_walk: function(keyReads, options, howToRead) {
 		// The current scope and context we are trying to find "keyReads" within.
 		var currentScope = this,
 			currentContext,
@@ -245,7 +362,19 @@ assign(Scope.prototype, {
 					currentReads = keyReads.slice(nameIndex);
 				},
 				earlyExit: function(parentValue, nameIndex) {
-					if (nameIndex > setObserveDepth || (nameIndex === setObserveDepth && (typeof parentValue === "object" && keyReads[nameIndex].key in parentValue))) {
+					var isVariableScope = currentScope._meta.variable === true,
+						updateSetObservable = false;
+					if(isVariableScope === true && nameIndex === 0) {
+						// we MUST have pre-defined the key in a variable scope
+						updateSetObservable = canReflect.hasOwnKey( parentValue, keyReads[nameIndex].key);
+					} else {
+						updateSetObservable =
+							// Has more matches
+							nameIndex > setObserveDepth ||
+							// The same number of matches but it has the key
+							nameIndex === setObserveDepth && (typeof parentValue === "object" && canReflect.hasOwnKey( parentValue, keyReads[nameIndex].key));
+					}
+					if ( updateSetObservable ) {
 						currentSetObserve = currentObserve;
 						currentSetReads = currentReads;
 						setObserveDepth = nameIndex;
@@ -253,9 +382,9 @@ assign(Scope.prototype, {
 				}
 			}, options);
 
-		var isRecording = ObservationRecorder.isRecording(),
-			readSpecial = options && options.special === true,
-			foundNormalContext = false;
+
+
+		var isRecording = ObservationRecorder.isRecording();
 
 		// Goes through each scope context provided until it finds the key (attr). Once the key is found
 		// then it's value is returned along with an observe, the current scope and reads.
@@ -264,73 +393,50 @@ assign(Scope.prototype, {
 		// found in an observable the closest observable can be returned.
 		while (currentScope) {
 
-			var isSpecialContext = currentScope._meta.special === true;
-			var isNormalContext = !currentScope.isSpecial();
-
-			if(isNormalContext && foundNormalContext && currentScopeOnly) {
-				break;
+			if(howToRead.shouldSkip(currentScope) === true) {
+				currentScope = currentScope._parent;
+				continue;
 			}
-			if(isNormalContext) {
-				foundNormalContext = true;
+			if(howToRead.shouldExit(currentScope) === true) {
+				break;
 			}
 
 			currentContext = currentScope._context;
 
-			// skip this if it _is_ a special context and we aren't explicitly reading special contexts
-			if (!readSpecial && isSpecialContext === true) {
-				currentScope = currentScope._parent;
-				continue;
-			}
 
-			// skip this if we _are_ explicitly reading special contexts and this context is _not_ special
-			if (readSpecial && isSpecialContext === false) {
-				currentScope = currentScope._parent;
-				continue;
-			}
+			// Prevent computes from temporarily observing the reading of observables.
+			var getObserves = ObservationRecorder.trap();
 
-			if (currentScope._context instanceof TemplateContext) {
-				currentScope = currentScope._parent;
-				continue;
-			}
+			var data = howToRead.read(currentContext, keyReads, readOptions);
 
-			if (currentContext !== null &&
-				// if its a primitive type, keep looking up the scope, since there won't be any properties
-				(typeof currentContext === "object" || typeof currentContext === "function")
-			) {
-				// Prevent computes from temporarily observing the reading of observables.
-				var getObserves = ObservationRecorder.trap();
+			// Retrieve the observes that were read.
+			var observes = getObserves();
+			// If a **value was was found**, return value and location data.
+			if (data.value !== undefined || data.parentHasKey) {
 
-				var data = observeReader.read(currentContext, keyReads, readOptions);
-
-				// Retrieve the observes that were read.
-				var observes = getObserves();
-				// If a **value was was found**, return value and location data.
-				if (data.value !== undefined || data.parentHasKey) {
-
-					if(!observes.length && isRecording) {
-						// if we didn't actually observe anything
-						// the reads and currentObserve don't mean anything
-						// we just point to the current object so setting is fast
-						currentObserve = data.parent;
-						currentReads = keyReads.slice(keyReads.length - 1);
-					} else {
-						ObservationRecorder.addMany(observes);
-					}
-
-					return {
-						scope: currentScope,
-						rootObserve: currentObserve,
-						value: data.value,
-						reads: currentReads,
-						thisArg: keyReads.length > 1 ? data.parent : undefined,
-						parentHasKey: data.parentHasKey
-					};
+				if(!observes.length && isRecording) {
+					// if we didn't actually observe anything
+					// the reads and currentObserve don't mean anything
+					// we just point to the current object so setting is fast
+					currentObserve = data.parent;
+					currentReads = keyReads.slice(keyReads.length - 1);
+				} else {
+					ObservationRecorder.addMany(observes);
 				}
-				// Otherwise, save all observables that were read. If no value
-				// is found, we will observe on all of them.
-				else {
-					undefinedObserves.push.apply(undefinedObserves, observes);
-				}
+
+				return {
+					scope: currentScope,
+					rootObserve: currentObserve,
+					value: data.value,
+					reads: currentReads,
+					thisArg: data.parent,
+					parentHasKey: data.parentHasKey
+				};
+			}
+			// Otherwise, save all observables that were read. If no value
+			// is found, we will observe on all of them.
+			else {
+				undefinedObserves.push.apply(undefinedObserves, observes);
 			}
 
 			currentScope = currentScope._parent;
@@ -338,11 +444,12 @@ assign(Scope.prototype, {
 
 		// The **value was not found** in the scope
 		// if not looking for a "special" key, check in can-stache-helpers
-		if (!readSpecial) {
+		if (howToRead.shouldLookForHelper) {
 			var helper = this.getHelper(keyReads);
 
 			if (helper && helper.value) {
-				return helper;
+				// Don't return parent so `.bind` is not used.
+				return {value: helper.value};
 			}
 		}
 
@@ -356,6 +463,102 @@ assign(Scope.prototype, {
 			value: undefined
 		};
 	},
+	// ## Scope.prototype.getDataForScopeSet
+	// Returns an object with data needed by `.set` to figure out what to set,
+	// and how.
+	// {
+	//   parent: what is being set
+	//   key: try setting a key value
+	//   how: "setValue" | "set" | "updateDeep" | "write" | "setKeyValue"
+	// }
+	getDataForScopeSet: function getDataForScopeSet(key, options) {
+		var keyInfo = Scope.keyInfo(key);
+		var firstSearchedContext;
+
+		var opts = assign({
+			read: function(context, keys){
+				if(firstSearchedContext === undefined && !(context instanceof LetContext)) {
+					firstSearchedContext = context;
+				}
+				var parentKeys = keys.slice(0, keys.length-1);
+				if(parentKeys.length) {
+					var parent = stacheKey.read(context, parentKeys, options).value;
+					if(parent) {
+						if( canReflect.hasKey(parent, keys[keys.length-1].key ) ) {
+							return {
+								parent: parent,
+								parentHasKey: true,
+								value: undefined
+							};
+						} else {
+							return {};
+						}
+					} else {
+						return {};
+					}
+				} else if(keys.length === 1) {
+					if( canReflect.hasKey(context, keys[0].key ) ) {
+						return {
+							parent: context,
+							parentHasKey: true,
+							value: undefined
+						};
+					} else {
+						return {};
+					}
+				} else {
+					// probably reading this
+					return {
+						value: context
+					};
+				}
+			}
+		},options);
+
+
+
+		var readData = this.readKeyInfo(keyInfo, opts);
+		var parent;
+		if(keyInfo.remainingKey === "this") {
+			return { parent: readData.value, how: "setValue" };
+		}
+
+		var props = keyInfo.remainingKey.split(".");
+		var propName = props.pop();
+
+		if(readData.thisArg) {
+			parent = readData.thisArg;
+		}
+		else if(firstSearchedContext) {
+			parent = firstSearchedContext;
+		}
+
+		if (parent === undefined) {
+			return {
+				error: "Attempting to set a value at " +
+					key + " where the context is undefined."
+			};
+		}
+
+		if(!canReflect.isObservableLike(parent) && canReflect.isObservableLike(parent[propName])) {
+			if(canReflect.isMapLike(parent[propName])) {
+				return {
+					parent: parent,
+					key: propName,
+					how: "updateDeep",
+					warn: "can-view-scope: Merging data into \"" +
+						propName + "\" because its parent is non-observable"
+				};
+			}
+			else if(canReflect.isValueLike(parent[propName])){
+				return { parent: parent, key: propName, how: "setValue" };
+			} else {
+				return { parent: parent, how: "write", key: propName, passOptions: true };
+			}
+		} else {
+			return { parent: parent, how: "write", key: propName, passOptions: true };
+		}
+	},
 
 	// ## Scope.prototype.getHelper
 	// read a helper from the templateContext or global helpers list
@@ -365,7 +568,7 @@ assign(Scope.prototype, {
 		while (scope) {
 			context = scope._context;
 			if (context instanceof TemplateContext) {
-				helper = observeReader.read(context.helpers, keyReads, { proxyMethods: false });
+				helper = stacheKey.read(context.helpers, keyReads, { proxyMethods: false });
 				if(helper.value !== undefined) {
 					return helper;
 				}
@@ -373,7 +576,7 @@ assign(Scope.prototype, {
 			scope = scope._parent;
 		}
 
-		return observeReader.read(stacheHelpers, keyReads, { proxyMethods: false });
+		return stacheKey.read(stacheHelpers, keyReads, { proxyMethods: false });
 	},
 
 	// ## Scope.prototype.get
@@ -441,7 +644,7 @@ assign(Scope.prototype, {
 		return this.add(new TemplateContext());
 	},
 	addLetContext: function(values){
-		return this.add(new SimpleMap(values || {}), {variable: true});
+		return this.add(new LetContext(values || {}), {variable: true});
 	},
 	// ## Scope.prototype.getRoot
 	// Returns the top most context that is not a references scope.
@@ -509,7 +712,7 @@ assign(Scope.prototype, {
 			};
 
 			// scope.foo@bar -> bar
-			var reads = observeReader.reads(key);
+			var reads = stacheKey.reads(key);
 			var keyParts = reads.map(function(read) {
 				return read.key;
 			});
@@ -564,99 +767,18 @@ assign(Scope.prototype, {
 	// ## Scope.prototype.hasKey
 	// returns whether or not this scope has the key
 	hasKey: function hasKey(key) {
-		var reads = observeReader.reads(key);
+		var reads = stacheKey.reads(key);
 		var readValue;
 
 		if (reads[0].key === "scope") {
 			// read properties like `scope.vm.foo` directly from the scope
-			readValue = observeReader.read(this, reads.slice(1), key);
+			readValue = stacheKey.read(this, reads.slice(1), key);
 		} else {
 			// read normal properties from the scope's context
-			readValue = observeReader.read(this._context, reads, key);
+			readValue = stacheKey.read(this._context, reads, key);
 		}
 
 		return readValue.foundLastParent && readValue.parentHasKey;
-	},
-
-	// ## Scope.prototype.getDataForScopeSet
-	// Returns an object with data needed by `.set` to figure out what to set,
-	// and how.
-	getDataForScopeSet: function getDataForScopeSet(key, options) {
-		var keyInfo = Scope.keyInfo(key),
-			parent;
-
-		// Use `.read` to read everything upto, but not including the last property
-		// name to find the object we want to set some property on.
-		// For example:
-		//  - `foo.bar` -> `foo`
-		//  - `../foo.bar` -> `../foo`
-		//  - `../foo` -> `..`
-		//  - `foo` -> `.`
-		if (keyInfo.isCurrentContext) {
-			return { parent: this._context, how: "setValue" };
-		} else if (keyInfo.isInParentContext || keyInfo.isParentContext) {
-			// walk up until we find a parent that can have context.
-			// the `isContextBased` check above won't catch it when you go from
-			// `../foo` to `foo` because `foo` isn't context based.
-			parent = this._parent;
-			while (parent._meta.notContext) {
-				parent = parent._parent;
-			}
-
-			if (keyInfo.isParentContext) {
-				return { parent: parent._context, how: "setValue" };
-			}
-			// key starts with "../" or is "."
-			return { how: "set", parent: parent, passOptions: true, key: key.substr(3) || "." };
-		}
-
-		var dotIndex = key.lastIndexOf('.'),
-			slashIndex = key.lastIndexOf('/'),
-			contextPath,
-			propName;
-
-		if (slashIndex > dotIndex) {
-			// ../foo
-			contextPath = key.substring(0, slashIndex);
-			propName = key.substring(slashIndex + 1, key.length);
-		} else {
-			if (dotIndex !== -1) {
-				// ./foo
-				contextPath = key.substring(0, dotIndex);
-				propName = key.substring(dotIndex + 1, key.length);
-			} else {
-				// foo.bar
-				contextPath = ".";
-				propName = key;
-			}
-		}
-
-		var context = this.read(contextPath, options).value;
-		if (context === undefined) {
-			return {
-				error: "Attempting to set a value at " +
-					key + " where " + contextPath + " is undefined."
-			};
-		}
-
-		if(!canReflect.isObservableLike(context) && canReflect.isObservableLike(context[propName])) {
-			if(canReflect.isMapLike(context[propName])) {
-				return {
-					parent: context,
-					key: propName,
-					how: "updateDeep",
-					warn: "can-view-scope: Merging data into \"" +
-						propName + "\" because its parent is non-observable"
-				};
-			}
-			else if(canReflect.isValueLike(context[propName])){
-				return { parent: context, key: propName, how: "setValue" };
-			} else {
-				return { parent: context, how: "write", key: propName, passOptions: true };
-			}
-		} else {
-			return { parent: context, how: "write", key: propName, passOptions: true };
-		}
 	},
 
 	set: function(key, value, options) {
@@ -683,7 +805,7 @@ assign(Scope.prototype, {
 				break;
 
 			case "write":
-				observeReader.write(parent, data.key, value, options);
+				stacheKey.write(parent, data.key, value, options);
 				break;
 
 			case "setValue":
@@ -764,6 +886,8 @@ assign(Scope.prototype, {
 		return this._meta.notContext || this._meta.special || (this._context instanceof TemplateContext) || this._meta.variable;
 	}
 });
+// Legacy name for _walk.
+Scope.prototype._read = Scope.prototype._walk;
 
 canReflect.assignSymbols(Scope.prototype, {
 	"can.hasKey": Scope.prototype.hasKey
