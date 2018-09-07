@@ -218,12 +218,14 @@ Object.assign(ScopeKeyData.prototype, {
 
 			//!steal-remove-start
 			if (process.env.NODE_ENV !== 'production') {
+				var valueDeps = new Set();
+				valueDeps.add(this);
 				canReflectDeps.addMutatedBy(
 					// for properties like foo.bar add the dependency to foo
 					this.thisArg || this.root,
 					this.reads[ this.reads.length - 1 ].key,
 					{
-						valueDependencies: new Set([ this ])
+						valueDependencies: valueDeps
 					}
 				);
 			}
@@ -240,12 +242,14 @@ Object.assign(ScopeKeyData.prototype, {
 		//!steal-remove-start
 		if (process.env.NODE_ENV !== 'production') {
 			if (data.rootObserve) {
+				var rootValueDeps = new Set();
+				rootValueDeps.add(this);
 				canReflectDeps.addMutatedBy(
 					// for properties like foo.bar add the dependency to foo
 					data.thisArg || data.rootObserve,
 					data.reads[ data.reads.length - 1 ].key,
 					{
-						valueDependencies: new Set([ this ])
+						valueDependencies: rootValueDeps
 					}
 				);
 			}
