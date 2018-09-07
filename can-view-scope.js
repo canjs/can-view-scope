@@ -309,7 +309,7 @@ assign(Scope.prototype, {
 			}
 			howToRead.shouldExit = Scope.makeShouldExitAfterFirstNormalContext();
 			howToRead.shouldSkip = Scope.makeShouldSkipSpecialContexts(keyInfo.parentContextWalkCount);
-			howToRead.shouldLookForHelper = false;
+			howToRead.shouldLookForHelper = true;
 
 			return this._walk(keyReads, options, howToRead);
 		}
