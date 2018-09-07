@@ -23,9 +23,6 @@ function canHaveProperties(obj){
 function returnFalse(){
 	return false;
 }
-function returnTrue(){
-	return true;
-}
 
 function Scope(context, parent, meta) {
 	// The obj that will be looked on for values.
@@ -85,7 +82,7 @@ assign(Scope, {
 				info.parentContextWalkCount++;
 			}
 			return "";
-		})
+		});
 		// ../..
 		if(info.remainingKey === "..") {
 			info.parentContextWalkCount++;
@@ -302,8 +299,8 @@ assign(Scope.prototype, {
 		// 1.C. Handle context-based reads. They should skip over special stuff.
 		// this.key, ../.., .././foo
 		else if (keyInfo.isContextBased) {
-
-			options && options.special === true && console.warn("SPECIAL!!!!");
+			// TODO: REMOVE
+			// options && options.special === true && console.warn("SPECIAL!!!!");
 
 			if(keyInfo.remainingKey !== "this") {
 				keyReads = stacheKey.reads(keyInfo.remainingKey);
@@ -322,8 +319,8 @@ assign(Scope.prototype, {
 			keyReads = stacheKey.reads(keyInfo.remainingKey);
 
 			var isSpecialRead = options && options.special === true;
-
-			options && options.special === true && console.warn("SPECIAL!!!!");
+			// TODO: remove
+			// options && options.special === true && console.warn("SPECIAL!!!!");
 
 			howToRead.shouldExit = Scope.makeShouldExitOnSecondNormalContext();
 			howToRead.shouldSkip = isSpecialRead ? Scope.shouldSkipEverythingButSpecial : Scope.shouldSkipIfSpecial;
