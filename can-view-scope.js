@@ -1,8 +1,13 @@
 "use strict";
-// # can-view-scope/scope.js
+// # can-view-scope.js
 //
-// This allows you to define a lookup context and parent contexts that a key's value can be retrieved from.
-// If no parent scope is provided, only the scope's context will be explored for values.
+// This provides the ability to lookup values across a higherarchy of objects.  This is similar to
+// how closures work in JavaScript.
+//
+// This is done with the `Scope` type. It works by having a `_context` reference to
+// an object whose properties can be searched for values.  It also has a `_parent` reference
+// to the next Scope in which to check.  In this way, `Scope` is used to form a tree-like
+// structure.  Leaves and Nodes in the tree only point to their parent.
 var stacheKey = require('can-stache-key');
 var ObservationRecorder = require("can-observation-recorder");
 var TemplateContext = require('./template-context');
@@ -15,7 +20,8 @@ var defineLazyValue = require('can-define-lazy-value');
 var stacheHelpers = require('can-stache-helpers');
 var SimpleMap = require('can-simple-map');
 
-var LetContext = SimpleMap.extend("LetContext",{});
+
+// ## Helpers
 
 function canHaveProperties(obj){
 	return obj != null;
@@ -24,18 +30,29 @@ function returnFalse(){
 	return false;
 }
 
+// ### LetContext
+// Instances of this are used to create a `let` variable context.
+var LetContext = SimpleMap.extend("LetContext",{});
+
+// ## Scope
+// Represents a node in the scope tree.
 function Scope(context, parent, meta) {
-	// The obj that will be looked on for values.
+	// The object that will be looked on for values.
+	// If the type of context is TemplateContext, there will be special rules for it.
 	this._context = context;
 	// The next Scope object whose context should be looked on for values.
 	this._parent = parent;
 	// If this is a special context, it can be labeled here.
 	// Options are:
-	// - viewModel - This is a viewModel
-	// - notContext - This can't be looked within using `./` and `../`. It will be skipped.
-	//   This is for virtual contexts like those used by `%index`.
-	// - special - This can't be looked within using `./` and `../`. It will be skipped.
-	//   This is for reading properties like {{scope.index}}.
+	// - `viewModel` - This is a viewModel. This is mostly used by can-component to make `scope.vm` work.
+	// - `notContext` - This can't be looked within using `./` and `../`. It will be skipped.
+	//   This is for virtual contexts like those used by `%index`. This is very much like
+	//   `variable`.  Most things should switch to `variable` in the future.
+	// - `special` - This can't be looked within using `./` and `../`. It will be skipped.
+	//   This is for reading properties on the scope {{scope.index}}. It's different from variable
+	//   because it's never lookup up like {{key}}.
+	// - `variable` - This is used to define a variable (as opposed to "normal" context). These
+	//   will also be skipped when using `./` and `../`.
 	this._meta = meta || {};
 
 	// A cache that can be used to store computes used to look up within this scope.
@@ -46,15 +63,27 @@ function Scope(context, parent, meta) {
 
 var parentContextSearch = /(\.\.\/)|(\.\/)|(this[\.@])/g;
 
+// ## Static Methods
+// The following methods are exposed mostly for testing purposes.
 assign(Scope, {
-	// ## Scope.read
-	// Scope.read was moved to can.compute.read
-	// can.compute.read reads properties from a parent. A much more complex version of getObject.
+	// ### Scope.read
+	// Scope.read was moved to can-stache-key.read
+	// can-stache-key.read reads properties from a parent. A much more complex version of getObject.
 	read: stacheKey.read,
 	TemplateContext: TemplateContext,
+	// ### keyInfo(key)
+	// Returns an object that details what the `key` means with the following:
+	// ```js
+	// {
+	//   remainingKey, // what would be read on a context (or this)
+	//   isScope, // if the scope itself is being read
+	//   inScope, // if a key on the scope is being read
+	//   parentContextWalkCount, // how many ../
+	//   isContextBased // if a "normal" context is explicitly being read
+	// }
+	// ```
 	keyInfo: function(attr){
 
-		// make `{{./}}` an alias for `{{this}}`
 		if (attr === "./") {
 			attr = "this";
 		}
@@ -75,7 +104,7 @@ assign(Scope, {
 		}
 
 		info.parentContextWalkCount = 0;
-		// figure out how many parent walks
+		// Searches for `../` and other context specifiers
 		info.remainingKey = attr.replace(parentContextSearch, function(token, parentContext, dotSlash, thisContext, index){
 			info.isContextBased = true;
 			if(parentContext !== undefined) {
@@ -97,31 +126,9 @@ assign(Scope, {
 		}
 		return info;
 	},
-	// converts
-	// 	../foo -> ./foo
-	//  ../. -> .
-	//  .. -> .
-	//  .././foo -> ./foo
-	// ../../foo -> ../foo
-	removeLeadingParentWalk: function(key, keyInfo){
-		if(keyInfo.isParentContext) {
-			return ".";
-		}
-		var remaining = key.substr(3);
-		if(remaining === "" || remaining === ".") {
-			return ".";
-		}
-		var after = remaining.substr(0,2);
-		if(after === "..") {
-			return remaining;
-		}
-		else if(after !== "./") {
-			return "./"+remaining;
-		} else {
-			return remaining;
-		}
-
-	},
+	// ### isTemplateContextOrCanNotHaveProperties
+	// Returns `true` if a template context or a `null` or `undefined`
+	// context.
 	isTemplateContextOrCanNotHaveProperties: function(currentScope){
 		var currentContext = currentScope._context;
 		if(currentContext instanceof TemplateContext) {
@@ -131,6 +138,8 @@ assign(Scope, {
 		}
 		return false;
 	},
+	// ### shouldSkipIfSpecial
+	// Return `true` if special.
 	shouldSkipIfSpecial: function(currentScope){
 		var isSpecialContext = currentScope._meta.special === true;
 		if (isSpecialContext === true) {
@@ -141,6 +150,8 @@ assign(Scope, {
 		}
 		return false;
 	},
+	// ### shouldSkipIfSpecial
+	// Return `true` if not special.
 	shouldSkipEverythingButSpecial: function(currentScope){
 		var isSpecialContext = currentScope._meta.special === true;
 		if (isSpecialContext === false) {
@@ -151,8 +162,8 @@ assign(Scope, {
 		}
 		return false;
 	},
-	// TODO: Remove?
-	// This will keep checking until we hit the next normal context
+	// ### makeShouldExitOnSecondNormalContext
+	// This will keep checking until we hit a second "normal" context.
 	makeShouldExitOnSecondNormalContext: function(){
 		var foundNormalContext = false;
 		return function shouldExitOnSecondNormalContext(currentScope){
@@ -165,7 +176,8 @@ assign(Scope, {
 			return shouldExit;
 		};
 	},
-	// This will not check anything after the first normal context
+	// ### makeShouldExitAfterFirstNormalContext
+	// This will not check anything after the first normal context.
 	makeShouldExitAfterFirstNormalContext: function(){
 		var foundNormalContext = false;
 		return function shouldExitAfterFirstNormalContext(currentScope){
@@ -180,6 +192,9 @@ assign(Scope, {
 			return false;
 		};
 	},
+	// ### makeShouldSkipSpecialContexts
+	// Skips `parentContextWalkCount` contexts. This is used to
+	// walk past scopes when `../` is used.
 	makeShouldSkipSpecialContexts: function(parentContextWalkCount){
 		var walkCount = parentContextWalkCount || 0;
 		return function(currentScope){
@@ -195,10 +210,10 @@ assign(Scope, {
 		};
 	}
 });
-
+// ## Prototype methods
 assign(Scope.prototype, {
 
-	// ## Scope.prototype.add
+	// ### scope.add
 	// Creates a new scope and sets the current scope to be the parent.
 	// ```
 	// var scope = new can.view.Scope([
@@ -215,8 +230,10 @@ assign(Scope.prototype, {
 		}
 	},
 
-	// ## Scope.prototype.find
+	// ### scope.find
+	// This is the equivalent of Can 3's scope walking.
 	find: function(attr, options) {
+
 		var keyReads = stacheKey.reads(attr);
 		var howToRead = {
 			shouldExit: returnFalse,
@@ -229,7 +246,7 @@ assign(Scope.prototype, {
 		return result.value;
 
 	},
-	// ## Scope.prototype.readFromSpecialContext
+	// ### scope.readFromSpecialContext
 	readFromSpecialContext: function(key) {
 		return this._walk(
 			[{key: key, at: false }],
@@ -243,13 +260,13 @@ assign(Scope.prototype, {
 		);
 	},
 
-	// ## Scope.prototype.readFromTemplateContext
+	// ### scope.readFromTemplateContext
 	readFromTemplateContext: function(key, readOptions) {
 		var keyReads = stacheKey.reads(key);
 		return stacheKey.read(this.templateContext, keyReads, readOptions);
 	},
 
-	// ## Scope.prototype.read
+	// ### Scope.prototype.read
 	// Reads from the scope chain and returns the first non-`undefined` value.
 	// `read` deals mostly with setting up "context based" keys to start reading
 	// from the right scope. Once the right scope is located, `_walk` is called.
@@ -331,7 +348,7 @@ assign(Scope.prototype, {
 	},
 
 
-	// ## Scope.prototype._walk
+	// ### scope._walk
 	// This is used to walk up the scope chain.
 	_walk: function(keyReads, options, howToRead) {
 		// The current scope and context we are trying to find "keyReads" within.
@@ -363,7 +380,7 @@ assign(Scope.prototype, {
 						updateSetObservable = false;
 					if(isVariableScope === true && nameIndex === 0) {
 						// we MUST have pre-defined the key in a variable scope
-						updateSetObservable = canReflect.hasOwnKey( parentValue, keyReads[nameIndex].key);
+						updateSetObservable = canReflect.hasKey( parentValue, keyReads[nameIndex].key);
 					} else {
 						updateSetObservable =
 							// Has more matches
@@ -460,7 +477,7 @@ assign(Scope.prototype, {
 			value: undefined
 		};
 	},
-	// ## Scope.prototype.getDataForScopeSet
+	// ### scope.getDataForScopeSet
 	// Returns an object with data needed by `.set` to figure out what to set,
 	// and how.
 	// {
@@ -577,7 +594,7 @@ assign(Scope.prototype, {
 		}
 	},
 
-	// ## Scope.prototype.getHelper
+	// ### scope.getHelper
 	// read a helper from the templateContext or global helpers list
 	getHelper: function(keyReads) {
 		// try every template context
@@ -596,7 +613,7 @@ assign(Scope.prototype, {
 		return stacheKey.read(stacheHelpers, keyReads, { proxyMethods: false });
 	},
 
-	// ## Scope.prototype.get
+	// ### scope.get
 	// Gets a value from the scope without being observable.
 	get: function(key, options) {
 
@@ -619,7 +636,7 @@ assign(Scope.prototype, {
 		//!steal-remove-end
 		return this.peek(key, options);
 	}),
-	// ## Scope.prototype.getScope
+	// ### scope.getScope
 	// Returns the first scope that passes the `tester` function.
 	getScope: function(tester) {
 		var scope = this;
@@ -630,13 +647,13 @@ assign(Scope.prototype, {
 			scope = scope._parent;
 		}
 	},
-	// ## Scope.prototype.getContext
+	// ### scope.getContext
 	// Returns the first context whose scope passes the `tester` function.
 	getContext: function(tester) {
 		var res = this.getScope(tester);
 		return res && res._context;
 	},
-	// ## Scope.prototype.getTemplateContext
+	// ### scope.getTemplateContext
 	// Returns the template context
 	getTemplateContext: function() {
 		var lastScope;
@@ -663,7 +680,7 @@ assign(Scope.prototype, {
 	addLetContext: function(values){
 		return this.add(new LetContext(values || {}), {variable: true});
 	},
-	// ## Scope.prototype.getRoot
+	// ### scope.getRoot
 	// Returns the top most context that is not a references scope.
 	// Used by `.read` to provide `%root`.
 	getRoot: function() {
@@ -706,7 +723,7 @@ assign(Scope.prototype, {
 		return top && top._context;
 	},
 
-	// ## Scope.prototype.getPathsForKey
+	// ### scope.getPathsForKey
 	// Finds all paths that will return a value for a specific key
 	// NOTE: this is for development purposes only and is removed in production
 	getPathsForKey: function getPathsForKey(key) {
@@ -781,7 +798,7 @@ assign(Scope.prototype, {
 		//!steal-remove-end
 	},
 
-	// ## Scope.prototype.hasKey
+	// ### scope.hasKey
 	// returns whether or not this scope has the key
 	hasKey: function hasKey(key) {
 		var reads = stacheKey.reads(key);
@@ -839,7 +856,7 @@ assign(Scope.prototype, {
 		}
 	},
 
-	// ## Scope.prototype.attr
+	// ### scope.attr
 	// Gets or sets a value in the scope without being observable.
 	attr: ObservationRecorder.ignore(function(key, value, options) {
 		canLog.warn("can-view-scope::attr is deprecated, please use peek, get or set");
@@ -857,20 +874,20 @@ assign(Scope.prototype, {
 		}
 	}),
 
-	// ## Scope.prototype.computeData
+	// ### scope.computeData
 	// Finds the first location of the key in the scope and then provides a get-set compute that represents the key's value
 	// and other information about where the value was found.
 	computeData: function(key, options) {
 		return makeComputeData(this, key, options);
 	},
 
-	// ## Scope.prototype.compute
+	// ### scope.compute
 	// Provides a get-set compute that represents a key's value.
 	compute: function(key, options) {
 		return this.computeData(key, options)
 			.compute;
 	},
-	// ## Scope.prototype.cloneFromRef
+	// ### scope.cloneFromRef
 	//
 	// This takes a scope and essentially copies its chain from
 	// right before the last TemplateContext. And it does not include the ref.
