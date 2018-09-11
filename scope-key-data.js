@@ -228,8 +228,10 @@ Object.assign(ScopeKeyData.prototype, {
 
 			//!steal-remove-start
 			if (process.env.NODE_ENV !== 'production') {
+				var valueDeps = new Set();
+				valueDeps.add(this);
 				callMutateWithRightArgs(canReflectDeps.addMutatedBy, this.thisArg || this.root, this.reads,{
-					valueDependencies: new Set([ this ])
+					valueDependencies: valueDeps
 				});
 			}
 			//!steal-remove-end
@@ -245,8 +247,10 @@ Object.assign(ScopeKeyData.prototype, {
 		//!steal-remove-start
 		if (process.env.NODE_ENV !== 'production') {
 			if (data.rootObserve) {
+				var rootValueDeps = new Set();
+				rootValueDeps.add(this);
 				callMutateWithRightArgs(canReflectDeps.addMutatedBy, data.thisArg || data.rootObserve, data.reads,{
-					valueDependencies: new Set([ this ])
+					valueDependencies: rootValueDeps
 				});
 			}
 		}

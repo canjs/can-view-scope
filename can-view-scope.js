@@ -398,7 +398,8 @@ assign(Scope.prototype, {
 
 
 
-		var isRecording = ObservationRecorder.isRecording();
+		var isRecording = ObservationRecorder.isRecording(),
+			readAContext = false;
 
 		// Goes through each scope context provided until it finds the key (attr). Once the key is found
 		// then it's value is returned along with an observe, the current scope and reads.
@@ -414,6 +415,7 @@ assign(Scope.prototype, {
 			if(howToRead.shouldExit(currentScope) === true) {
 				break;
 			}
+			readAContext = true;
 
 			currentContext = currentScope._context;
 
@@ -474,7 +476,8 @@ assign(Scope.prototype, {
 		return {
 			setRoot: currentSetObserve,
 			reads: currentSetReads,
-			value: undefined
+			value: undefined,
+			noContextAvailable: !readAContext
 		};
 	},
 	// ### scope.getDataForScopeSet
