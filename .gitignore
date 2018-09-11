@@ -29,4 +29,5 @@ node_modules
 
 doc/
 dist/
+docco/
 package-lock.json

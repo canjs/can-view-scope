@@ -1,6 +1,6 @@
 {
   "name": "can-view-scope",
-  "version": "4.7.1",
+  "version": "4.8.0-pre.0",
   "description": "Observable scopes",
   "homepage": "https://canjs.com/doc/can-view-scope.html",
   "repository": {
@@ -24,7 +24,8 @@
     "release:major": "npm version major && npm publish",
     "build": "node build.js",
     "develop": "done-serve --static --develop --port 8080",
-    "detect-cycle": "detect-cyclic-packages --ignore done-serve"
+    "detect-cycle": "detect-cyclic-packages --ignore done-serve",
+    "docco": "docco -o docco can-view-scope.js compute_data.js scope-key-data.js template-context.js"
   },
   "main": "can-view-scope",
   "keywords": [
@@ -45,7 +46,7 @@
     "can-queues": "^1.0.0",
     "can-reflect": "^1.6.0",
     "can-reflect-dependencies": "<2.0.0",
-    "can-simple-map": "^4.0.0",
+    "can-simple-map": "^4.3.0",
     "can-single-reference": "^1.0.0",
     "can-stache-helpers": "^1.0.0",
     "can-stache-key": "^1.3.0",
@@ -58,6 +59,7 @@
     "jshint": "^2.9.1",
     "steal": "^1.12.0",
     "steal-qunit": "^1.0.0",
-    "testee": "^0.8.0"
+    "testee": "^0.8.0",
+    "docco": "^0.7.0"
   }
 }

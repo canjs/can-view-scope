@@ -59,7 +59,8 @@ test('backtrack path (#163)', function () {
 	}),
 		col = {
 			format: 'str'
-		}, base = new Scope(row),
+		},
+		base = new Scope(row),
 		cur = base.add(col);
 	equal(cur.peek('.'), col, 'got col');
 	equal(cur.peek('..'), row, 'got row');
@@ -283,47 +284,9 @@ test('reading properties on undefined (#1314)', function(){
 });
 
 
-test("Scope attributes can be set (#1297, #1304)", function(){
-	var comp = new SimpleObservable('Test');
-	var map = new SimpleMap({
-		other: new SimpleMap({
-			name: "Justin"
-		})
-	});
-	var scope = new Scope({
-		name: "Matthew",
-		other: {
-			person: {
-				name: "David"
-			},
-			comp: comp
-		}
-	});
 
-	scope.set("name", "Wilbur");
-	equal(scope.get("name"), "Wilbur", "Value updated");
 
-	scope.set("other.person.name", "Dave");
-	equal(scope.get("other.person.name"), "Dave", "Value updated");
 
-	scope.set("other.comp", "Changed");
-	equal(comp.get(), "Changed", "Compute updated");
-
-	scope = new Scope(map);
-	scope.set("other.name", "Brian");
-
-	equal(scope.get("other.name"), "Brian", "Value updated");
-	equal(map.attr("other").attr("name"), "Brian", "Name update in map");
-});
-
-testHelpers.dev.devOnlyTest("Setting a value to an attribute with an undefined parent errors (canjs/can-stache-bindings#298)", function(){
-	var teardown = testHelpers.dev.willError(/Attempting to set a value at (.+) where (.+) is undefined./);
-
-	var scope = new Scope({});
-	scope.set("person.name", "Christopher");
-
-	QUnit.equal(teardown(), 1, "saw errors");
-});
 
 test("computeData.compute get/sets computes in maps", function(){
 	var cmpt = new SimpleObservable(4);
@@ -360,17 +323,7 @@ test("computesData can find update when initially undefined parent scope becomes
 
 });
 
-test("can set scope attributes with ../ (#2132)", function(){
 
-	var map = new SimpleMap();
-	var scope = new Scope(map);
-	var top = scope.add(new SimpleMap());
-
-	top.set("../foo", "bar");
-
-	equal(map.attr("foo"), "bar");
-
-});
 
 test("can read parent context with ../ (#2244)", function(){
 	var map = new SimpleMap();
@@ -493,19 +446,6 @@ QUnit.test("computes are read as this and . and  ../", function(){
 	QUnit.equal(scope.get(".."), 1, ".. read value");
 });
 
-QUnit.test("computes are set as this and . and  ../", function(){
-	var value = new SimpleObservable(1);
-	var scope = new Scope(value);
-	scope.set("this",2);
-	QUnit.equal(scope.get("this"), 2, "this read value");
-	scope.set(".",3);
-	QUnit.equal(scope.get("this"), 3, ". read value");
-
-	scope = scope.add({});
-	scope.set("..",4);
-	QUnit.equal(scope.get(".."), 4, ".. read value");
-});
-
 QUnit.test("maps are set with this.foo and ./foo", function(){
 	var map = new SimpleObservable(new SimpleMap({value: 1}));
 	var scope = new Scope(map);
@@ -513,17 +453,6 @@ QUnit.test("maps are set with this.foo and ./foo", function(){
 	QUnit.equal(scope.get("this.value"), 2, "this read value");
 	scope.set("./value",3);
 	QUnit.equal(scope.get("./value"), 3, ". read value");
-});
-
-
-QUnit.test("setting a key on a non observable context", function(){
-	var context = {colors: new SimpleMap()};
-
-	var scope = new Scope(context);
-
-	scope.set("colors", {prop: "bar"});
-
-	QUnit.deepEqual(context.colors.attr(), {prop: "bar"}, "can updateDeep");
 });
 
 testHelpers.dev.devOnlyTest("computeData dependencies", function(assert) {
@@ -808,16 +737,6 @@ QUnit.test("nested properties can be read from templateContext.vars", function()
 	QUnit.equal(scope.peek("scope.vars.foo.bar"), "quz", "vars.foo.bar === quz");
 });
 
-QUnit.test("filename and lineNumber can be read from anywhere in scope chain", function() {
-	var parent = new Scope({});
-	var scope = parent.add({});
-
-	parent.set("scope.filename", "my-cool-file.txt");
-	parent.set("scope.lineNumber", "5");
-
-	QUnit.equal(scope.peek("scope.filename"), "my-cool-file.txt", 'scope.peek("scope.filename")');
-	QUnit.equal(scope.peek("scope.lineNumber"), "5", 'scope.peek("scope.lineNumber")');
-});
 
 QUnit.test("nested properties can be read from scope.root", function() {
 	var root = new SimpleMap({ bar: "baz" });
@@ -839,12 +758,13 @@ QUnit.test("special scopes are skipped if options.special !== true", function() 
 });
 
 QUnit.test("special scopes are skipped when using ../.", function() {
-	var map = new SimpleMap({ foo: "one" });
-	var scope = new Scope(map)
+	var obj = { foo: "one" };
+	var scope = new Scope(obj)
 		.add({ foo: "two" }, { special: true })
 		.add({});
 
-	QUnit.equal(scope.peek('../.'), map);
+	QUnit.equal(scope.peek('../.'), obj);
+	QUnit.equal(scope.peek('.././foo'), "one");
 });
 
 QUnit.test("special scopes are skipped when using .", function() {
@@ -1225,7 +1145,7 @@ QUnit.test("functions have correct `thisArg` so they can be called even with `pr
 	var rootFunc = scope.read('func', { proxyMethods: false });
 
 	QUnit.equal(rootFunc.value, func, "rootFunc.value === func");
-	QUnit.equal(rootFunc.thisArg, undefined, "rootFunc.thisArg === undefined");
+	QUnit.equal(rootFunc.thisArg, childData, "rootFunc.thisArg === childData");
 
 	var myHelper = function() {};
 	canReflect.setKeyValue(scope.templateContext.helpers, "myHelper", myHelper);
@@ -1410,3 +1330,7 @@ QUnit.test("do not error when reading a missing parent context (#183)", function
 
 	QUnit.ok(results.noContextAvailable, "no error");
 });
+
+require("./variable-scope-test");
+require("./scope-set-test");
+require("./scope-key-data-test");

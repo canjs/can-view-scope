@@ -49,6 +49,14 @@ var isEventObject = function(obj){
 	return obj && typeof obj.batchNum === "number" && typeof obj.type === "string";
 };
 
+function callMutateWithRightArgs(method, mutated, reads, mutator){
+	if(reads.length) {
+		method.call(canReflectDeps,mutated, reads[ reads.length - 1 ].key ,mutator);
+	} else {
+		method.call(canReflectDeps,mutated ,mutator);
+	}
+}
+
 // could we make this an observation first ... and have a getter for the compute?
 
 // This is a fast-path enabled Observation wrapper use many places in can-stache.
@@ -141,7 +149,11 @@ Object.assign(ScopeKeyData.prototype, {
 	set: function(newVal){
 		var root = this.root || this.setRoot;
 		if(root) {
-			observeReader.write(root, this.reads, newVal, this.options);
+			if(this.reads.length) {
+				observeReader.write(root, this.reads, newVal, this.options);
+			} else {
+				canReflect.setValue(root,newVal);
+			}
 		} else {
 			this.startingScope.set(this.key, newVal, this.options);
 		}
@@ -203,13 +215,11 @@ Object.assign(ScopeKeyData.prototype, {
 
 			//!steal-remove-start
 			if (process.env.NODE_ENV !== 'production') {
-			// remove old dependency
-				canReflectDeps.deleteMutatedBy(
-					// for properties like foo.bar add the dependency to foo
-					this.thisArg || this.root,
-					this.reads[ this.reads.length - 1 ].key,
-					this
-				);
+				// remove old dependency
+				if(this.reads.length) {
+					callMutateWithRightArgs(canReflectDeps.deleteMutatedBy, this.thisArg || this.root, this.reads,this);
+				}
+
 			}
 			//!steal-remove-end
 
@@ -220,14 +230,9 @@ Object.assign(ScopeKeyData.prototype, {
 			if (process.env.NODE_ENV !== 'production') {
 				var valueDeps = new Set();
 				valueDeps.add(this);
-				canReflectDeps.addMutatedBy(
-					// for properties like foo.bar add the dependency to foo
-					this.thisArg || this.root,
-					this.reads[ this.reads.length - 1 ].key,
-					{
-						valueDependencies: valueDeps
-					}
-				);
+				callMutateWithRightArgs(canReflectDeps.addMutatedBy, this.thisArg || this.root, this.reads,{
+					valueDependencies: valueDeps
+				});
 			}
 			//!steal-remove-end
 
@@ -244,14 +249,9 @@ Object.assign(ScopeKeyData.prototype, {
 			if (data.rootObserve) {
 				var rootValueDeps = new Set();
 				rootValueDeps.add(this);
-				canReflectDeps.addMutatedBy(
-					// for properties like foo.bar add the dependency to foo
-					data.thisArg || data.rootObserve,
-					data.reads[ data.reads.length - 1 ].key,
-					{
-						valueDependencies: rootValueDeps
-					}
-				);
+				callMutateWithRightArgs(canReflectDeps.addMutatedBy, data.thisArg || data.rootObserve, data.reads,{
+					valueDependencies: rootValueDeps
+				});
 			}
 		}
 		//!steal-remove-end
