@@ -1331,6 +1331,13 @@ QUnit.test("do not error when reading a missing parent context (#183)", function
 	QUnit.ok(results.noContextAvailable, "no error");
 });
 
+QUnit.test("cloneFromRef clones meta", function(){
+	var scope = new Scope({}).add(new Scope.TemplateContext({})).addLetContext({tempProp: undefined});
+	var copyScope = scope.cloneFromRef();
+
+	QUnit.deepEqual( copyScope._meta, {variable: true});
+});
+
 require("./variable-scope-test");
 require("./scope-set-test");
 require("./scope-key-data-test");

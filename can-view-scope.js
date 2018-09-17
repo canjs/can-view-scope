@@ -897,7 +897,7 @@ assign(Scope.prototype, {
 	// this is a helper function to provide lexical semantics for refs.
 	// This will not be needed for leakScope: false.
 	cloneFromRef: function() {
-		var contexts = [];
+		var scopes = [];
 		var scope = this,
 			context,
 			parent;
@@ -907,12 +907,13 @@ assign(Scope.prototype, {
 				parent = scope._parent;
 				break;
 			}
-			contexts.unshift(context);
+			scopes.unshift(scope);
 			scope = scope._parent;
 		}
 		if (parent) {
-			contexts.forEach(function(context) {
-				parent = parent.add(context);
+			scopes.forEach(function(scope) {
+				// For performance, re-use _meta, don't copy it.
+				parent = parent.add(scope._context, scope._meta);
 			});
 			return parent;
 		} else {
