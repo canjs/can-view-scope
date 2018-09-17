@@ -993,7 +993,7 @@ QUnit.test("scope.read should walk over special scopes", function() {
 	QUnit.equal(scope.read("c").value, "c", "c");
 });
 
-QUnit.test("scope.read should skip special contexts and read from not-context scope higher in the chain", function(){
+QUnit.test("scope.read should skip special contexts and read from notContext scope higher in the chain", function(){
 	var scope = new Scope({ a: "a" })
 		.add({ b: "b" }, { notContext: true })
 		.add({ c: "c" }, { special: true })
@@ -1005,6 +1005,23 @@ QUnit.test("scope.read should skip special contexts and read from not-context sc
 	QUnit.equal(scope.read("c").value, undefined, "c not read from special context");
 	QUnit.equal(scope.read("d").value, "d", "d read correctly from notContext parent context");
 	QUnit.equal(scope.read("e").value, "e", "e read correctly");
+
+	scope = scope.add({ f: "f" }, { notContext : true })
+		.add({ g: "g" }, { special : true })
+		.add({ h: "h" }, { notContext : true })
+		.add({ i: "i" });
+
+	QUnit.equal(scope.read("e").value, undefined, "e not read from normal parent context");
+	QUnit.equal(scope.read("f").value, "f", "f read correctly from notContext parent context");
+	QUnit.equal(scope.read("g").value, undefined, "g not read from special context");
+	QUnit.equal(scope.read("h").value, "h", "h read correctly from notContext parent context");
+	QUnit.equal(scope.read("i").value, "i", "i read correctly");
+
+	QUnit.equal(scope.read("../a").value, undefined, "../a not read from normal parent context above normal parent context");
+	QUnit.equal(scope.read("../b").value, "b", "../b read correctly from notContext parent context above normal parent context");
+	QUnit.equal(scope.read("../c").value, undefined, "../c not read from special context above normal parent context");
+	QUnit.equal(scope.read("../d").value, "d", "../d read correctly from notContext parent context above normal parent context");
+	QUnit.equal(scope.read("../e").value, "e", "../e read correctly above normal parent context");
 });
 
 QUnit.test("reading using ../ when there is no parent returns undefined", function() {

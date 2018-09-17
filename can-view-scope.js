@@ -150,7 +150,7 @@ assign(Scope, {
 		}
 		return false;
 	},
-	// ### shouldSkipIfSpecial
+	// ### shouldSkipEverythingButSpecial
 	// Return `true` if not special.
 	shouldSkipEverythingButSpecial: function(currentScope){
 		var isSpecialContext = currentScope._meta.special === true;
@@ -197,7 +197,14 @@ assign(Scope, {
 	// walk past scopes when `../` is used.
 	makeShouldSkipSpecialContexts: function(parentContextWalkCount){
 		var walkCount = parentContextWalkCount || 0;
-		return function(currentScope){
+		return function shouldSkipSpecialContexts(currentScope){
+			// after walking past the correct number of contexts,
+			// should not skip notContext scopes
+			// so that ../foo can be used to read from a notContext scope
+			if (walkCount < 0 && currentScope._meta.notContext) {
+				return false;
+			}
+
 			if(currentScope.isSpecial()) {
 				return true;
 			}
@@ -210,6 +217,7 @@ assign(Scope, {
 		};
 	}
 });
+
 // ## Prototype methods
 assign(Scope.prototype, {
 
@@ -324,7 +332,7 @@ assign(Scope.prototype, {
 			} else {
 				keyReads = [];
 			}
-			howToRead.shouldExit = Scope.makeShouldExitAfterFirstNormalContext();
+			howToRead.shouldExit = Scope.makeShouldExitOnSecondNormalContext();
 			howToRead.shouldSkip = Scope.makeShouldSkipSpecialContexts(keyInfo.parentContextWalkCount);
 			howToRead.shouldLookForHelper = true;
 
@@ -991,8 +999,11 @@ if (process.env.NODE_ENV !== 'production') {
 	Scope.prototype.log = function() {
 		var scope = this;
 	    var indent = "";
-	    while(scope) {
-	        console.log(indent, canReflect.getName(scope._context), scope._context );
+		var contextType = "";
+		while(scope) {
+			contextType = scope._meta.notContext ? " (notContext)" :
+				scope._meta.special ? " (special)" : "";
+			console.log(indent, canReflect.getName(scope._context) + contextType, scope._context);
 	        scope = scope._parent;
 	        indent += " ";
 	    }
