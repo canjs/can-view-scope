@@ -1355,6 +1355,13 @@ QUnit.test("cloneFromRef clones meta", function(){
 	QUnit.deepEqual( copyScope._meta, {variable: true});
 });
 
+QUnit.test("scope/key walks the scope", function() {
+	var scope = new Scope({foo: "bar"}).add({}).add({});
+	var value = scope.peek("scope/foo");
+
+	QUnit.equal(value, 'bar');
+});
+
 require("./variable-scope-test");
 require("./scope-set-test");
 require("./scope-key-data-test");
