@@ -95,10 +95,15 @@ assign(Scope, {
 		if(info.isScope) {
 			return info;
 		}
+		var firstSix = attr.substr(0, 6);
 		info.isInScope =
-			attr.substr(0, 6) === "scope." ||
-			attr.substr(0, 6) === "scope@";
+			firstSix === "scope." ||
+			firstSix === "scope@";
 		if(info.isInScope) {
+			info.remainingKey = attr.substr(6);
+			return info;
+		} else if(firstSix === "scope/") {
+			info.walkScope = true;
 			info.remainingKey = attr.substr(6);
 			return info;
 		}
@@ -338,7 +343,16 @@ assign(Scope.prototype, {
 
 			return this._walk(keyReads, options, howToRead);
 		}
-		// 1.D. Handle reading without context clues
+		// 1.D. Handle scope walking with scope/key
+		else if(keyInfo.walkScope) {
+			howToRead.shouldExit = returnFalse;
+			howToRead.shouldSkip = Scope.shouldSkipIfSpecial;
+			howToRead.shouldLookForHelper = true;
+			keyReads = stacheKey.reads(keyInfo.remainingKey);
+
+			return this._walk(keyReads, options, howToRead);
+		}
+		// 1.E. Handle reading without context clues
 		// {{foo}}
 		else {
 			keyReads = stacheKey.reads(keyInfo.remainingKey);
