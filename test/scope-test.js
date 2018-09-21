@@ -1356,10 +1356,15 @@ QUnit.test("cloneFromRef clones meta", function(){
 });
 
 QUnit.test("scope/key walks the scope", function() {
-	var scope = new Scope({foo: "bar"}).add({}).add({});
-	var value = scope.peek("scope/foo");
+	var scope = new Scope({
+		foo: "bar",
+		baz: function() { return "quz"; }
+	}).add({}).add({});
 
-	QUnit.equal(value, 'bar');
+	var value = scope.peek("scope/foo");
+	QUnit.equal(value, "bar");
+	value = scope.peek("@scope/baz");
+	QUnit.equal(value(), "quz");
 });
 
 require("./variable-scope-test");
