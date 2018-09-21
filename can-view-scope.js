@@ -106,6 +106,10 @@ assign(Scope, {
 			info.walkScope = true;
 			info.remainingKey = attr.substr(6);
 			return info;
+		} else if(attr.substr(0, 7) === "@scope/") {
+			info.walkScope = true;
+			info.remainingKey = attr.substr(7);
+			return info;
 		}
 
 		info.parentContextWalkCount = 0;
