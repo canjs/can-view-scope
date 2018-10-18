@@ -1367,6 +1367,19 @@ QUnit.test("scope/key walks the scope", function() {
 	QUnit.equal(value(), "quz");
 });
 
+QUnit.test("able to read partials", function(){
+	var myPartial = function(){};
+
+	var scope = new Scope(new Scope.TemplateContext({
+		partials: {myPartial: myPartial}
+	})).add({});
+
+	var result = scope.get("myPartial");
+
+	QUnit.equal(result, myPartial, "read the value");
+
+});
+
 require("./variable-scope-test");
 require("./scope-set-test");
 require("./scope-key-data-test");

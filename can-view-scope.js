@@ -487,7 +487,7 @@ assign(Scope.prototype, {
 		// The **value was not found** in the scope
 		// if not looking for a "special" key, check in can-stache-helpers
 		if (howToRead.shouldLookForHelper) {
-			var helper = this.getHelper(keyReads);
+			var helper = this.getHelperOrPartial(keyReads);
 
 			if (helper && helper.value) {
 				// Don't return parent so `.bind` is not used.
@@ -626,12 +626,20 @@ assign(Scope.prototype, {
 	// ### scope.getHelper
 	// read a helper from the templateContext or global helpers list
 	getHelper: function(keyReads) {
+		console.warn(".getHelper is deprecated, use .getHelperOrPartial");
+		return this.getHelperOrPartial(keyReads);
+	},
+	getHelperOrPartial: function(keyReads) {
 		// try every template context
 		var scope = this, context, helper;
 		while (scope) {
 			context = scope._context;
 			if (context instanceof TemplateContext) {
 				helper = stacheKey.read(context.helpers, keyReads, { proxyMethods: false });
+				if(helper.value !== undefined) {
+					return helper;
+				}
+				helper = stacheKey.read(context.partials, keyReads, { proxyMethods: false });
 				if(helper.value !== undefined) {
 					return helper;
 				}
