@@ -548,7 +548,6 @@ testHelpers.dev.devOnlyTest("computeData dependencies", function(assert) {
 	//   |    v
 	//  computeData
 	var mapValueDependencies = canReflectDeps.getDependencyDataOf(map, "value");
-
 	assert.ok(
 		mapValueDependencies
 			.whatIChange
@@ -568,7 +567,6 @@ testHelpers.dev.devOnlyTest("computeData dependencies", function(assert) {
 	);
 
 	var computeDataDependencies = canReflect.getValueDependencies(computeData);
-
 	assert.ok(
 		computeDataDependencies
 			.valueDependencies
