@@ -122,7 +122,7 @@ function fastOnBoundSetValue() {
 	this.value = this.newVal;
 }
 
-Object.assign(ScopeKeyData.prototype, {
+assign(ScopeKeyData.prototype, {
 	constructor: ScopeKeyData,
 	dispatch: function dispatch(newVal){
 		var old = this.value;
