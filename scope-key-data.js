@@ -10,6 +10,7 @@ var makeComputeLike = require("./make-compute-like");
 var canReflectDeps = require('can-reflect-dependencies');
 var valueEventBindings = require("can-event-queue/value/value");
 var stacheHelpers = require('can-stache-helpers');
+var SimpleObservable = require("can-simple-observable");
 
 var dispatchSymbol = canSymbol.for("can.dispatch");
 
@@ -105,7 +106,8 @@ var ScopeKeyData = function(scope, key, options){
 	this.initialValue = undefined;
 	this.reads = undefined;
 	this.setRoot = undefined;
-	this.thisArg = undefined;
+	// This is read by call expressions so it needs to be observable
+	this._thisArg = new SimpleObservable();
 	this.parentHasKey = undefined;
 	var valueDependencies = new Set();
 	valueDependencies.add(observation);
@@ -217,7 +219,7 @@ assign(ScopeKeyData.prototype, {
 			if (process.env.NODE_ENV !== 'production') {
 				// remove old dependency
 				if(this.reads.length) {
-					callMutateWithRightArgs(canReflectDeps.deleteMutatedBy, this.thisArg || this.root, this.reads,this);
+					callMutateWithRightArgs(canReflectDeps.deleteMutatedBy, peekValue(this._thisArg) || this.root, this.reads,this);
 				}
 
 			}
@@ -230,7 +232,7 @@ assign(ScopeKeyData.prototype, {
 			if (process.env.NODE_ENV !== 'production') {
 				var valueDeps = new Set();
 				valueDeps.add(this);
-				callMutateWithRightArgs(canReflectDeps.addMutatedBy, this.thisArg || this.root, this.reads,{
+				callMutateWithRightArgs(canReflectDeps.addMutatedBy, data.parent || this.root, this.reads,{
 					valueDependencies: valueDeps
 				});
 			}
@@ -266,6 +268,15 @@ assign(ScopeKeyData.prototype, {
 	},
 	hasDependencies: function(){
 		return canReflect.valueHasDependencies( this.observation );
+	}
+});
+
+Object.defineProperty(ScopeKeyData.prototype, "thisArg", {
+	get: function(){
+		return this._thisArg.get();
+	},
+	set: function(newVal) {
+		this._thisArg.set(newVal);
 	}
 });
 
