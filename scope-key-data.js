@@ -29,6 +29,7 @@ var dispatchSymbol = canSymbol.for("can.dispatch");
 // this work.
 
 var peekValue = ObservationRecorder.ignore(canReflect.getValue.bind(canReflect));
+var peekGet = ObservationRecorder.ignore(Observation.prototype.get);
 
 var getFastPathRoot = ObservationRecorder.ignore(function(computeData){
 	if( computeData.reads &&
@@ -112,6 +113,10 @@ var ScopeKeyData = function(scope, key, options){
 	var valueDependencies = new Set();
 	valueDependencies.add(observation);
 	this.dependencies = {valueDependencies: valueDependencies};
+
+	// This is basically what .get() should give, but it
+	// isn't used to figure out the last value.
+	this._latestValue = undefined;
 };
 
 valueEventBindings(ScopeKeyData.prototype);
@@ -128,7 +133,7 @@ assign(ScopeKeyData.prototype, {
 	constructor: ScopeKeyData,
 	dispatch: function dispatch(newVal){
 		var old = this.value;
-		this.value = newVal;
+		this._latestValue = this.value = newVal;
 		// call the base implementation in can-event-queue
 		this[dispatchSymbol].call(this, this.value, old);
 	},
@@ -141,7 +146,7 @@ assign(ScopeKeyData.prototype, {
 			// rewrite the observation to call its event handlers
 			this.toFastPath(fastPathRoot);
 		}
-		this.value = peekValue(this.observation);
+		this._latestValue = this.value = peekGet.call(this.observation);
 	},
 	onUnbound: function onUnbound() {
 		this.bound = false;
@@ -168,10 +173,10 @@ assign(ScopeKeyData.prototype, {
 			}
 		}
 
-		if (this.bound === true ) {
-			return this.value;
+		if (this.bound === true && this.fastPath === true) {
+			return this._latestValue;
 		} else {
-			return this.observation.get();
+			return peekGet.call(this.observation);
 		}
 	},
 	toFastPath: function(fastPathRoot){
@@ -188,6 +193,7 @@ assign(ScopeKeyData.prototype, {
 			// but I think we will be able to get at it b/c there should only be one
 			// dependency we are binding to ...
 			if(target === fastPathRoot && typeof newVal !== "function") {
+				self._latestValue = newVal;
 				this.newVal = newVal;
 			} else {
 				// restore

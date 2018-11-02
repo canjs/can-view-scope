@@ -631,7 +631,7 @@ QUnit.test("./ scope lookup should read current scope", function () {
 	var parent = new SimpleMap();
 	var map = new SimpleMap();
 	var scope = new Scope(parent).add(map);
-	QUnit.equal(scope.attr("./"), map);
+	QUnit.equal(scope.get("./"), map);
 });
 
 QUnit.test("getTemplateContext() gives a scope with the templateContext", function() {

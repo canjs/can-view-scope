@@ -46,3 +46,42 @@ QUnit.test("ScopeKeyData's thisArg is observable", function(){
 		value: "B"
 	});
 });
+
+QUnit.test("reading ScopeKeyData will update underlying observable", function(){
+	var context = new SimpleMap({
+		"prop" :"value"
+	});
+
+	var prop = new Scope(context).computeData("this.prop",{proxyMethods: false});
+
+	canReflect.onValue(prop, function(){});
+
+	context.on("prop", function(){
+
+		QUnit.equal(canReflect.getValue(prop), "VALUE", "able to read fastPath value");
+	},"notify");
+
+	context.set("prop", "VALUE");
+
+
+	var root = new SimpleObservable("value");
+	var observation = new Observation(function(){
+		return root.value;
+	});
+
+	context = {
+		"prop" : observation
+	};
+
+	prop = new Scope(context).computeData("this.prop",{proxyMethods: false});
+
+	canReflect.onValue(prop, function(){});
+
+
+	canReflect.onValue(root, function(){
+
+		QUnit.equal(canReflect.getValue(prop), "VALUE", "able to read deep, non-fast-path value");
+	},"notify");
+
+	root.value = "VALUE";
+});
