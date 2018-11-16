@@ -691,7 +691,8 @@ assign(Scope.prototype, {
 		return res && res._context;
 	},
 	// ### scope.getTemplateContext
-	// Returns the template context
+	// Returns the template context scope
+	// This function isn't named right.
 	getTemplateContext: function() {
 		var lastScope;
 

@@ -846,8 +846,8 @@ QUnit.test("ScopeKeyData can.valueHasDependencies", function(){
 	var age = base.computeData('age');
 
 
-	QUnit.equal(canReflect.valueHasDependencies(age), undefined, "undefined");
-	canReflect.onValue(age, function(){});
+	//QUnit.equal(canReflect.valueHasDependencies(age), undefined, "undefined");
+	//canReflect.onValue(age, function(){});
 
 	QUnit.equal(canReflect.valueHasDependencies(age), true, "undefined");
 });
