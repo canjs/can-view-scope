@@ -155,7 +155,6 @@ var ScopeKeyData = function(scope, key, options){
 	// things added later
 	this.fastPath = undefined;
 	this.root = undefined;
-	//this.initialValue = undefined;
 	this.reads = undefined;
 	this.setRoot = undefined;
 	// This is read by call expressions so it needs to be observable
@@ -340,9 +339,6 @@ assign(ScopeKeyData.prototype, {
 			Observation.temporarilyBind(this);
 		}
 		return canReflect.valueHasDependencies( this.observation );
-	},
-	warnOnUndefinedProperty: function(){
-
 	}
 });
 
