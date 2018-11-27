@@ -335,6 +335,9 @@ assign(ScopeKeyData.prototype, {
 		return /*this.initialValue =*/ data.value;
 	},
 	hasDependencies: function(){
+		// ScopeKeyData is unique in that when these things are read, it will temporarily bind
+		// to make sure the right value is returned. This is for can-stache.
+		// Helpers warns about a missing helper.
 		if (!this.bound) {
 			Observation.temporarilyBind(this);
 		}
