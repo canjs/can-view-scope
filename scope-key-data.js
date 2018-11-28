@@ -28,8 +28,6 @@ var dispatchSymbol = canSymbol.for("can.dispatch");
 // If the `this` is not that object ... freak out.  Though `this` is not necessarily part of it.  can-observation could make
 // this work.
 
-var peekValue = ObservationRecorder.ignore(canReflect.getValue.bind(canReflect));
-var peekGet = ObservationRecorder.ignore(Observation.prototype.get);
 
 var getFastPathRoot = ObservationRecorder.ignore(function(computeData){
 	if( computeData.reads &&
@@ -50,6 +48,16 @@ var getFastPathRoot = ObservationRecorder.ignore(function(computeData){
 var isEventObject = function(obj){
 	return obj && typeof obj.batchNum === "number" && typeof obj.type === "string";
 };
+
+function getMutated(scopeKeyData){
+	// The _thisArg is the value before the last `.`. For example if the key was `foo.bar.zed`,
+	// _thisArg would be the value at foo.bar.
+	// This should be improved as `foo.bar` might not be observable.
+	var value = ObservationRecorder.peekValue(scopeKeyData._thisArg);
+
+	// Something like `string@split` would provide a primitive which can't be a mutated subject
+	return !canReflect.isPrimitive(value) ? value : scopeKeyData.root;
+}
 
 function callMutateWithRightArgs(method, mutated, reads, mutator){
 	if(reads.length) {
@@ -146,7 +154,7 @@ assign(ScopeKeyData.prototype, {
 			// rewrite the observation to call its event handlers
 			this.toFastPath(fastPathRoot);
 		}
-		this._latestValue = this.value = peekGet.call(this.observation);
+		this._latestValue = this.value = ObservationRecorder.peekValue(this.observation);
 	},
 	onUnbound: function onUnbound() {
 		this.bound = false;
@@ -176,7 +184,7 @@ assign(ScopeKeyData.prototype, {
 		if (this.bound === true && this.fastPath === true) {
 			return this._latestValue;
 		} else {
-			return peekGet.call(this.observation);
+			return ObservationRecorder.peekValue(this.observation);
 		}
 	},
 	toFastPath: function(fastPathRoot){
@@ -225,7 +233,7 @@ assign(ScopeKeyData.prototype, {
 			if (process.env.NODE_ENV !== 'production') {
 				// remove old dependency
 				if(this.reads.length) {
-					callMutateWithRightArgs(canReflectDeps.deleteMutatedBy, peekValue(this._thisArg) || this.root, this.reads,this);
+					callMutateWithRightArgs(canReflectDeps.deleteMutatedBy, getMutated(this), this.reads,this);
 				}
 
 			}
@@ -252,17 +260,6 @@ assign(ScopeKeyData.prototype, {
 		// directly from the observable.
 		data = this.startingScope.read(this.key, this.options);
 
-		//!steal-remove-start
-		if (process.env.NODE_ENV !== 'production') {
-			if (data.rootObserve) {
-				var rootValueDeps = new Set();
-				rootValueDeps.add(this);
-				callMutateWithRightArgs(canReflectDeps.addMutatedBy, data.thisArg || data.rootObserve, data.reads,{
-					valueDependencies: rootValueDeps
-				});
-			}
-		}
-		//!steal-remove-end
 
 		this.scope = data.scope;
 		this.reads = data.reads;
@@ -270,6 +267,20 @@ assign(ScopeKeyData.prototype, {
 		this.setRoot = data.setRoot;
 		this.thisArg = data.thisArg;
 		this.parentHasKey = data.parentHasKey;
+
+		//!steal-remove-start
+		if (process.env.NODE_ENV !== 'production') {
+			if (data.rootObserve) {
+				var rootValueDeps = new Set();
+				rootValueDeps.add(this);
+				callMutateWithRightArgs(canReflectDeps.addMutatedBy, getMutated(this), data.reads,{
+					valueDependencies: rootValueDeps
+				});
+			}
+		}
+		//!steal-remove-end
+
+
 		return this.initialValue = data.value;
 	},
 	hasDependencies: function(){

@@ -85,3 +85,17 @@ QUnit.test("reading ScopeKeyData will update underlying observable", function(){
 
 	root.value = "VALUE";
 });
+
+
+QUnit.test("able to read from primitives (#197)", function(){
+	var map = new SimpleMap({
+		someProperty: "hello"
+	});
+	var scope = new Scope(map);
+	var scopeKeyData = scope.computeData("someProperty@split");
+
+	// the problem was adding a string as a mutated dependency
+	canReflect.onValue(scopeKeyData, function(){});
+
+	QUnit.ok(true,"does not error");
+});
