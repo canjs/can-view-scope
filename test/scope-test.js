@@ -845,9 +845,9 @@ QUnit.test("ScopeKeyData can.valueHasDependencies", function(){
 	var base = new Scope(map);
 	var age = base.computeData('age');
 
-
-	QUnit.equal(canReflect.valueHasDependencies(age), undefined, "undefined");
-	canReflect.onValue(age, function(){});
+	// The following 2 lines were commented out ... we auto-bind ScopeKeyData
+	//QUnit.equal(canReflect.valueHasDependencies(age), undefined, "undefined");
+	//canReflect.onValue(age, function(){});
 
 	QUnit.equal(canReflect.valueHasDependencies(age), true, "undefined");
 });
