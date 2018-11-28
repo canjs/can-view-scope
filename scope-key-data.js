@@ -11,6 +11,7 @@ var canReflectDeps = require('can-reflect-dependencies');
 var valueEventBindings = require("can-event-queue/value/value");
 var stacheHelpers = require('can-stache-helpers');
 var SimpleObservable = require("can-simple-observable");
+var dev = require("can-log/dev/dev");
 
 var dispatchSymbol = canSymbol.for("can.dispatch");
 
@@ -59,6 +60,56 @@ function callMutateWithRightArgs(method, mutated, reads, mutator){
 	}
 }
 
+
+
+
+var warnOnUndefinedProperty;
+//!steal-remove-start
+if (process.env.NODE_ENV !== 'production') {
+	warnOnUndefinedProperty = function(options) {
+		if ( options.key !== "debugger" && !options.parentHasKey) {
+			var filename = options.scope.peek('scope.filename');
+			var lineNumber = options.scope.peek('scope.lineNumber');
+
+			var reads = observeReader.reads(options.key);
+			var firstKey = reads[0].key;
+			var key = reads.map(function(read) {
+				return read.key + (read.at ? "()" : "");
+			}).join(".");
+			var pathsForKey = options.scope.getPathsForKey(firstKey);
+			var paths = Object.keys( pathsForKey );
+
+			var includeSuggestions = paths.length && (paths.indexOf(firstKey) < 0);
+
+			var warning = [
+				(filename ? filename + ':' : '') +
+					(lineNumber ? lineNumber + ': ' : '') +
+					'Unable to find key "' + key + '".' +
+					(
+						includeSuggestions ?
+							" Did you mean" + (paths.length > 1 ? " one of these" : "") + "?\n" :
+							"\n"
+					)
+			];
+
+			if (includeSuggestions) {
+				paths.forEach(function(path) {
+					warning.push('\t"' + path + '" which will read from');
+					warning.push(pathsForKey[path]);
+					warning.push("\n");
+				});
+			}
+
+			warning.push("\n");
+
+			dev.warn.apply(dev,
+				warning
+			);
+		}
+	};
+}
+//!steal-remove-end
+
 // could we make this an observation first ... and have a getter for the compute?
 
 // This is a fast-path enabled Observation wrapper use many places in can-stache.
@@ -104,7 +155,6 @@ var ScopeKeyData = function(scope, key, options){
 	// things added later
 	this.fastPath = undefined;
 	this.root = undefined;
-	this.initialValue = undefined;
 	this.reads = undefined;
 	this.setRoot = undefined;
 	// This is read by call expressions so it needs to be observable
@@ -270,9 +320,27 @@ assign(ScopeKeyData.prototype, {
 		this.setRoot = data.setRoot;
 		this.thisArg = data.thisArg;
 		this.parentHasKey = data.parentHasKey;
-		return this.initialValue = data.value;
+		//!steal-remove-start
+		if (process.env.NODE_ENV !== 'production') {
+			if(data.value === undefined && this.options.warnOnMissingKey === true) {
+				warnOnUndefinedProperty({
+					scope: this.startingScope,
+					key: this.key,
+					parentHasKey: data.parentHasKey
+				});
+			}
+		}
+		//!steal-remove-end
+
+		return /*this.initialValue =*/ data.value;
 	},
 	hasDependencies: function(){
+		// ScopeKeyData is unique in that when these things are read, it will temporarily bind
+		// to make sure the right value is returned. This is for can-stache.
+		// Helpers warns about a missing helper.
+		if (!this.bound) {
+			Observation.temporarilyBind(this);
+		}
 		return canReflect.valueHasDependencies( this.observation );
 	}
 });
@@ -321,6 +389,19 @@ Object.defineProperty(ScopeKeyData.prototype, "compute", {
 			configurable: false
 		});
 		return compute;
+	},
+	configurable: true
+});
+
+Object.defineProperty(ScopeKeyData.prototype, "initialValue", {
+	get: function(){
+		if (!this.bound) {
+			Observation.temporarilyBind(this);
+		}
+		return this.get();
+	},
+	set: function(){
+		throw new Error("initialValue should not be set");
 	},
 	configurable: true
 });
