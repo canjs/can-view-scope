@@ -4,6 +4,7 @@ var QUnit = require('steal-qunit');
 var canReflect = require('can-reflect');
 var SimpleObservable = require('can-simple-observable');
 var Observation = require("can-observation");
+var ObservationRecorder = require("can-observation-recorder");
 
 QUnit.module('can-view-scope scope-key-data');
 
@@ -98,4 +99,17 @@ QUnit.test("able to read from primitives (#197)", function(){
 	canReflect.onValue(scopeKeyData, function(){});
 
 	QUnit.ok(true,"does not error");
+});
+
+QUnit.test("initialValue should not emit ObservationRecords (#198)", function(){
+	var map = new SimpleMap({
+		someProperty: "hello"
+	});
+	var scope = new Scope(map);
+	var scopeKeyData = scope.computeData("someProperty");
+
+	ObservationRecorder.start();
+	QUnit.equal(scopeKeyData.initialValue, "hello")
+	var records = ObservationRecorder.stop();
+	QUnit.equal(records.valueDependencies.size, 0, "no value deps");
 });

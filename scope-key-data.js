@@ -403,7 +403,7 @@ Object.defineProperty(ScopeKeyData.prototype, "initialValue", {
 		if (!this.bound) {
 			Observation.temporarilyBind(this);
 		}
-		return this.get();
+		return ObservationRecorder.peekValue(this);
 	},
 	set: function(){
 		throw new Error("initialValue should not be set");
