@@ -109,7 +109,7 @@ QUnit.test("initialValue should not emit ObservationRecords (#198)", function(){
 	var scopeKeyData = scope.computeData("someProperty");
 
 	ObservationRecorder.start();
-	QUnit.equal(scopeKeyData.initialValue, "hello")
+	QUnit.equal(scopeKeyData.initialValue, "hello");
 	var records = ObservationRecorder.stop();
 	QUnit.equal(records.valueDependencies.size, 0, "no value deps");
 });
