@@ -382,7 +382,9 @@ QUnit.test("Optimize for compute().observableProperty (#29)", function(assert) {
 	map.attr("value", "b");
 });
 
-QUnit.test("a compute can observe the ScopeKeyData", 3, function(assert) {
+QUnit.test("a compute can observe the ScopeKeyData", function(assert) {
+	assert.expect(3);
+
 	var map = new SimpleMap({value: "a", other: "b"});
 	var wrap = new SimpleObservable(map);
 
@@ -781,7 +783,8 @@ QUnit.test("this works everywhere (#45)", function(assert) {
 	assert.equal(scope.get("this.foo"),"bar");
 });
 
-QUnit.test("'this' and %context give the context", 1, function(assert) {
+QUnit.test("'this' and %context give the context", function(assert) {
+	assert.expect(1);
 	var vm;
 	var MyMap = SimpleMap.extend({
 		doSomething: function(){
@@ -1082,7 +1085,7 @@ QUnit.test("read can handle objects stored on helpers", function(assert) {
 	var scope = new Scope();
 
 	var fakeConsole = {
-		QUnit.log: function() {
+		log: function() {
 			return "fakeConsole.log";
 		},
 		warn: function() {
