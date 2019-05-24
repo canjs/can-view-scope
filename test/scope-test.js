@@ -15,7 +15,7 @@ var canStacheHelpers = require('can-stache-helpers');
 
 QUnit.module('can/view/scope');
 
-test("basics",function(){
+QUnit.test("basics",function(assert) {
 	var address =  new SimpleMap({zip: 60647});
 	var person = new SimpleMap({name: "Justin", address: address});
 	var items = new SimpleMap({ people: person, count: 1000 });
@@ -30,30 +30,30 @@ test("basics",function(){
 	});
 	canReflect.onValue(c, function(){});
 
-	deepEqual(nameInfo.reads, [{key: "name", at: false}], "reads");
-	equal(nameInfo.scope, personScope, "scope");
-	equal(nameInfo.value,"Justin", "value");
-	equal(nameInfo.rootObserve, person, "rootObserve");
+	assert.deepEqual(nameInfo.reads, [{key: "name", at: false}], "reads");
+	assert.equal(nameInfo.scope, personScope, "scope");
+	assert.equal(nameInfo.value,"Justin", "value");
+	assert.equal(nameInfo.rootObserve, person, "rootObserve");
 
 });
 
-test('Scope.prototype.computeData', function () {
+QUnit.test('Scope.prototype.computeData', function(assert) {
 	var map = new SimpleMap();
 	var base = new Scope(map);
 	var computeData = base.computeData('age');
 
-	equal(computeData.observation, computeData.options.observation, 'ScopeKeyData should have a backing observation stored on its `options`');
+	assert.equal(computeData.observation, computeData.options.observation, 'ScopeKeyData should have a backing observation stored on its `options`');
 
 	var age = computeData.compute;
-	equal(age(), undefined, 'age is not set');
+	assert.equal(age(), undefined, 'age is not set');
 	age.bind('change', function (ev, newVal, oldVal) {
-		equal(newVal, 31, 'newVal is provided correctly');
-		equal(oldVal, undefined, 'oldVal is undefined');
+		assert.equal(newVal, 31, 'newVal is provided correctly');
+		assert.equal(oldVal, undefined, 'oldVal is undefined');
 	});
 	age(31);
-	equal(map.attr('age'), 31, 'maps age is set correctly');
+	assert.equal(map.attr('age'), 31, 'maps age is set correctly');
 });
-test('backtrack path (#163)', function () {
+QUnit.test('backtrack path (#163)', function(assert) {
 	var row = new SimpleMap({
 		first: 'Justin'
 	}),
@@ -62,12 +62,12 @@ test('backtrack path (#163)', function () {
 		},
 		base = new Scope(row),
 		cur = base.add(col);
-	equal(cur.peek('.'), col, 'got col');
-	equal(cur.peek('..'), row, 'got row');
-	equal(cur.peek('../first'), 'Justin', 'got row');
+	assert.equal(cur.peek('.'), col, 'got col');
+	assert.equal(cur.peek('..'), row, 'got row');
+	assert.equal(cur.peek('../first'), 'Justin', 'got row');
 });
 
-test('nested properties with compute', function () {
+QUnit.test('nested properties with compute', function(assert) {
 	var me = new SimpleMap({
 		name: new SimpleMap({
 			first: 'Justin'
@@ -79,23 +79,23 @@ test('nested properties with compute', function () {
 	var changes = 0;
 	var handler =  function (ev, newVal, oldVal) {
 		if (changes === 0) {
-			equal(oldVal, 'Justin');
-			equal(newVal, 'Brian');
+			assert.equal(oldVal, 'Justin');
+			assert.equal(newVal, 'Brian');
 		} else if (changes === 1) {
-			equal(oldVal, 'Brian');
-			equal(newVal, undefined);
+			assert.equal(oldVal, 'Brian');
+			assert.equal(newVal, undefined);
 		} else if (changes === 2) {
-			equal(oldVal, undefined);
-			equal(newVal, 'Payal');
+			assert.equal(oldVal, undefined);
+			assert.equal(newVal, 'Payal');
 		} else if (changes === 3) {
-			equal(oldVal, 'Payal');
-			equal(newVal, 'Curtis');
+			assert.equal(oldVal, 'Payal');
+			assert.equal(newVal, 'Curtis');
 		}
 		changes++;
 	};
 
 	compute.bind('change',handler);
-	equal(compute(), 'Justin', 'read value after bind');
+	assert.equal(compute(), 'Justin', 'read value after bind');
 
 	me.attr('name').attr('first', 'Brian');
 	me.attr('name',undefined);
@@ -108,7 +108,7 @@ test('nested properties with compute', function () {
 
 	compute.unbind('change',handler);
 });
-test('function at the end', function () {
+QUnit.test('function at the end', function(assert) {
 	var compute = new Scope({
 		me: {
 			info: function () {
@@ -118,7 +118,7 @@ test('function at the end', function () {
 	})
 		.computeData('me.info')
 		.compute;
-	equal(compute()(), 'Justin');
+	assert.equal(compute()(), 'Justin');
 	var fn = function () {
 		return this.name;
 	};
@@ -133,9 +133,9 @@ test('function at the end', function () {
 			args: []
 		})
 		.compute;
-	equal(compute2()(), 'Hank');
+	assert.equal(compute2()(), 'Hank');
 });
-test('binds to the right scope only', function () {
+QUnit.test('binds to the right scope only', function(assert) {
 	var baseMap = new SimpleMap({
 		me: new SimpleMap({
 			name: new SimpleMap({
@@ -153,19 +153,19 @@ test('binds to the right scope only', function () {
 	var compute = scope.computeData('../me.name.first')
 		.compute;
 	compute.bind('change', function (ev, newVal, oldVal) {
-		equal(oldVal, 'Justin');
-		equal(newVal, 'Brian');
+		assert.equal(oldVal, 'Justin');
+		assert.equal(newVal, 'Brian');
 	});
-	equal(compute(), 'Justin');
+	assert.equal(compute(), 'Justin');
 	// this should do nothing
 	topMap.attr('me').attr('name').attr('first', 'Payal');
 	baseMap.attr('me').attr('name').attr('first', 'Brian');
 });
-test('Scope read returnObserveMethods=true', function () {
+QUnit.test('Scope read returnObserveMethods=true', function(assert) {
 	var MapConstruct = SimpleMap.extend({
 		foo: function (arg) {
-			equal(this, data.map, 'correct this');
-			equal(arg, true, 'correct arg');
+			assert.equal(this, data.map, 'correct this');
+			assert.equal(arg, true, 'correct arg');
 		}
 	});
 	var data = {
@@ -176,7 +176,7 @@ test('Scope read returnObserveMethods=true', function () {
 	});
 	res.value(true);
 });
-test('rooted observable is able to update correctly', function () {
+QUnit.test('rooted observable is able to update correctly', function(assert) {
 	var baseMap = new SimpleMap({
 		name: new SimpleMap({
 			first: 'Justin'
@@ -185,13 +185,13 @@ test('rooted observable is able to update correctly', function () {
 	var scope = new Scope(baseMap);
 	var compute = scope.computeData('name.first')
 		.compute;
-	equal(compute(), 'Justin');
+	assert.equal(compute(), 'Justin');
 	baseMap.attr('name', new SimpleMap({
 		first: 'Brian'
 	}));
-	equal(compute(), 'Brian');
+	assert.equal(compute(), 'Brian');
 });
-test('computeData reading an object with a compute', function () {
+QUnit.test('computeData reading an object with a compute', function(assert) {
 	var age = new SimpleObservable(21);
 
 	var scope = new Scope({
@@ -203,26 +203,26 @@ test('computeData reading an object with a compute', function () {
 	var computeData = scope.computeData('person.age');
 	var value = computeData.compute();
 
-	equal(value, 21, 'correct value');
+	assert.equal(value, 21, 'correct value');
 
 	computeData.compute(31);
-	equal(age.get(), 31, 'age updated');
+	assert.equal(age.get(), 31, 'age updated');
 });
-test('computeData with initial empty compute (#638)', function () {
-	expect(2);
+QUnit.test('computeData with initial empty compute (#638)', function(assert) {
+	assert.expect(2);
 	var c = new SimpleObservable();
 	var scope = new Scope({
 		compute: c
 	});
 	var computeData = scope.computeData('compute');
-	equal(computeData.compute(), undefined);
+	assert.equal(computeData.compute(), undefined);
 	computeData.compute.bind('change', function (ev, newVal) {
-		equal(newVal, 'compute value');
+		assert.equal(newVal, 'compute value');
 	});
 	c.set('compute value');
 });
 
-test('Can read static properties on constructors (#634)', function () {
+QUnit.test('Can read static properties on constructors (#634)', function(assert) {
 	var Foo = SimpleMap.extend( {
 		static_prop: 'baz'
 	}, {
@@ -232,11 +232,11 @@ test('Can read static properties on constructors (#634)', function () {
 		own_prop: 'quux'
 	}),
 		scope = new Scope(data);
-	equal(scope.computeData('constructor.static_prop')
+	assert.equal(scope.computeData('constructor.static_prop')
 		.compute(), 'baz', 'static prop');
 });
 
-test("Can read static properties on constructors (#634)", function () {
+QUnit.test("Can read static properties on constructors (#634)", function(assert) {
 	var Foo = SimpleMap.extend({
 		static_prop: "baz"
 	}, {
@@ -247,11 +247,11 @@ test("Can read static properties on constructors (#634)", function () {
 	}),
 		scope = new Scope(data);
 
-	equal(scope.computeData("constructor.static_prop")
+	assert.equal(scope.computeData("constructor.static_prop")
 		.compute(), "baz", "static prop");
 });
 
-test('Scope lookup restricted to current scope with ./ (#874)', function() {
+QUnit.test('Scope lookup restricted to current scope with ./ (#874)', function(assert) {
 	var current;
 	var scope = new Scope(
 			new SimpleMap({value: "A Value"})
@@ -261,25 +261,25 @@ test('Scope lookup restricted to current scope with ./ (#874)', function() {
 
 	var compute = scope.computeData('./value').compute;
 
-	equal(compute(), undefined, "no initial value");
+	assert.equal(compute(), undefined, "no initial value");
 
 
 	compute.bind("change", function(ev, newVal){
-		equal(newVal, "B Value", "changed");
+		assert.equal(newVal, "B Value", "changed");
 	});
 
 	compute("B Value");
-	equal(current.attr("value"), "B Value", "updated");
+	assert.equal(current.attr("value"), "B Value", "updated");
 
 });
 
-test('reading properties on undefined (#1314)', function(){
+QUnit.test('reading properties on undefined (#1314)', function(assert) {
 
 	var scope = new Scope(undefined);
 
 	var compute = scope.compute("property");
 
-	equal(compute(), undefined, "got back undefined");
+	assert.equal(compute(), undefined, "got back undefined");
 
 });
 
@@ -288,7 +288,7 @@ test('reading properties on undefined (#1314)', function(){
 
 
 
-test("computeData.compute get/sets computes in maps", function(){
+QUnit.test("computeData.compute get/sets computes in maps", function(assert) {
 	var cmpt = new SimpleObservable(4);
 	var map = new SimpleMap();
 	map.attr("computer", cmpt);
@@ -296,15 +296,15 @@ test("computeData.compute get/sets computes in maps", function(){
 	var scope = new Scope(map);
 	var computeData = scope.computeData("computer",{});
 
-	equal( computeData.compute(), 4, "got the value");
+	assert.equal( computeData.compute(), 4, "got the value");
 
 	computeData.compute(5);
-	equal(cmpt.get(), 5, "updated compute value");
-	equal( computeData.compute(), 5, "the compute has the right value");
+	assert.equal(cmpt.get(), 5, "updated compute value");
+	assert.equal( computeData.compute(), 5, "the compute has the right value");
 });
 
-test("computesData can find update when initially undefined parent scope becomes defined (#579)", function(){
-	expect(2);
+QUnit.test("computesData can find update when initially undefined parent scope becomes defined (#579)", function(assert) {
+	assert.expect(2);
 
 	var map = new SimpleMap();
 	var scope = new Scope(map);
@@ -312,10 +312,10 @@ test("computesData can find update when initially undefined parent scope becomes
 
 	var computeData = top.computeData("../value",{});
 
-	equal( computeData.compute(), undefined, "initially undefined");
+	assert.equal( computeData.compute(), undefined, "initially undefined");
 
 	computeData.compute.bind("change", function(ev, newVal){
-		equal(newVal, "first");
+		assert.equal(newVal, "first");
 	});
 
 	map.attr("value","first");
@@ -325,34 +325,34 @@ test("computesData can find update when initially undefined parent scope becomes
 
 
 
-test("can read parent context with ../ (#2244)", function(){
+QUnit.test("can read parent context with ../ (#2244)", function(assert) {
 	var map = new SimpleMap();
 	var scope = new Scope(map);
 	var top = scope.add(new SimpleMap());
 
-	equal( top.peek("../"), map, "looked up value correctly");
+	assert.equal( top.peek("../"), map, "looked up value correctly");
 
 });
 
-test("trying to read constructor from refs scope is ok", function(){
+QUnit.test("trying to read constructor from refs scope is ok", function(assert) {
 	var map = new TemplateContext();
 	var construct = new Observation(function(){
 		return map.constructor;
 	});
 	canReflect.onValue(construct, function() {});
-	equal(canReflect.getValue(construct), TemplateContext);
+	assert.equal(canReflect.getValue(construct), TemplateContext);
 });
 
-test("reading from a string in a nested scope doesn't throw an error (#22)",function(){
+QUnit.test("reading from a string in a nested scope doesn't throw an error (#22)",function(assert) {
 	var foo = new SimpleObservable('foo');
 	var bar = new SimpleObservable('bar');
 	var scope = new Scope(foo);
 	var localScope = scope.add(bar);
 
-	equal(localScope.read('foo').value, undefined);
+	assert.equal(localScope.read('foo').value, undefined);
 });
 
-test("Optimize for compute().observableProperty (#29)", function(){
+QUnit.test("Optimize for compute().observableProperty (#29)", function(assert) {
 	var map = new SimpleMap({value: "a"});
 	var wrap = new SimpleObservable(map);
 
@@ -363,26 +363,28 @@ test("Optimize for compute().observableProperty (#29)", function(){
 	var changeNumber = 0;
 	scopeCompute.on("change", function(ev, newVal, oldVal){
 		if(changeNumber === 1) {
-			QUnit.equal(newVal, "b");
-			QUnit.equal(oldVal, "a");
-			QUnit.ok(scopeKeyData.fastPath, "still fast path");
+			assert.equal(newVal, "b");
+			assert.equal(oldVal, "a");
+			assert.ok(scopeKeyData.fastPath, "still fast path");
 			changeNumber++;
 			wrap.set(new SimpleMap({value: "c"}));
 		} else if(changeNumber === 2) {
-			QUnit.equal(newVal, "c", "got new value");
-			QUnit.equal(oldVal, "b", "got old value");
-			QUnit.notOk(scopeKeyData.fastPath, "still fast path");
+			assert.equal(newVal, "c", "got new value");
+			assert.equal(oldVal, "b", "got old value");
+			assert.notOk(scopeKeyData.fastPath, "still fast path");
 		}
 
 	});
 
-	QUnit.ok(scopeKeyData.fastPath, "fast path");
+	assert.ok(scopeKeyData.fastPath, "fast path");
 
 	changeNumber++;
 	map.attr("value", "b");
 });
 
-test("a compute can observe the ScopeKeyData", 3, function(){
+QUnit.test("a compute can observe the ScopeKeyData", function(assert) {
+	assert.expect(3);
+
 	var map = new SimpleMap({value: "a", other: "b"});
 	var wrap = new SimpleObservable(map);
 
@@ -395,7 +397,7 @@ test("a compute can observe the ScopeKeyData", 3, function(){
 	// another for when the compute is actually binding.
 	// It might be possible to avoid temporarilyBind by giving what the handler should be
 	scopeKeyData[canSymbol.for("can.onValue")] = function(){
-		QUnit.ok(true, "bound on the scopeKeyData");
+		assert.ok(true, "bound on the scopeKeyData");
 		return oldOnValue.apply(this, arguments);
 	};
 
@@ -404,55 +406,56 @@ test("a compute can observe the ScopeKeyData", 3, function(){
 	});
 
 	canReflect.onValue( c, function(newValue){
-		QUnit.equal(newValue,"Ab", "observation changed");
+		assert.equal(newValue,"Ab", "observation changed");
 	});
 
 	map.attr("value","A");
 
 });
 
-QUnit.asyncTest("unbinding clears all event bindings", function(){
-	var map = new SimpleMap({value: "a", other: "b"});
-	var wrap = new SimpleObservable(map);
+QUnit.test("unbinding clears all event bindings", function(assert) {
+    var ready = assert.async();
+    var map = new SimpleMap({value: "a", other: "b"});
+    var wrap = new SimpleObservable(map);
 
-	var scope = new Scope(wrap);
-	var scopeKeyData = scope.computeData("value");
+    var scope = new Scope(wrap);
+    var scopeKeyData = scope.computeData("value");
 
-	var c = new Observation(function(){
+    var c = new Observation(function(){
 		return scopeKeyData.get() + map.attr("other");
 	});
 
-	var handlers = function(newValue){
-		QUnit.equal(newValue,"Ab");
+    var handlers = function(newValue){
+		assert.equal(newValue,"Ab");
 	};
-	canReflect.onValue(c, handlers);
+    canReflect.onValue(c, handlers);
 
-	canReflect.offValue(c, handlers);
+    canReflect.offValue(c, handlers);
 
-	setTimeout(function () {
+    setTimeout(function () {
 		var handlers = map[canSymbol.for("can.meta")].handlers.get([]);
-		equal(handlers.length, 0, "there are no bindings");
-		start();
+		assert.equal(handlers.length, 0, "there are no bindings");
+		ready();
 	}, 30);
 });
 
-QUnit.test("computes are read as this and . and  ../", function(){
+QUnit.test("computes are read as this and . and  ../", function(assert) {
 	var value = new SimpleObservable(1);
 	var scope = new Scope(value);
-	QUnit.equal(scope.get("this"), 1, "this read value");
-	QUnit.equal(scope.get("."), 1, ". read value");
+	assert.equal(scope.get("this"), 1, "this read value");
+	assert.equal(scope.get("."), 1, ". read value");
 	scope = scope.add({});
 
-	QUnit.equal(scope.get(".."), 1, ".. read value");
+	assert.equal(scope.get(".."), 1, ".. read value");
 });
 
-QUnit.test("maps are set with this.foo and ./foo", function(){
+QUnit.test("maps are set with this.foo and ./foo", function(assert) {
 	var map = new SimpleObservable(new SimpleMap({value: 1}));
 	var scope = new Scope(map);
 	scope.set("this.value",2);
-	QUnit.equal(scope.get("this.value"), 2, "this read value");
+	assert.equal(scope.get("this.value"), 2, "this read value");
 	scope.set("./value",3);
-	QUnit.equal(scope.get("./value"), 3, ". read value");
+	assert.equal(scope.get("./value"), 3, ". read value");
 });
 
 testHelpers.dev.devOnlyTest("computeData dependencies", function(assert) {
@@ -602,7 +605,7 @@ testHelpers.dev.devOnlyTest("computeData dependencies for nested properties", fu
 	);
 });
 
-QUnit.test("scopeKeyData offValue resets dependencyChange/start", function() {
+QUnit.test("scopeKeyData offValue resets dependencyChange/start", function(assert) {
 	var map = new SimpleMap({value: "a", other: "b"});
 	var wrap = new SimpleObservable(map);
 
@@ -613,52 +616,52 @@ QUnit.test("scopeKeyData offValue resets dependencyChange/start", function() {
 	canReflect.onValue(scopeKeyData, handler);
 	canReflect.offValue(scopeKeyData, handler);
 
-	QUnit.equal(scopeKeyData.observation.dependencyChange, Observation.prototype.dependencyChange, 'dependencyChange should be restored');
-	QUnit.equal(scopeKeyData.observation.start, Observation.prototype.start, 'start should be restored');
+	assert.equal(scopeKeyData.observation.dependencyChange, Observation.prototype.dependencyChange, 'dependencyChange should be restored');
+	assert.equal(scopeKeyData.observation.start, Observation.prototype.start, 'start should be restored');
 });
 
-QUnit.test("Rendering a template with a custom scope (#55)", function() {
+QUnit.test("Rendering a template with a custom scope (#55)", function(assert) {
 	var scope = new Scope({});
 
-	QUnit.equal(scope.get('name'), undefined, "No name");
+	assert.equal(scope.get('name'), undefined, "No name");
 	scope.set('name', 'John');
-	QUnit.equal(scope.get('name'), 'John', "Got the name");
+	assert.equal(scope.get('name'), 'John', "Got the name");
 	scope = scope.add({name: 'Justin'});
-	QUnit.equal(scope.get('name'), 'Justin', "Got the top scope name");
+	assert.equal(scope.get('name'), 'Justin', "Got the top scope name");
 });
 
-QUnit.test("./ scope lookup should read current scope", function () {
+QUnit.test("./ scope lookup should read current scope", function(assert) {
 	var parent = new SimpleMap();
 	var map = new SimpleMap();
 	var scope = new Scope(parent).add(map);
-	QUnit.equal(scope.get("./"), map);
+	assert.equal(scope.get("./"), map);
 });
 
-QUnit.test("getTemplateContext() gives a scope with the templateContext", function() {
+QUnit.test("getTemplateContext() gives a scope with the templateContext", function(assert) {
 	var map = new SimpleMap();
 	var scope = new Scope(map);
 
 	var templateContext = scope.getTemplateContext();
 
-	QUnit.ok(templateContext instanceof Scope, 'templateContext is a Scope');
-	QUnit.ok(templateContext._context instanceof TemplateContext, 'templateContext context is a TemplateContext object');
+	assert.ok(templateContext instanceof Scope, 'templateContext is a Scope');
+	assert.ok(templateContext._context instanceof TemplateContext, 'templateContext context is a TemplateContext object');
 });
 
-QUnit.test("scope can be used to read from the templateContext", function() {
+QUnit.test("scope can be used to read from the templateContext", function(assert) {
 	var map = new SimpleMap();
 	var scope = new Scope(map);
 
-	QUnit.deepEqual(scope.peek("scope"), scope, "scope");
+	assert.deepEqual(scope.peek("scope"), scope, "scope");
 
 	scope.set("scope.vars.name", "Kevin");
-	QUnit.equal(scope.peek("scope.vars.name"), "Kevin", "scope.vars.name === Kevin");
+	assert.equal(scope.peek("scope.vars.name"), "Kevin", "scope.vars.name === Kevin");
 
 	var ageFn = function() { return "30"; };
 	scope.set("scope.vars.age", ageFn);
-	QUnit.equal(scope.peek("scope.vars.age")(), "30", "scope.vars.age === 30");
+	assert.equal(scope.peek("scope.vars.age")(), "30", "scope.vars.age === 30");
 });
 
-QUnit.test("scope.index reads from special scopes", function() {
+QUnit.test("scope.index reads from special scopes", function(assert) {
 
 	// When this is run in the main CanJS test suite, can-stache adds an index helper,
 	// so delete its helper so it doesn’t conflict with this test
@@ -669,38 +672,38 @@ QUnit.test("scope.index reads from special scopes", function() {
 	var map2 = new SimpleMap({ index: 3 });
 	var scope = new Scope(map1);
 
-	QUnit.equal(scope.peek('scope.index'), undefined,
+	assert.equal(scope.peek('scope.index'), undefined,
 		'scope.index returns undefined if no special context exists');
 
 	scope = scope.add({ index: 2 }, { special: true })
 		.add(map2)
 		.add({ index: 0 }, { special: true });
 
-	QUnit.equal(scope.peek('scope.index'), 0, 'scope.index is read correctly');
+	assert.equal(scope.peek('scope.index'), 0, 'scope.index is read correctly');
 
-	QUnit.equal(scope._parent.peek('scope.index'), 2, 'scope.index is only read from special contexts');
+	assert.equal(scope._parent.peek('scope.index'), 2, 'scope.index is only read from special contexts');
 
 	// Restore can-stache’s index helper
 	canStacheHelpers.index = originalIndexHelper;
 
 });
 
-QUnit.test("scope.index should not return a global helper", function() {
+QUnit.test("scope.index should not return a global helper", function(assert) {
 	var mockGlobalHelper = function() {
-		QUnit.ok(false, 'global helper should not be called');
+		assert.ok(false, 'global helper should not be called');
 	};
 	var originalIndexHelper = canStacheHelpers.index;
 	canStacheHelpers.index = mockGlobalHelper;
 
 	var scope = new Scope({});
 
-	QUnit.equal(scope.peek('scope.index'), undefined,
+	assert.equal(scope.peek('scope.index'), undefined,
 		'scope.index returns undefined if no special context exists');
 
 	canStacheHelpers.index = originalIndexHelper;
 });
 
-QUnit.test("scope.key reads from special scopes", function() {
+QUnit.test("scope.key reads from special scopes", function(assert) {
 	var map1 = new SimpleMap({ key: "one" });
 	var map2 = new SimpleMap({ key: 3 });
 	var scope = new Scope(map1)
@@ -708,83 +711,84 @@ QUnit.test("scope.key reads from special scopes", function() {
 		.add(map2)
 		.add({ key: "four" }, { special: true });
 
-	QUnit.equal(scope.peek('scope.key'), "four", 'scope.key is read correctly');
+	assert.equal(scope.peek('scope.key'), "four", 'scope.key is read correctly');
 
-	QUnit.equal(scope._parent.peek('scope.key'), "two", 'scope.key is only read from special contexts');
+	assert.equal(scope._parent.peek('scope.key'), "two", 'scope.key is only read from special contexts');
 });
 
-QUnit.test("variables starting with 'scope' should not be read from templateContext (#104)", function() {
+QUnit.test("variables starting with 'scope' should not be read from templateContext (#104)", function(assert) {
 	var map = new SimpleMap({ scope1: "this is scope1" });
 	var scope = new Scope(map);
 
-	QUnit.deepEqual(scope.peek("scope1"), "this is scope1", "scope1");
+	assert.deepEqual(scope.peek("scope1"), "this is scope1", "scope1");
 });
 
-QUnit.test("nested properties can be read from templateContext.vars", function() {
+QUnit.test("nested properties can be read from templateContext.vars", function(assert) {
 	var foo = new SimpleMap({ bar: "baz" });
 
 	var map = new SimpleMap();
 	var scope = new Scope(map);
 
-	QUnit.ok(!scope.peek("scope.vars.foo.bar"), "vars.foo.bar === undefined");
+	assert.ok(!scope.peek("scope.vars.foo.bar"), "vars.foo.bar === undefined");
 
 	scope.set("scope.vars.foo", foo);
-	QUnit.equal(scope.peek("scope.vars.foo.bar"), "baz", "vars.foo.bar === baz");
+	assert.equal(scope.peek("scope.vars.foo.bar"), "baz", "vars.foo.bar === baz");
 
 	scope.set("scope.vars.foo.bar", "quz");
-	QUnit.equal(scope.peek("scope.vars.foo.bar"), "quz", "vars.foo.bar === quz");
+	assert.equal(scope.peek("scope.vars.foo.bar"), "quz", "vars.foo.bar === quz");
 });
 
 
-QUnit.test("nested properties can be read from scope.root", function() {
+QUnit.test("nested properties can be read from scope.root", function(assert) {
 	var root = new SimpleMap({ bar: "baz" });
 	var map = new SimpleMap({ bar: "abc" });
 
 	var scope = new Scope(root)
 		.add(map);
 
-	QUnit.equal(scope.peek("scope.root.bar"), "baz", "root.bar === baz");
+	assert.equal(scope.peek("scope.root.bar"), "baz", "root.bar === baz");
 });
 
-QUnit.test("special scopes are skipped if options.special !== true", function() {
+QUnit.test("special scopes are skipped if options.special !== true", function(assert) {
 	var map1 = new SimpleMap({});
 	var scope = new Scope(map1)
 		.add({ foo: "two" }, { special: true })
 		.add({});
 
-	QUnit.equal(scope.peek('foo', { special: true }), "two", "foo is read from special scope");
+	assert.equal(scope.peek('foo', { special: true }), "two", "foo is read from special scope");
 });
 
-QUnit.test("special scopes are skipped when using ../.", function() {
+QUnit.test("special scopes are skipped when using ../.", function(assert) {
 	var obj = { foo: "one" };
 	var scope = new Scope(obj)
 		.add({ foo: "two" }, { special: true })
 		.add({});
 
-	QUnit.equal(scope.peek('../.'), obj);
-	QUnit.equal(scope.peek('.././foo'), "one");
+	assert.equal(scope.peek('../.'), obj);
+	assert.equal(scope.peek('.././foo'), "one");
 });
 
-QUnit.test("special scopes are skipped when using .", function() {
+QUnit.test("special scopes are skipped when using .", function(assert) {
 	var map = new SimpleMap({ foo: "one" });
 	var scope = new Scope(map)
 		.add({ foo: "two" }, { special: true });
 
-	QUnit.equal(scope.peek('.'), map);
+	assert.equal(scope.peek('.'), map);
 });
 
-QUnit.test("this works everywhere (#45)", function(){
+QUnit.test("this works everywhere (#45)", function(assert) {
 	var obj = {foo: "bar"};
 	var scope = new Scope(obj);
 	// this.foo works
-	QUnit.equal(scope.get("this.foo"),"bar");
+	assert.equal(scope.get("this.foo"),"bar");
 });
 
-QUnit.test("'this' and %context give the context", 1, function(){
+QUnit.test("'this' and %context give the context", function(assert) {
+	assert.expect(1);
 	var vm;
 	var MyMap = SimpleMap.extend({
 		doSomething: function(){
-			QUnit.equal(this, vm, "event callback called on context");
+			assert.equal(this, vm, "event callback called on context");
 		}
 	});
 
@@ -796,7 +800,7 @@ QUnit.test("'this' and %context give the context", 1, function(){
 
 });
 
-QUnit.test("that .set with ../ is able to skip notContext scopes (#43)", function(){
+QUnit.test("that .set with ../ is able to skip notContext scopes (#43)", function(assert) {
 	var instance = new SimpleMap({prop: 0});
 	var notContextContext = {NAME: "NOT CONTEXT"};
 	var top = {NAME: "TOP"};
@@ -805,11 +809,11 @@ QUnit.test("that .set with ../ is able to skip notContext scopes (#43)", functio
 
 	scope.set("../prop",1);
 
-	QUnit.equal( instance.attr("prop"), 1);
+	assert.equal( instance.attr("prop"), 1);
 });
 
 
-test("undefined props should be a scope hit (#20)", function(){
+QUnit.test("undefined props should be a scope hit (#20)", function(assert) {
 
 	var MyType = SimpleMap.extend("MyType",{
 		init: function(){
@@ -826,7 +830,7 @@ test("undefined props should be a scope hit (#20)", function(){
 	c1.on("change", function(){});
 	c1("BAR");
 
-	QUnit.equal(instance.attr("value"), "BAR");
+	assert.equal(instance.attr("value"), "BAR");
 
 	var instance2 = new MyType();
 	var scope2 = new Scope(instance2).add(new SimpleObservable());
@@ -836,23 +840,23 @@ test("undefined props should be a scope hit (#20)", function(){
 	c2.on("change", function(){});
 	c2("BAR");
 
-	QUnit.equal(instance2.attr("value"), "BAR");
+	assert.equal(instance2.attr("value"), "BAR");
 
 });
 
-QUnit.test("ScopeKeyData can.valueHasDependencies", function(){
+QUnit.test("ScopeKeyData can.valueHasDependencies", function(assert) {
 	var map = new SimpleMap({age: 21});
 	var base = new Scope(map);
 	var age = base.computeData('age');
 
 	// The following 2 lines were commented out ... we auto-bind ScopeKeyData
-	//QUnit.equal(canReflect.valueHasDependencies(age), undefined, "undefined");
+	//assert.equal(canReflect.valueHasDependencies(age), undefined, "undefined");
 	//canReflect.onValue(age, function(){});
 
-	QUnit.equal(canReflect.valueHasDependencies(age), true, "undefined");
+	assert.equal(canReflect.valueHasDependencies(age), true, "undefined");
 });
 
-QUnit.test("get and set Priority", function(){
+QUnit.test("get and set Priority", function(assert) {
 	var map = new SimpleMap({age: 21});
 	var base = new Scope(map);
 	var age = base.computeData('age');
@@ -860,15 +864,15 @@ QUnit.test("get and set Priority", function(){
 	canReflect.setPriority(age, 5);
 
 
-	QUnit.equal(canReflect.getPriority(age), 5, "set priority");
+	assert.equal(canReflect.getPriority(age), 5, "set priority");
 
 	var compute = age.compute;
 
-	QUnit.equal(canReflect.getPriority(compute), 5, "set priority");
+	assert.equal(canReflect.getPriority(compute), 5, "set priority");
 
 });
 
-QUnit.test("fast path checking does not leak ObservationRecord.adds", function(){
+QUnit.test("fast path checking does not leak ObservationRecord.adds", function(assert) {
 	// reading values in setup can cause problems ... these will
 	// leak to outer scope
 	var map = new SimpleMap({age: 21});
@@ -889,22 +893,22 @@ QUnit.test("fast path checking does not leak ObservationRecord.adds", function()
 	age.get();
 	var dependencies = ObservationRecorder.stop();
 
-	QUnit.equal(dependencies.keyDependencies.size, 0, "no key dependencies");
-	QUnit.equal(dependencies.valueDependencies.size, 1, "only sees age");
-	QUnit.ok(dependencies.valueDependencies.has(age), "only sees age");
+	assert.equal(dependencies.keyDependencies.size, 0, "no key dependencies");
+	assert.equal(dependencies.valueDependencies.size, 1, "only sees age");
+	assert.ok(dependencies.valueDependencies.has(age), "only sees age");
 });
 
-QUnit.test("{{scope.set(...)}} works", function() {
+QUnit.test("{{scope.set(...)}} works", function(assert) {
 	var map = new SimpleMap({ foo: 'bar' });
 	var scope = new Scope(map);
 
 	var set = scope.peek('scope@set');
 
 	set('foo', 'baz');
-	QUnit.equal(map.get('foo'), 'baz', 'map.foo updated using scope.set');
+	assert.equal(map.get('foo'), 'baz', 'map.foo updated using scope.set');
 });
 
-QUnit.test("can read a method from scope.viewModel", function() {
+QUnit.test("can read a method from scope.viewModel", function(assert) {
 	var viewModel = new SimpleMap({
 		method: function() {
 			return 'method return value';
@@ -915,10 +919,10 @@ QUnit.test("can read a method from scope.viewModel", function() {
 
 	var method = scope.peek('scope.viewModel@method');
 
-	QUnit.equal(method(), 'method return value');
+	assert.equal(method(), 'method return value');
 });
 
-QUnit.test("can read a value from scope.element", function() {
+QUnit.test("can read a value from scope.element", function(assert) {
 	var element = {
 		value: 'element value'
 	};
@@ -927,10 +931,10 @@ QUnit.test("can read a value from scope.element", function() {
 
 	var value = scope.peek('scope.element.value');
 
-	QUnit.equal(value, 'element value');
+	assert.equal(value, 'element value');
 });
 
-QUnit.test("scope.find can be used to find a value in the first scope it exists", function() {
+QUnit.test("scope.find can be used to find a value in the first scope it exists", function(assert) {
 	var a = new SimpleMap({ a: "a" });
 	var b = new SimpleMap({ b: "b" });
 	var c = new SimpleMap({ c: "c" });
@@ -939,12 +943,12 @@ QUnit.test("scope.find can be used to find a value in the first scope it exists"
 		.add(b)
 		.add(a);
 
-	QUnit.equal(scope.find("a"), "a", "a");
-	QUnit.equal(scope.find("b"), "b", "b");
-	QUnit.equal(scope.find("c"), "c", "c");
+	assert.equal(scope.find("a"), "a", "a");
+	assert.equal(scope.find("b"), "b", "b");
+	assert.equal(scope.find("c"), "c", "c");
 });
 
-QUnit.test("scope.find accepts readOptions", function() {
+QUnit.test("scope.find accepts readOptions", function(assert) {
 	var a = new SimpleMap({ a: "a" });
 	a.func = function() {
 		return this;
@@ -959,14 +963,14 @@ QUnit.test("scope.find accepts readOptions", function() {
 
 	var aDotFunc = scope.find("func");
 
-	QUnit.equal(aDotFunc(), a, "a.func() got correct context");
+	assert.equal(aDotFunc(), a, "a.func() got correct context");
 
 	aDotFunc = scope.find("func", { proxyMethods: false });
 
-	QUnit.notEqual(aDotFunc(), a, "non-proxied a.func() got correct context");
+	assert.notEqual(aDotFunc(), a, "non-proxied a.func() got correct context");
 });
 
-QUnit.test("scope.read should not walk up normal scopes by default", function() {
+QUnit.test("scope.read should not walk up normal scopes by default", function(assert) {
 	var a = new SimpleMap({ a: "a" });
 	var b = new SimpleMap({ b: "b" });
 	var c = new SimpleMap({ c: "c" });
@@ -975,64 +979,64 @@ QUnit.test("scope.read should not walk up normal scopes by default", function() 
 		.add(b)
 		.add(a);
 
-	QUnit.equal(scope.read("a").value, "a", "a");
-	QUnit.equal(scope.read("b").value, undefined, "b");
-	QUnit.equal(scope.read("c").value, undefined, "c");
+	assert.equal(scope.read("a").value, "a", "a");
+	assert.equal(scope.read("b").value, undefined, "b");
+	assert.equal(scope.read("c").value, undefined, "c");
 });
 
-QUnit.test("scope.read should walk over special scopes", function() {
+QUnit.test("scope.read should walk over special scopes", function(assert) {
 	var map = new SimpleMap({ a: "a", b: "b", c: "c" });
 
 	var scope = new Scope(map)
 		.add({ d: "d" }, { special: true });
 
-	QUnit.equal(scope.read("a").value, "a", "a");
-	QUnit.equal(scope.read("b").value, "b", "b");
-	QUnit.equal(scope.read("c").value, "c", "c");
+	assert.equal(scope.read("a").value, "a", "a");
+	assert.equal(scope.read("b").value, "b", "b");
+	assert.equal(scope.read("c").value, "c", "c");
 });
 
-QUnit.test("scope.read should skip special contexts and read from notContext scope higher in the chain", function(){
+QUnit.test("scope.read should skip special contexts and read from notContext scope higher in the chain", function(assert) {
 	var scope = new Scope({ a: "a" })
 		.add({ b: "b" }, { notContext: true })
 		.add({ c: "c" }, { special: true })
 		.add({ d: "d" }, { notContext: true })
 		.add({ e: "e" });
 
-	QUnit.equal(scope.read("a").value, undefined, "a not read from normal parent context");
-	QUnit.equal(scope.read("b").value, "b", "b read correctly from notContext parent context");
-	QUnit.equal(scope.read("c").value, undefined, "c not read from special context");
-	QUnit.equal(scope.read("d").value, "d", "d read correctly from notContext parent context");
-	QUnit.equal(scope.read("e").value, "e", "e read correctly");
+	assert.equal(scope.read("a").value, undefined, "a not read from normal parent context");
+	assert.equal(scope.read("b").value, "b", "b read correctly from notContext parent context");
+	assert.equal(scope.read("c").value, undefined, "c not read from special context");
+	assert.equal(scope.read("d").value, "d", "d read correctly from notContext parent context");
+	assert.equal(scope.read("e").value, "e", "e read correctly");
 
 	scope = scope.add({ f: "f" }, { notContext : true })
 		.add({ g: "g" }, { special : true })
 		.add({ h: "h" }, { notContext : true })
 		.add({ i: "i" });
 
-	QUnit.equal(scope.read("e").value, undefined, "e not read from normal parent context");
-	QUnit.equal(scope.read("f").value, "f", "f read correctly from notContext parent context");
-	QUnit.equal(scope.read("g").value, undefined, "g not read from special context");
-	QUnit.equal(scope.read("h").value, "h", "h read correctly from notContext parent context");
-	QUnit.equal(scope.read("i").value, "i", "i read correctly");
+	assert.equal(scope.read("e").value, undefined, "e not read from normal parent context");
+	assert.equal(scope.read("f").value, "f", "f read correctly from notContext parent context");
+	assert.equal(scope.read("g").value, undefined, "g not read from special context");
+	assert.equal(scope.read("h").value, "h", "h read correctly from notContext parent context");
+	assert.equal(scope.read("i").value, "i", "i read correctly");
 
-	QUnit.equal(scope.read("../a").value, undefined, "../a not read from normal parent context above normal parent context");
-	QUnit.equal(scope.read("../b").value, "b", "../b read correctly from notContext parent context above normal parent context");
-	QUnit.equal(scope.read("../c").value, undefined, "../c not read from special context above normal parent context");
-	QUnit.equal(scope.read("../d").value, "d", "../d read correctly from notContext parent context above normal parent context");
-	QUnit.equal(scope.read("../e").value, "e", "../e read correctly above normal parent context");
+	assert.equal(scope.read("../a").value, undefined, "../a not read from normal parent context above normal parent context");
+	assert.equal(scope.read("../b").value, "b", "../b read correctly from notContext parent context above normal parent context");
+	assert.equal(scope.read("../c").value, undefined, "../c not read from special context above normal parent context");
+	assert.equal(scope.read("../d").value, "d", "../d read correctly from notContext parent context above normal parent context");
+	assert.equal(scope.read("../e").value, "e", "../e read correctly above normal parent context");
 });
 
-QUnit.test("reading using ../ when there is no parent returns undefined", function() {
+QUnit.test("reading using ../ when there is no parent returns undefined", function(assert) {
 	var scope = new Scope({});
 
 	try {
-		QUnit.equal(scope.read('../foo').value, undefined, 'returns undefined');
+		assert.equal(scope.read('../foo').value, undefined, 'returns undefined');
 	} catch(e) {
-		QUnit.ok(false, 'error occured: ' + e);
+		assert.ok(false, 'error occured: ' + e);
 	}
 });
 
-QUnit.test("read checks templateContext helpers then global helpers after checking the scope", function() {
+QUnit.test("read checks templateContext helpers then global helpers after checking the scope", function(assert) {
 	var map = {
 		scopeFunction: function() {
 			return 'scopeFunction';
@@ -1063,13 +1067,13 @@ QUnit.test("read checks templateContext helpers then global helpers after checki
 	canStacheHelpers.localHelperFunction = globalHelperCalledLocalHelperFunction;
 
 	var readScopeFunction = scope.read('scopeFunction').value;
-	QUnit.deepEqual(readScopeFunction(), 'scopeFunction', 'scopeFunction');
+	assert.deepEqual(readScopeFunction(), 'scopeFunction', 'scopeFunction');
 
 	var readLocalHelperFunction = scope.read('localHelperFunction').value;
-	QUnit.deepEqual(readLocalHelperFunction(), 'localHelperFunction', 'localHelperFunction');
+	assert.deepEqual(readLocalHelperFunction(), 'localHelperFunction', 'localHelperFunction');
 
 	var readHelperFunction = scope.read('helperFunction').value;
-	QUnit.deepEqual(readHelperFunction(), 'helperFunction', 'helperFunction');
+	assert.deepEqual(readHelperFunction(), 'helperFunction', 'helperFunction');
 
 	// clean up
 	delete canStacheHelpers.helperFunction;
@@ -1077,7 +1081,7 @@ QUnit.test("read checks templateContext helpers then global helpers after checki
 	canReflect.setKeyValue(scope.templateContext.helpers, "localHelperFunction", undefined);
 });
 
-QUnit.test("read can handle objects stored on helpers", function() {
+QUnit.test("read can handle objects stored on helpers", function(assert) {
 	var scope = new Scope();
 
 	var fakeConsole = {
@@ -1091,15 +1095,15 @@ QUnit.test("read can handle objects stored on helpers", function() {
 	canStacheHelpers.console = fakeConsole;
 
 	var readConsoleLog = scope.read('console.log').value;
-	QUnit.deepEqual(readConsoleLog(), 'fakeConsole.log', 'fakeConsole.log');
+	assert.deepEqual(readConsoleLog(), 'fakeConsole.log', 'fakeConsole.log');
 
 	var readConsoleWarn = scope.read('console.warn').value;
-	QUnit.deepEqual(readConsoleWarn(), 'fakeConsole.warn', 'fakeConsole.warn');
+	assert.deepEqual(readConsoleWarn(), 'fakeConsole.warn', 'fakeConsole.warn');
 
 	delete canStacheHelpers.console;
 });
 
-QUnit.test("scope.helpers can be used to read a helper that conflicts with a property in the scope", function() {
+QUnit.test("scope.helpers can be used to read a helper that conflicts with a property in the scope", function(assert) {
 	var map = {
 		myIf: function() {
 			return 'map.myIf';
@@ -1116,16 +1120,16 @@ QUnit.test("scope.helpers can be used to read a helper that conflicts with a pro
 	canStacheHelpers.myIf = myIf;
 
 	var localIf = scope.read('myIf').value;
-	QUnit.deepEqual(localIf(), 'map.myIf', 'scope function');
+	assert.deepEqual(localIf(), 'map.myIf', 'scope function');
 
 	var globalIf = scope.read('scope.helpers.myIf').value;
-	QUnit.deepEqual(globalIf(), 'global.myIf', 'global function');
+	assert.deepEqual(globalIf(), 'global.myIf', 'global function');
 
 	// clean up
 	delete canStacheHelpers.myIf;
 });
 
-QUnit.test("functions have correct `thisArg` so they can be called even with `proxyMethods: false`", function() {
+QUnit.test("functions have correct `thisArg` so they can be called even with `proxyMethods: false`", function(assert) {
 	var parent = {
 		name: function() {
 			return 'parent';
@@ -1148,40 +1152,40 @@ QUnit.test("functions have correct `thisArg` so they can be called even with `pr
 
 	var childName = scope.read("child.name", { proxyMethods: false });
 
-	QUnit.equal(childName.value, child.name, "childName.value === child.name");
-	QUnit.equal(childName.thisArg, child, "childName.thisArg === child");
+	assert.equal(childName.value, child.name, "childName.value === child.name");
+	assert.equal(childName.thisArg, child, "childName.thisArg === child");
 
 	var childNameCompute = scope.computeData('child.name', { proxyMethods: false });
 	Observation.temporarilyBind(childNameCompute);
 
-	QUnit.equal(childNameCompute.initialValue, child.name, "childNameCompute.inititalValue === child.name");
-	QUnit.equal(childNameCompute.thisArg, child, "childNameCompute.thisArg === child");
+	assert.equal(childNameCompute.initialValue, child.name, "childNameCompute.inititalValue === child.name");
+	assert.equal(childNameCompute.thisArg, child, "childNameCompute.thisArg === child");
 
 	var rootFunc = scope.read('func', { proxyMethods: false });
 
-	QUnit.equal(rootFunc.value, func, "rootFunc.value === func");
-	QUnit.equal(rootFunc.thisArg, childData, "rootFunc.thisArg === childData");
+	assert.equal(rootFunc.value, func, "rootFunc.value === func");
+	assert.equal(rootFunc.thisArg, childData, "rootFunc.thisArg === childData");
 
 	var myHelper = function() {};
 	canReflect.setKeyValue(scope.templateContext.helpers, "myHelper", myHelper);
 
 	var helper = scope.read("myHelper", { proxyMethods: false });
 
-	QUnit.equal(helper.value, myHelper, "helper.value === func");
-	QUnit.equal(helper.thisArg, undefined, "helper.thisArg === undefined");
+	assert.equal(helper.value, myHelper, "helper.value === func");
+	assert.equal(helper.thisArg, undefined, "helper.thisArg === undefined");
 
 	var parentName = scope.read("../parent.name", { proxyMethods: false });
 
-	QUnit.equal(parentName.value, parent.name, "parentName.value === parent.name");
-	QUnit.equal(parentName.thisArg, parent, "parentName.thisArg === parent");
+	assert.equal(parentName.value, parent.name, "parentName.value === parent.name");
+	assert.equal(parentName.thisArg, parent, "parentName.thisArg === parent");
 
 	var parentFunc = scope.read('../func', { proxyMethods: false });
 
-	QUnit.equal(parentFunc.value, func, "parentFunc.value === func");
-	QUnit.equal(parentFunc.thisArg, parentData, "rootFunc.thisArg === parentData");
+	assert.equal(parentFunc.value, func, "parentFunc.value === func");
+	assert.equal(parentFunc.thisArg, parentData, "rootFunc.thisArg === parentData");
 });
 
-QUnit.test("debugger is a reserved scope key for calling debugger helper", function() {
+QUnit.test("debugger is a reserved scope key for calling debugger helper", function(assert) {
 	var scope = new Scope({ name: "Kevin" });
 
 	var debuggerHelper = function(options) {
@@ -1190,32 +1194,32 @@ QUnit.test("debugger is a reserved scope key for calling debugger helper", funct
 	canStacheHelpers["debugger"] = debuggerHelper;
 
 	var debuggerScopeKey = scope.compute("debugger");
-	QUnit.equal(canReflect.getValue(debuggerScopeKey), "Kevin", "debugger called with correct helper options");
+	assert.equal(canReflect.getValue(debuggerScopeKey), "Kevin", "debugger called with correct helper options");
 
 	delete canStacheHelpers["debugger"];
 });
 
-QUnit.test("scope.vm and scope.top", function() {
+QUnit.test("scope.vm and scope.top", function(assert) {
 	var scope = new Scope({ name: "foo" })
 		.add({ name: "Kevin" }, { viewModel: true }) // top
 		.add({ name: "bar" }) // intermediate
 		.add({ name: "Ryan" }, { viewModel: true }) // vm
 		.add({ name: "baz" });
 
-	QUnit.equal(scope.read("scope.vm.name").value, "Ryan", "scope.first can be used to read from the _first_ context with viewModel: true");
-	QUnit.equal(scope.read("scope.top.name").value, "Kevin", "scope.top can be used to read from the _top_ context with viewModel: true");
+	assert.equal(scope.read("scope.vm.name").value, "Ryan", "scope.first can be used to read from the _first_ context with viewModel: true");
+	assert.equal(scope.read("scope.top.name").value, "Kevin", "scope.top can be used to read from the _top_ context with viewModel: true");
 });
 
-testHelpers.dev.devOnlyTest("scope.root deprecation warning", function() {
+testHelpers.dev.devOnlyTest("scope.root deprecation warning", function (assert) {
 	var teardown = testHelpers.dev.willWarn(/`scope.root` is deprecated/);
 
 	var scope = new Scope({ foo: "bar" });
 	scope.read("scope.root");
 
-	QUnit.equal(teardown(), 1, "deprecation warning displayed");
+	assert.equal(teardown(), 1, "deprecation warning displayed");
 });
 
-testHelpers.dev.devOnlyTest("scope.getPathsForKey", function() {
+testHelpers.dev.devOnlyTest("scope.getPathsForKey", function (assert) {
 	var top = {};
 	top[canSymbol.for("can.hasKey")] = function(key) {
 		return key === "name";
@@ -1235,7 +1239,7 @@ testHelpers.dev.devOnlyTest("scope.getPathsForKey", function() {
 
 	var paths = scope.getPathsForKey("name");
 
-	QUnit.deepEqual(paths, {
+	assert.deepEqual(paths, {
 		"scope.vm.name": vm,
 		"scope.top.name": top,
 		"name": nonVm,
@@ -1244,7 +1248,7 @@ testHelpers.dev.devOnlyTest("scope.getPathsForKey", function() {
 	});
 });
 
-testHelpers.dev.devOnlyTest("scope.getPathsForKey works for functions", function() {
+testHelpers.dev.devOnlyTest("scope.getPathsForKey works for functions", function (assert) {
 	var top = { name: function() { return "Christopher"; } };
 	var vm = { name: function() { return "Ryan"; } };
 	var nonVm = { name: function() { return "Bianca"; } };
@@ -1260,7 +1264,7 @@ testHelpers.dev.devOnlyTest("scope.getPathsForKey works for functions", function
 
 	var paths = scope.getPathsForKey("name");
 
-	QUnit.deepEqual(paths, {
+	assert.deepEqual(paths, {
 		"scope.vm.name()": vm,
 		"scope.top.name()": top,
 		"name()": nonVm,
@@ -1269,7 +1273,7 @@ testHelpers.dev.devOnlyTest("scope.getPathsForKey works for functions", function
 	});
 });
 
-QUnit.test("scope.hasKey", function() {
+QUnit.test("scope.hasKey", function(assert) {
 	var top = { foo: "bar" };
 	var vm = { bar: "baz" };
 	var nonVm = {};
@@ -1282,17 +1286,17 @@ QUnit.test("scope.hasKey", function() {
 		.add(vm, { viewModel: true })
 		.add(nonVm);
 
-	QUnit.equal(canReflect.hasKey(scope, "scope.top.foo"), true, "hasKey scope.top.foo === true");
-	QUnit.equal(canReflect.hasKey(scope, "scope.top.bar"), false, "hasKey scope.top.bar === false");
+	assert.equal(canReflect.hasKey(scope, "scope.top.foo"), true, "hasKey scope.top.foo === true");
+	assert.equal(canReflect.hasKey(scope, "scope.top.bar"), false, "hasKey scope.top.bar === false");
 
-	QUnit.equal(canReflect.hasKey(scope, "scope.vm.bar"), true, "hasKey scope.vm.bar === true");
-	QUnit.equal(canReflect.hasKey(scope, "scope.vm.baz"), false, "hasKey scope.vm.baz === false");
+	assert.equal(canReflect.hasKey(scope, "scope.vm.bar"), true, "hasKey scope.vm.bar === true");
+	assert.equal(canReflect.hasKey(scope, "scope.vm.baz"), false, "hasKey scope.vm.baz === false");
 
-	QUnit.equal(canReflect.hasKey(scope, "baz"), true, "hasKey baz === true");
-	QUnit.equal(canReflect.hasKey(scope, "foo"), false, "hasKey foo === false");
+	assert.equal(canReflect.hasKey(scope, "baz"), true, "hasKey baz === true");
+	assert.equal(canReflect.hasKey(scope, "foo"), false, "hasKey foo === false");
 });
 
-QUnit.test("read returns correct `parentHasKey` value", function() {
+QUnit.test("read returns correct `parentHasKey` value", function(assert) {
 	var vm = {};
 	canReflect.assignSymbols(vm, {
 		"can.hasKey": function(key) {
@@ -1302,11 +1306,11 @@ QUnit.test("read returns correct `parentHasKey` value", function() {
 
 	var scope = new Scope(vm);
 
-	QUnit.ok(scope.read("foo").parentHasKey, "parent has key 'foo'");
-	QUnit.notOk(scope.read("bar").parentHasKey, "parent does not have key 'bar'");
+	assert.ok(scope.read("foo").parentHasKey, "parent has key 'foo'");
+	assert.notOk(scope.read("bar").parentHasKey, "parent does not have key 'bar'");
 });
 
-QUnit.test("computeData returns correct `parentHasKey` value", function() {
+QUnit.test("computeData returns correct `parentHasKey` value", function(assert) {
 	var vm = {};
 	canReflect.assignSymbols(vm, {
 		"can.hasKey": function(key) {
@@ -1323,49 +1327,49 @@ QUnit.test("computeData returns correct `parentHasKey` value", function() {
 	fooCompute.read();
 	barCompute.read();
 
-	QUnit.ok(fooCompute.parentHasKey, "parent has key 'foo'");
-	QUnit.notOk(barCompute.parentHasKey, "parent does not have key 'bar'");
+	assert.ok(fooCompute.parentHasKey, "parent has key 'foo'");
+	assert.notOk(barCompute.parentHasKey, "parent does not have key 'bar'");
 });
 
-QUnit.test("can get helpers from parent TemplateContext", function(){
+QUnit.test("can get helpers from parent TemplateContext", function(assert) {
 	var scope = new Scope(
 		new Scope.TemplateContext({helpers: {foo: function(){}}})
 	).add(
 		new Scope.TemplateContext()
 	).add( {});
-	QUnit.ok( scope.get("foo"), "got helper");
+	assert.ok( scope.get("foo"), "got helper");
 });
 
-QUnit.test("do not error when reading a missing parent context (#183)", function(){
+QUnit.test("do not error when reading a missing parent context (#183)", function(assert) {
 	var scope = new Scope(
 		new Scope.TemplateContext({})
 	).add({}, {});
 
 	var results = scope.read("../key",{});
 
-	QUnit.ok(results.noContextAvailable, "no error");
+	assert.ok(results.noContextAvailable, "no error");
 });
 
-QUnit.test("cloneFromRef clones meta", function(){
+QUnit.test("cloneFromRef clones meta", function(assert) {
 	var scope = new Scope({}).add(new Scope.TemplateContext({})).addLetContext({tempProp: undefined});
 	var copyScope = scope.cloneFromRef();
 
-	QUnit.deepEqual( copyScope._meta, {variable: true});
+	assert.deepEqual( copyScope._meta, {variable: true});
 });
 
-QUnit.test("scope/key walks the scope", function() {
+QUnit.test("scope/key walks the scope", function(assert) {
 	var scope = new Scope({
 		foo: "bar",
 		baz: function() { return "quz"; }
 	}).add({}).add({});
 
 	var value = scope.peek("scope/foo");
-	QUnit.equal(value, "bar");
+	assert.equal(value, "bar");
 	value = scope.peek("@scope/baz");
-	QUnit.equal(value(), "quz");
+	assert.equal(value(), "quz");
 });
 
-QUnit.test("able to read partials", function(){
+QUnit.test("able to read partials", function(assert) {
 	var myPartial = function(){};
 
 	var scope = new Scope(new Scope.TemplateContext({
@@ -1374,7 +1378,7 @@ QUnit.test("able to read partials", function(){
 
 	var result = scope.get("myPartial");
 
-	QUnit.equal(result, myPartial, "read the value");
+	assert.equal(result, myPartial, "read the value");
 
 });
 

@@ -8,19 +8,19 @@ var ObservationRecorder = require("can-observation-recorder");
 
 QUnit.module('can-view-scope scope-key-data');
 
-QUnit.test("able to scope-key-data this", function(){
+QUnit.test("able to scope-key-data this", function(assert) {
 	var value = new SimpleObservable(1);
 	var scope = new Scope(value);
 	var thisObservable = scope.computeData("this");
 	thisObservable.on(function(){});
 
-	QUnit.equal( canReflect.getValue(thisObservable), 1);
+	assert.equal( canReflect.getValue(thisObservable), 1);
 
 	canReflect.setValue(thisObservable,2);
 });
 
 
-QUnit.test("ScopeKeyData's thisArg is observable", function(){
+QUnit.test("ScopeKeyData's thisArg is observable", function(assert) {
 	var doSomething = function(){
 		return this.value;
 	};
@@ -39,7 +39,7 @@ QUnit.test("ScopeKeyData's thisArg is observable", function(){
 	});
 
 	canReflect.onValue(obs, function(value){
-		QUnit.equal(value, "B");
+		assert.equal(value, "B");
 	});
 
 	context.set("foo",{
@@ -48,7 +48,7 @@ QUnit.test("ScopeKeyData's thisArg is observable", function(){
 	});
 });
 
-QUnit.test("reading ScopeKeyData will update underlying observable", function(){
+QUnit.test("reading ScopeKeyData will update underlying observable", function(assert) {
 	var context = new SimpleMap({
 		"prop" :"value"
 	});
@@ -59,7 +59,7 @@ QUnit.test("reading ScopeKeyData will update underlying observable", function(){
 
 	context.on("prop", function(){
 
-		QUnit.equal(canReflect.getValue(prop), "VALUE", "able to read fastPath value");
+		assert.equal(canReflect.getValue(prop), "VALUE", "able to read fastPath value");
 	},"notify");
 
 	context.set("prop", "VALUE");
@@ -81,14 +81,14 @@ QUnit.test("reading ScopeKeyData will update underlying observable", function(){
 
 	canReflect.onValue(root, function(){
 
-		QUnit.equal(canReflect.getValue(prop), "VALUE", "able to read deep, non-fast-path value");
+		assert.equal(canReflect.getValue(prop), "VALUE", "able to read deep, non-fast-path value");
 	},"notify");
 
 	root.value = "VALUE";
 });
 
 
-QUnit.test("able to read from primitives (#197)", function(){
+QUnit.test("able to read from primitives (#197)", function(assert) {
 	var map = new SimpleMap({
 		someProperty: "hello"
 	});
@@ -98,10 +98,10 @@ QUnit.test("able to read from primitives (#197)", function(){
 	// the problem was adding a string as a mutated dependency
 	canReflect.onValue(scopeKeyData, function(){});
 
-	QUnit.ok(true,"does not error");
+	assert.ok(true,"does not error");
 });
 
-QUnit.test("initialValue should not emit ObservationRecords (#198)", function(){
+QUnit.test("initialValue should not emit ObservationRecords (#198)", function(assert) {
 	var map = new SimpleMap({
 		someProperty: "hello"
 	});
@@ -109,7 +109,7 @@ QUnit.test("initialValue should not emit ObservationRecords (#198)", function(){
 	var scopeKeyData = scope.computeData("someProperty");
 
 	ObservationRecorder.start();
-	QUnit.equal(scopeKeyData.initialValue, "hello");
+	assert.equal(scopeKeyData.initialValue, "hello");
 	var records = ObservationRecorder.stop();
-	QUnit.equal(records.valueDependencies.size, 0, "no value deps");
+	assert.equal(records.valueDependencies.size, 0, "no value deps");
 });
