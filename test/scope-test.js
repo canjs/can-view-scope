@@ -1379,7 +1379,15 @@ QUnit.test("able to read partials", function(assert) {
 	var result = scope.get("myPartial");
 
 	assert.equal(result, myPartial, "read the value");
+});
 
+QUnit.test("properties can shadow functions on can-event-queue/map when there is a LetContext", function(assert) {
+	var scope = new Scope({
+		one: "the one property"
+	})
+	.addLetContext();
+
+	assert.equal(scope.get("one"), "the one property", "read the value");
 });
 
 require("./variable-scope-test");
