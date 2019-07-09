@@ -18,7 +18,7 @@ var canReflect = require("can-reflect");
 var canLog = require('can-log/dev/dev');
 var defineLazyValue = require('can-define-lazy-value');
 var stacheHelpers = require('can-stache-helpers');
-var SimpleMap = require('can-simple-map');
+var LetContext = require('./let-context');
 
 
 // ## Helpers
@@ -29,10 +29,6 @@ function canHaveProperties(obj){
 function returnFalse(){
 	return false;
 }
-
-// ### LetContext
-// Instances of this are used to create a `let` variable context.
-var LetContext = SimpleMap.extend("LetContext",{});
 
 // ## Scope
 // Represents a node in the scope tree.
