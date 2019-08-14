@@ -1,6 +1,7 @@
 var Scope = require('can-view-scope');
 var SimpleMap = require('can-simple-map');
 var QUnit = require('steal-qunit');
+var canSymbol = require("can-symbol");
 var canReflect = require('can-reflect');
 var SimpleObservable = require('can-simple-observable');
 var Observation = require("can-observation");
@@ -112,4 +113,17 @@ QUnit.test("initialValue should not emit ObservationRecords (#198)", function(as
 	assert.equal(scopeKeyData.initialValue, "hello");
 	var records = ObservationRecorder.stop();
 	assert.equal(records.valueDependencies.size, 0, "no value deps");
+});
+
+QUnit.test("Implements can.setElement", function(assert) {
+	var observation = new Observation(function(){
+		return "test";
+	});
+	var map = new SimpleMap({
+		someProp: observation
+	});
+	var scope = new Scope(map);
+	var scopeKeyData = scope.computeData("someProp");
+	scopeKeyData[canSymbol.for("can.setElement")](document.createElement("div"));
+	assert.ok(true, "ScopeKeyData has can.setElement");
 });
