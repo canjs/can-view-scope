@@ -14,6 +14,7 @@ var SimpleObservable = require("can-simple-observable");
 var dev = require("can-log/dev/dev");
 
 var dispatchSymbol = canSymbol.for("can.dispatch");
+var setElementSymbol = canSymbol.for("can.setElement");
 
 // The goal of this is to create a high-performance compute that represents a key value from can.view.Scope.
 // If the key value is something like {{name}} and the context is a can.Map, a faster
@@ -371,6 +372,9 @@ var scopeKeyDataPrototype = {
 	},
 	"can.setPriority": function(newPriority){
 		canReflect.setPriority( this.observation, newPriority );
+	},
+	"can.setElement": function(element) {
+		this.observation[setElementSymbol](element);
 	}
 };
 
