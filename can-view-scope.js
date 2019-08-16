@@ -984,7 +984,7 @@ defineLazyValue(Scope.prototype, 'templateContext', function() {
 });
 
 defineLazyValue(Scope.prototype, 'root', function() {
-	canLog.warn('`scope.root` is deprecated. Use either `scope.top` or `scope.vm` instead.');
+	canLog.warn('`scope.root` is deprecated. Use either `scope.top`: https://canjs.com/doc/can-stache/keys/scope.html#scope_top or `scope.vm`: https://canjs.com/doc/can-stache/keys/scope.html#scope_vm instead.');
 	return this.getRoot();
 });
 
