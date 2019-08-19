@@ -6,6 +6,7 @@ var canReflect = require('can-reflect');
 var SimpleObservable = require('can-simple-observable');
 var Observation = require("can-observation");
 var ObservationRecorder = require("can-observation-recorder");
+var testHelpers = require('can-test-helpers');
 
 QUnit.module('can-view-scope scope-key-data');
 
@@ -126,4 +127,23 @@ QUnit.test("Implements can.setElement", function(assert) {
 	var scopeKeyData = scope.computeData("someProp");
 	scopeKeyData[canSymbol.for("can.setElement")](document.createElement("div"));
 	assert.ok(true, "ScopeKeyData has can.setElement");
+});
+
+testHelpers.dev.devOnlyTest("Warn when key is not found and log the value of the last property that can be read #206", function(assert) {
+	var teardown = testHelpers.dev.willWarn(/Unable to find key "foo.length". Found "foo" with value: %o/, function(message, matched) {
+		assert.ok(matched, "warning displayed");
+	});
+	
+	var context = {
+		foo: true
+	};
+
+	var scope = new Scope(context);
+
+	var scopeKeyData = scope.computeData("foo.length", {
+		warnOnMissingKey: true
+	});
+
+	scopeKeyData.read();
+	teardown();
 });

@@ -96,8 +96,8 @@ if (process.env.NODE_ENV !== 'production') {
 					'Unable to find key "' + key + '".' +
 					(
 						includeSuggestions ?
-							" Did you mean" + (paths.length > 1 ? " one of these" : "") + "?\n" :
-							"\n"
+							' Did you mean' + (paths.length > 1 ? ' one of these' : '') + '?\n' :
+							' Found "' + firstKey + '" with value: %o\n'
 					)
 			];
 
@@ -109,10 +109,8 @@ if (process.env.NODE_ENV !== 'production') {
 				});
 			}
 
-			warning.push("\n");
-
-			dev.warn.apply(dev,
-				warning
+			dev.warn.apply(dev, 
+				[warning.join("\n"), options.scope.get(firstKey)]
 			);
 		}
 	};
