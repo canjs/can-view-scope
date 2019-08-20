@@ -87,6 +87,8 @@ if (process.env.NODE_ENV !== 'production') {
 			}).join(".");
 			var pathsForKey = options.scope.getPathsForKey(firstKey);
 			var paths = Object.keys( pathsForKey );
+			var firstKeyValue = options.scope.get(firstKey);
+			var value = firstKeyValue ? firstKeyValue : ""+firstKeyValue;
 
 			var includeSuggestions = paths.length && (paths.indexOf(firstKey) < 0);
 
@@ -109,9 +111,7 @@ if (process.env.NODE_ENV !== 'production') {
 				});
 			}
 
-			dev.warn.apply(dev, 
-				[warning.join("\n"), options.scope.get(firstKey)]
-			);
+			dev.warn.apply(dev, [warning.join("\n"), value]);
 		}
 	};
 }
