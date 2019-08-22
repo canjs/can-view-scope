@@ -148,8 +148,10 @@ testHelpers.dev.devOnlyTest("Warn when key is not found and log the value of the
 	teardown();
 });
 
-testHelpers.dev.devOnlyTest("Warn when key is not found and log the undefined value #206", function(assert) {
-	var teardown = testHelpers.dev.willWarn('Unable to find key "foo.length". Found "foo" with value: %o\n undefined');
+testHelpers.dev.devOnlyTest("Don't warn when key is not defined #206", function(assert) {
+	var teardown = testHelpers.dev.willWarn(/Unable to find key "foo.length". Found "foo" with value: %o/, function(message, matched) {
+		assert.notOk(matched, "warning is not displayed");
+	});
 
 	var scope = new Scope({});
 
@@ -158,5 +160,5 @@ testHelpers.dev.devOnlyTest("Warn when key is not found and log the undefined va
 	});
 
 	scopeKeyData.read();
-	assert.equal(teardown(), 1, "Warning is logged with undefined");
+	teardown();
 });
