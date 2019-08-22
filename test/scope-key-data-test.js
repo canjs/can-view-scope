@@ -149,7 +149,7 @@ testHelpers.dev.devOnlyTest("Warn when key is not found and log the value of the
 });
 
 testHelpers.dev.devOnlyTest("Don't warn when key is not defined #206", function(assert) {
-	var teardown = testHelpers.dev.willWarn(/Unable to find key "foo.length". Found "foo" with value: %o/, function(message, matched) {
+	var teardown = testHelpers.dev.willWarn('Unable to find key "foo.length', function(message, matched) {
 		assert.notOk(matched, "warning is not displayed");
 	});
 
