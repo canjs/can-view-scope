@@ -87,31 +87,35 @@ if (process.env.NODE_ENV !== 'production') {
 			}).join(".");
 			var pathsForKey = options.scope.getPathsForKey(firstKey);
 			var paths = Object.keys( pathsForKey );
+			var firstKeyValue = options.scope.get(firstKey);
 
 			var includeSuggestions = paths.length && (paths.indexOf(firstKey) < 0);
 
 			var warning = [
 				(filename ? filename + ':' : '') +
 					(lineNumber ? lineNumber + ': ' : '') +
-					'Unable to find key "' + key + '".' +
-					(
-						includeSuggestions ?
-							' Did you mean' + (paths.length > 1 ? ' one of these' : '') + '?\n' :
-							' Found "' + firstKey + '" with value: %o\n'
-					)
+					'Unable to find key "' + key + '".'
 			];
 
 			if (includeSuggestions) {
+				warning[0] = warning[0] + ' Did you mean' + (paths.length > 1 ? ' one of these' : '') + '?\n';
 				paths.forEach(function(path) {
 					warning.push('\t"' + path + '" which will read from');
 					warning.push(pathsForKey[path]);
 					warning.push("\n");
 				});
+			} else if (firstKeyValue) {
+				warning[0] = warning[0] + ' Found "' + firstKey + '" with value: %o\n';
 			}
 
-			dev.warn.apply(dev, 
-				[warning.join("\n"), options.scope.get(firstKey)]
-			);
+			if (firstKeyValue) {
+				dev.warn.apply(dev, [warning.join("\n"), firstKeyValue]);
+			} else {
+				dev.warn.apply(dev,
+					warning
+				);
+			}
+
 		}
 	};
 }

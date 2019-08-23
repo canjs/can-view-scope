@@ -147,3 +147,18 @@ testHelpers.dev.devOnlyTest("Warn when key is not found and log the value of the
 	scopeKeyData.read();
 	teardown();
 });
+
+testHelpers.dev.devOnlyTest("Warn when key is not defined #206", function(assert) {
+	var teardown = testHelpers.dev.willWarn('Unable to find key "foo.length".', function(message, matched) {
+		assert.ok(matched, "warning is not displayed");
+	});
+
+	var scope = new Scope({});
+
+	var scopeKeyData = scope.computeData("foo.length", {
+		warnOnMissingKey: true
+	});
+
+	scopeKeyData.read();
+	teardown();
+});
