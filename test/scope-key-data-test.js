@@ -148,9 +148,9 @@ testHelpers.dev.devOnlyTest("Warn when key is not found and log the value of the
 	teardown();
 });
 
-testHelpers.dev.devOnlyTest("Don't warn when key is not defined #206", function(assert) {
-	var teardown = testHelpers.dev.willWarn('Unable to find key "foo.length', function(message, matched) {
-		assert.notOk(matched, "warning is not displayed");
+testHelpers.dev.devOnlyTest("Warn when key is not defined #206", function(assert) {
+	var teardown = testHelpers.dev.willWarn('Unable to find key "foo.length".', function(message, matched) {
+		assert.ok(matched, "warning is not displayed");
 	});
 
 	var scope = new Scope({});
