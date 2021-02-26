@@ -605,6 +605,45 @@ testHelpers.dev.devOnlyTest("computeData dependencies for nested properties", fu
 	);
 });
 
+testHelpers.dev.devOnlyTest("read should not leak dependencies", function(assert) {
+	// create a map
+	var cherif = new SimpleMap({ name: "cherif" });
+
+	// create a scope around that map
+	var scope = new Scope(cherif);
+
+	// create a scopeKeyData for a property in the scope
+	var computeData = scope.computeData("name");
+
+	// call onValue on the scopeKeyData
+	canReflect.onValue(computeData, function(){});
+
+	// see that scopeKeyData is in valueDepenedencies list of map
+	var mapDependencies = canReflectDeps.getDependencyDataOf(cherif, "name");
+	assert.ok(
+		mapDependencies
+			.whatChangesMe
+			.mutate
+			.valueDependencies
+			.has(computeData),
+		"map depends on computeData's value"
+	);
+
+	// call offValue on the scopeKeyData
+	canReflect.offValue(computeData, function(){});
+
+	// see that scopeKeyData is not in valueDepenedencies list of map
+	mapDependencies = canReflectDeps.getDependencyDataOf(cherif, "name");
+	assert.ok(
+		!mapDependencies
+			.whatChangesMe
+			.mutate
+			.valueDependencies
+			.has(computeData),
+		"map no longer depends on computeData's value"
+	);
+});
+
 QUnit.test("scopeKeyData offValue resets dependencyChange/start", function(assert) {
 	var map = new SimpleMap({value: "a", other: "b"});
 	var wrap = new SimpleObservable(map);
