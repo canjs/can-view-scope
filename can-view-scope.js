@@ -485,9 +485,9 @@ assign(Scope.prototype, {
 		if (howToRead.shouldLookForHelper) {
 			var helper = this.getHelperOrPartial(keyReads);
 
-			if (helper && helper.value) {
+			if (helper) {
 				// Don't return parent so `.bind` is not used.
-				return {value: helper.value};
+				return {value: helper};
 			}
 		}
 
@@ -633,17 +633,17 @@ assign(Scope.prototype, {
 			if (context instanceof TemplateContext) {
 				helper = stacheKey.read(context.helpers, keyReads, { proxyMethods: false });
 				if(helper.value !== undefined) {
-					return helper;
+					return helper.value;
 				}
 				helper = stacheKey.read(context.partials, keyReads, { proxyMethods: false });
 				if(helper.value !== undefined) {
-					return helper;
+					return helper.value;
 				}
 			}
 			scope = scope._parent;
 		}
 
-		return stacheKey.read(stacheHelpers, keyReads, { proxyMethods: false });
+		return stacheKey.read(stacheHelpers, keyReads, { proxyMethods: false }).value;
 	},
 
 	// ### scope.get
@@ -959,7 +959,8 @@ assign(Scope.prototype, {
 Scope.prototype._read = Scope.prototype._walk;
 
 canReflect.assignSymbols(Scope.prototype, {
-	"can.hasKey": Scope.prototype.hasKey
+	"can.hasKey": Scope.prototype.hasKey,
+	"can.isScopeLike": true
 });
 
 var templateContextPrimitives = [
